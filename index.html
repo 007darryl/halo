@@ -683,33 +683,29 @@ function playUIClick(){
   sine(1800,0.001,0.01,0.08,0.025,0.002);
 }
 
-// ── TYPE BEEP — 2050 holographic data stream ──
-function playTypeBeep(){
+// ── TYPE SOUND — 2035 data stream, plays once when intel opens ──
+function playTypeBeep(){ }
+
+function playDataStreamSound(){
   const ctx=getACtx();if(!ctx)return;
-  // Two-layer sound: ultra-soft filtered noise burst + faint sine shimmer
-  // Mimics holographic display pixel activation
-
-  // Layer 1: Filtered noise — like a photon hitting a display
-  const buf=ctx.createBuffer(1,Math.floor(ctx.sampleRate*0.018),ctx.sampleRate);
+  // Soft white noise sweep — like data flowing through a circuit
+  const dur=0.04;
+  const buf=ctx.createBuffer(1,Math.floor(ctx.sampleRate*dur),ctx.sampleRate);
   const d=buf.getChannelData(0);
-  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,4);
+  for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*Math.pow(1-i/d.length,2);
   const src=ctx.createBufferSource();src.buffer=buf;
-  const hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=4000;hp.Q.value=0.5;
-  const lp=ctx.createBiquadFilter();lp.type='lowpass';lp.frequency.value=9000;lp.Q.value=0.5;
-  const g=ctx.createGain();g.gain.value=0.028;
-  src.connect(hp);hp.connect(lp);lp.connect(g);g.connect(ctx.destination);
-  src.start();
 
-  // Layer 2: Faint high sine shimmer — data frequency
-  const freqs=[3136,3520,3951,4186,3520,3136,2960,3322];
-  const f=freqs[Math.floor(Math.random()*freqs.length)];
-  const o=ctx.createOscillator();const og=ctx.createGain();
-  o.type='sine';o.frequency.value=f;
-  og.gain.setValueAtTime(0,ctx.currentTime);
-  og.gain.linearRampToValueAtTime(0.009,ctx.currentTime+0.001);
-  og.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.035);
-  o.connect(og);og.connect(ctx.destination);
-  o.start();o.stop(ctx.currentTime+0.04);
+  // Band filter — narrow electronic frequency band
+  const bp=ctx.createBiquadFilter();
+  bp.type='bandpass';
+  bp.frequency.value=6000+Math.random()*2000;
+  bp.Q.value=3.0;
+
+  const g=ctx.createGain();
+  g.gain.value=0.022;
+
+  src.connect(bp);bp.connect(g);g.connect(ctx.destination);
+  src.start();
 }
 
 // ── HOVER ──
@@ -962,9 +958,8 @@ function typewriteContent(source, target, delay){
         const idx=d;
         setTimeout(()=>{
           span.textContent+=ch;
-          // beep every 4 chars
-          if(i%4===0 && ch.trim())playTypeBeep();
-        },idx*18);
+          if(i%3===0)playDataStreamSound();
+        },idx*6);
         d++;
       }
     } else if(node.nodeType===1){
