@@ -750,19 +750,7 @@ function stopAmbientHum(){
   ambientNodes=[];
 }
 
-// TYPE BEEP — for intel typewriter effect
-function playTypeBeep(){
-  const ctx=getACtx();if(!ctx)return;
-  const freqs=[800,900,1000,850,950,1050,920,880];
-  const f=freqs[Math.floor(Math.random()*freqs.length)];
-  const o=ctx.createOscillator();const g=ctx.createGain();
-  o.connect(g);g.connect(ctx.destination);
-  o.type='square';o.frequency.value=f;
-  g.gain.setValueAtTime(0,ctx.currentTime);
-  g.gain.linearRampToValueAtTime(0.04,ctx.currentTime+0.005);
-  g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.04);
-  o.start(ctx.currentTime);o.stop(ctx.currentTime+0.05);
-}
+// TYPE BEEP — handled by playTypeBeep() above
 
 // BOOT LINE BEEP — for each line during boot
 function playBootLineBeep(idx){
