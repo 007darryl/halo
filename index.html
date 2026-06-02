@@ -614,36 +614,141 @@ function playNoise(dur,vol=0.05,delay=0){
 }
 
 // ── SOUND FUNCTIONS — using real HUD audio ──
+// Second 4 = click, Second 5 = notification chime
+
 function playBootSound(){
-  if(hudBuffer)hudSlice(0,4.0,0.7);
+  // Boot: play notification chime 3 times rising
+  if(hudBuffer){
+    hudSlice(5.0,0.8,0.5);
+    setTimeout(()=>hudSlice(5.0,0.8,0.55),500);
+    setTimeout(()=>hudSlice(5.0,0.8,0.6),1000);
+    setTimeout(()=>hudSlice(5.0,1.2,0.65),1500);
+  }
 }
 function playBootLineBeep(idx){
+  // Alternating click and very short chime slice
   if(!hudBuffer)return;
-  const p=[2.0,2.3,2.6,2.9,3.2,3.5,3.8,4.1,4.4,4.7,5.0,5.3,5.6,6.0];
-  hudSlice(p[idx%p.length],0.25,0.5);
+  if(idx%2===0)hudSlice(4.0,0.18,0.35);
+  else hudSlice(5.0,0.15,0.25);
 }
-function playSendBeep(){if(hudBuffer)hudSlice(6.0,0.4,0.55);}
-function playReceiveBeep(){if(hudBuffer)hudSlice(7.0,0.8,0.5);}
-function playIntelBeep(){if(hudBuffer)hudSlice(8.0,1.2,0.55);}
-function playWakeBeep(){if(hudBuffer)hudSlice(10.0,0.8,0.6);}
-function playSuccessBeep(){if(hudBuffer)hudSlice(12.0,1.5,0.55);}
-function playUIClick(){if(hudBuffer)hudSlice(14.0,0.2,0.45);}
+function playSendBeep(){
+  if(hudBuffer)hudSlice(4.0,0.2,0.5);
+}
+function playReceiveBeep(){
+  if(hudBuffer){
+    hudSlice(4.0,0.15,0.4);
+    setTimeout(()=>hudSlice(5.0,0.8,0.45),150);
+  }
+}
+function playIntelBeep(){
+  if(hudBuffer){
+    hudSlice(4.0,0.15,0.4);
+    setTimeout(()=>hudSlice(5.0,1.0,0.5),120);
+    setTimeout(()=>hudSlice(5.0,0.8,0.4),600);
+  }
+}
+function playWakeBeep(){
+  if(hudBuffer){
+    hudSlice(5.0,0.8,0.5);
+    setTimeout(()=>hudSlice(5.0,0.8,0.55),400);
+  }
+}
+function playSuccessBeep(){
+  if(hudBuffer){
+    hudSlice(5.0,0.8,0.45);
+    setTimeout(()=>hudSlice(5.0,0.8,0.5),300);
+    setTimeout(()=>hudSlice(5.0,1.0,0.6),650);
+  }
+}
+function playUIClick(){
+  if(hudBuffer)hudSlice(4.0,0.18,0.45);
+}
 function playTypeBeep(){
-  if(!hudBuffer)return;
-  const p=[15.0,15.15,15.3,15.45,15.6,15.75,15.9,16.05,16.2,16.35];
-  hudSlice(p[Math.floor(Math.random()*p.length)],0.12,0.3);
+  if(hudBuffer)hudSlice(4.0,0.1,0.2);
 }
-function playHoverSound(){if(hudBuffer)hudSlice(17.0,0.15,0.25);}
-// ─── AMBIENT HUD ───
+function playHoverSound(){
+  if(hudBuffer)hudSlice(4.0,0.1,0.15);
+}
+
+// ─── AMBIENT — high frequency healing tones (432Hz / 528Hz) ───
 let ambientRunning=false;
+let ambientNodes=[];
+
 function startAmbientHum(){
-  if(ambientRunning||!hudBuffer)return;
+  if(ambientRunning)return;
+  const ctx=getACtx();if(!ctx)return;
   ambientRunning=true;
-  ambientObj=hudSlice(20.0,15.0,0.18,true);
+  ambientNodes=[];
+
+  // 432Hz — natural tuning frequency, calming
+  function addTone(freq,vol,detune=0){
+    const o=ctx.createOscillator();
+    const g=ctx.createGain();
+    const p=ctx.createPanner();
+    o.type='sine';
+    o.frequency.value=freq;
+    if(detune)o.detune.value=detune;
+    g.gain.setValueAtTime(0,ctx.currentTime);
+    g.gain.linearRampToValueAtTime(vol,ctx.currentTime+3);
+    o.connect(g);g.connect(ctx.destination);
+    o.start();
+    ambientNodes.push({o,g});
+  }
+
+  // Core healing frequencies
+  addTone(432,0.018);      // 432Hz — grounding
+  addTone(528,0.014);      // 528Hz — transformation
+  addTone(396,0.012);      // 396Hz — liberating
+  addTone(864,0.008);      // 864Hz — 432 harmonic
+  addTone(1056,0.005);     // 528 harmonic shimmer
+
+  // Very subtle beat frequency between 432 and 436 — creates 4Hz theta wave feel
+  addTone(436,0.008);
+
+  // Slow LFO breathing on the 528Hz tone
+  const lfo=ctx.createOscillator();
+  const lg=ctx.createGain();
+  lfo.frequency.value=0.1; // very slow breath — 6 breaths per minute
+  lg.gain.value=0.006;
+  lfo.connect(lg);
+  if(ambientNodes[1])lg.connect(ambientNodes[1].g.gain);
+  lfo.start();
+  ambientNodes.push({o:lfo,g:lg});
+
+  // Second LFO on 432Hz
+  const lfo2=ctx.createOscillator();
+  const lg2=ctx.createGain();
+  lfo2.frequency.value=0.07;
+  lg2.gain.value=0.005;
+  lfo2.connect(lg2);
+  if(ambientNodes[0])lg2.connect(ambientNodes[0].g.gain);
+  lfo2.start();
+  ambientNodes.push({o:lfo2,g:lg2});
+
+  // Occasional very soft high chime from audio file
+  if(hudBuffer)scheduleAmbientChimes();
 }
+
+function scheduleAmbientChimes(){
+  if(!ambientRunning)return;
+  function chime(){
+    if(!ambientRunning||!hudBuffer)return;
+    hudSlice(5.0,0.8,0.08); // very quiet background chime
+    setTimeout(chime,8000+Math.random()*12000);
+  }
+  setTimeout(chime,6000+Math.random()*8000);
+}
+
 function stopAmbientHum(){
   ambientRunning=false;
-  if(ambientObj){stopHud(ambientObj,1.0);ambientObj=null;}
+  const ctx=getACtx();if(!ctx)return;
+  ambientNodes.forEach(n=>{
+    try{
+      n.g.gain.linearRampToValueAtTime(0,ctx.currentTime+2);
+      setTimeout(()=>{try{n.o.stop();}catch(e){}},2100);
+    }catch(e){}
+  });
+  ambientNodes=[];
 }
 
 // TYPE BEEP — for intel typewriter effect
