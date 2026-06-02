@@ -982,18 +982,13 @@ document.getElementById('rinp').addEventListener('keydown',e=>{if(e.key==='Enter
 // ─── INTEL ───
 function openIntel(title,html){
   playIntelBeep();
-  duckAmbient();
   document.getElementById('intelTitle').textContent=title.toUpperCase();
   document.getElementById('intelOverlay').style.display='block';
   const body=document.getElementById('intelBody');
   body.innerHTML='';
   const temp=document.createElement('div');
   temp.innerHTML=html;
-  // Calculate total typing time and restore ambient after
-  const totalChars=html.replace(/<[^>]*>/g,'').length;
-  const totalTime=(totalChars*6)/1000+1.5;
   typewriteContent(temp, body, 0);
-  setTimeout(restoreAmbient, totalTime*1000);
 }
 
 function typewriteContent(source, target, delay){
@@ -1010,7 +1005,7 @@ function typewriteContent(source, target, delay){
         const idx=d;
         setTimeout(()=>{
           span.textContent+=ch;
-          if(ch===' '||ch==='.'||ch===',')playClickSound(0.35);
+          if(ch===' '||ch==='.'||ch===',')playClickSound(0.18);
         },idx*6);
         d++;
       }
