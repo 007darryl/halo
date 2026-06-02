@@ -141,7 +141,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg0);color:var
 .stark-tag{font-family:var(--font-display);font-size:8px;font-weight:600;letter-spacing:4px;color:rgba(0,212,255,0.18);margin-top:2px;}
 
 /* ── MIDDLE ── */
-#mid{display:grid;grid-template-columns:220px 1fr 220px;gap:10px;min-height:0;height:100%;overflow:hidden;}
+#mid{display:grid;grid-template-columns:220px 1fr 220px;gap:10px;height:100%;min-height:0;overflow:hidden;align-items:start;}
 
 /* ── GLASS PANEL ── */
 .gpnl{
@@ -182,7 +182,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg0);color:var
 .plbl::after{content:'';flex:1;height:1px;background:rgba(0,212,255,0.06);}
 
 /* ── LEFT PANELS ── */
-.left-col{display:flex;flex-direction:column;gap:8px;overflow:hidden;height:100%;}
+.left-col{display:flex;flex-direction:column;gap:8px;height:100%;overflow:hidden;}
 
 /* Tasks */
 .trow{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid rgba(0,212,255,0.05);cursor:pointer;transition:all 0.25s ease;border-radius:4px;}
@@ -219,7 +219,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg0);color:var
 .prog-stat{display:flex;justify-content:space-between;font-size:7px;color:rgba(0,212,255,0.2);font-family:var(--font-mono);margin-top:3px;}
 
 /* ── CENTER ── */
-.center-col{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;overflow:hidden;height:100%;}
+.center-col{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;height:100%;overflow:hidden;}
 
 /* ORB */
 .orb-zone{display:flex;align-items:center;justify-content:center;gap:20px;width:100%;}
@@ -342,7 +342,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg0);color:var
 .intel-spin{width:14px;height:14px;border:1px solid rgba(0,212,255,0.1);border-top-color:var(--c);border-radius:50%;animation:spin 0.8s linear infinite;}
 
 /* ── RIGHT PANELS ── */
-.right-col{display:flex;flex-direction:column;gap:8px;overflow:hidden;height:100%;}
+.right-col{display:flex;flex-direction:column;gap:8px;height:100%;overflow:hidden;}
 
 /* Quick buttons */
 .qbtn{background:rgba(0,212,255,0.03);border:1px solid rgba(0,212,255,0.08);color:rgba(0,212,255,0.4);font-family:var(--font-mono);font-size:8px;padding:8px 10px;border-radius:5px;cursor:pointer;text-align:left;letter-spacing:1px;transition:all 0.25s;line-height:1.4;display:block;width:100%;margin-bottom:4px;}
@@ -531,22 +531,22 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg0);color:var
 
     <!-- LEFT -->
     <div class="left-col">
-      <div class="gpnl" style="flex:1;">
-        <div class="gpnl-scan"></div><div class="gpnl-br"></div><div class="gpnl-sweep"></div>
+      <div class="gpnl" style="flex:1;min-height:0;">
+        <div class="gpnl-scan"></div><div class="gpnl-br"></div>
         <div class="plbl">Mission Objectives</div>
-        <div id="tlist"></div>
+        <div id="tlist" style="overflow-y:auto;max-height:160px;"></div>
         <div class="prog"><div class="prog-fill" id="sprog" style="width:0%"></div></div>
         <div class="prog-stat"><span id="sdone">0/0</span><span>PROGRESS</span></div>
-        <div class="addrow">
+        <div class="addrow" style="margin-top:6px;">
           <input class="addinp" id="tinp" placeholder="+ New objective" style="margin-top:0;flex:1;"/>
           <button class="addbtn" onclick="addTask()">+</button>
         </div>
       </div>
-      <div class="gpnl">
-        <div class="gpnl-scan"></div><div class="gpnl-br"></div><div class="gpnl-sweep"></div>
+      <div class="gpnl" style="flex:1;min-height:0;">
+        <div class="gpnl-scan"></div><div class="gpnl-br"></div>
         <div class="plbl">Priority Alerts</div>
-        <div id="rlist"></div>
-        <div class="addrow" style="margin-top:8px;">
+        <div id="rlist" style="overflow-y:auto;max-height:120px;"></div>
+        <div class="addrow" style="margin-top:6px;">
           <input class="addinp" id="rinp" placeholder="New alert..." style="margin-top:0;flex:1;"/>
           <select id="rpri" class="addinp" style="margin-top:0;flex:0 0 42px;padding:4px;"><option value="hi">HI</option><option value="md">MD</option><option value="lo">LO</option></select>
           <button class="addbtn" onclick="addRem()">+</button>
@@ -556,16 +556,20 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg0);color:var
 
     <!-- CENTER -->
     <div class="center-col">
-      <div class="orb-zone">
+      <!-- ORB + VOICE ROW -->
+      <div style="display:flex;align-items:center;justify-content:center;gap:16px;flex-shrink:0;">
         <!-- ORB -->
-        <div id="orbWrap" style="position:relative;width:clamp(200px,20vw,260px);height:clamp(200px,20vw,260px);flex-shrink:0;display:flex;align-items:center;justify-content:center;">
-          <canvas id="barCanvas" width="260" height="260" style="position:absolute;inset:0;pointer-events:none;"></canvas>
-          <div class="orb-ring or1"></div>
-          <div class="orb-ring or2"></div>
-          <div class="orb-ring or3"></div>
-          <div class="orb-ring or4"></div>
-          <div class="orb-ring or5"></div>
-          <div id="orbCore"><div class="orb-inner-ring"></div></div>
+        <div id="orbWrap" style="position:relative;width:240px;height:240px;flex-shrink:0;display:flex;align-items:center;justify-content:center;">
+          <canvas id="barCanvas" style="position:absolute;inset:0;pointer-events:none;width:100%;height:100%;"></canvas>
+          <div class="orb-ring" style="position:absolute;inset:0;border-radius:50%;border:1px solid rgba(0,212,255,0.06);"></div>
+          <div class="orb-ring" style="position:absolute;inset:5%;border-radius:50%;border:1px solid rgba(0,212,255,0.1);animation:spin 30s linear infinite;"></div>
+          <div class="orb-ring" style="position:absolute;inset:12%;border-radius:50%;border:1px solid rgba(0,212,255,0.14);animation:spinR 20s linear infinite;"></div>
+          <div class="orb-ring" style="position:absolute;inset:20%;border-radius:50%;border:1px solid rgba(0,212,255,0.18);animation:spin 14s linear infinite;"></div>
+          <div class="orb-ring" style="position:absolute;inset:28%;border-radius:50%;border:1px solid rgba(0,212,255,0.25);animation:spinR 9s linear infinite;"></div>
+          <div id="orbCore" style="position:absolute;width:88px;height:88px;border-radius:50%;background:radial-gradient(circle at 35% 35%,rgba(100,220,255,0.9),rgba(0,180,255,0.7),rgba(0,100,200,0.5),rgba(0,50,150,0.3));box-shadow:0 0 40px rgba(0,212,255,0.5),0 0 80px rgba(0,212,255,0.2);animation:orbPulse 3s ease infinite;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform 0.3s;z-index:2;">
+            <div style="position:absolute;inset:8px;border-radius:50%;border:1px solid rgba(255,255,255,0.15);animation:spinR 4s linear infinite;"></div>
+            <div style="position:absolute;width:55%;height:55%;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,0.4),transparent);top:12%;left:18%;"></div>
+          </div>
         </div>
         <!-- VOICE BOX -->
         <div class="voice-box">
@@ -593,8 +597,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg0);color:var
 
     <!-- RIGHT -->
     <div class="right-col">
-      <div class="gpnl" style="flex:1;">
-        <div class="gpnl-scan"></div><div class="gpnl-br"></div><div class="gpnl-sweep"></div>
+      <div class="gpnl" style="flex:1;min-height:0;overflow-y:auto;">
+        <div class="gpnl-scan"></div><div class="gpnl-br"></div>
         <div class="plbl">Quick Directives</div>
         <button class="qbtn" onclick="playUIClick();askHalo('Give me a mission briefing for today')">Today briefing ↗</button>
         <button class="qbtn" onclick="playUIClick();askHalo('Prioritise my tasks by urgency')">Prioritise tasks ↗</button>
@@ -603,8 +607,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg0);color:var
         <button class="qbtn" onclick="playUIClick();askHalo('What is stoicism?')">Stoicism brief ↗</button>
         <button class="qbtn" onclick="playUIClick();askHalo('Latest news today')">Latest news ↗</button>
       </div>
-      <div class="gpnl">
-        <div class="gpnl-scan"></div><div class="gpnl-br"></div><div class="gpnl-sweep"></div>
+      <div class="gpnl" style="flex:1;min-height:0;overflow-y:auto;">
+        <div class="gpnl-scan"></div><div class="gpnl-br"></div>
         <div class="plbl">Omkeer Operations</div>
         <div class="feat-grid">
           <div class="feat-card" onclick="playUIClick();askHalo('Generate Omkeer caption ideas for Instagram')"><div class="feat-icon">✍️</div><div class="feat-lbl">CAPTIONS</div></div>
@@ -619,7 +623,6 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg0);color:var
     </div>
 
   </div>
-
   <!-- SOCIAL CIRCLES + BOTTOM -->
   <div id="botbar">
     <div id="socialCircles">
