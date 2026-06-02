@@ -109,24 +109,24 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg0);color:var
 .notif-close{position:absolute;top:10px;right:12px;background:none;border:none;color:rgba(0,212,255,0.3);cursor:pointer;font-size:12px;}
 
 /* ── MAIN LAYOUT ── */
-#app{position:fixed;inset:0;z-index:2;display:grid;grid-template-rows:80px 1fr 56px;padding:10px 14px 10px;gap:6px;}
+#app{position:fixed;inset:0;z-index:2;display:grid;grid-template-rows:auto auto 1fr auto;padding:8px 14px;gap:4px;}
 
 /* ── TOP BAR ── */
 #topbar{display:grid;grid-template-columns:auto auto 1fr auto auto;align-items:center;gap:12px;border-bottom:1px solid rgba(0,212,255,0.08);padding-bottom:8px;position:relative;}
 #topbar::after{content:'';position:absolute;bottom:0;left:5%;right:5%;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.4),transparent);}
 
 /* Circle widgets */
-.circle-w{width:72px;height:72px;border-radius:50%;border:1px solid rgba(0,212,255,0.2);background:radial-gradient(circle,rgba(0,212,255,0.06),transparent);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;flex-shrink:0;cursor:default;transition:all 0.3s ease;}
+.circle-w{width:64px;height:64px;border-radius:50%;border:1px solid rgba(0,212,255,0.2);background:radial-gradient(circle,rgba(0,212,255,0.06),transparent);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;flex-shrink:0;cursor:default;transition:all 0.3s ease;}
 .circle-w:hover{border-color:rgba(0,212,255,0.5);box-shadow:0 0 20px rgba(0,212,255,0.2);}
 .circle-w::before{content:'';position:absolute;inset:-3px;border-radius:50%;border:1px solid rgba(0,212,255,0.06);animation:spin 18s linear infinite;}
-.cw-val{font-family:var(--font-display);font-size:17px;font-weight:700;color:var(--c);text-shadow:0 0 12px rgba(0,212,255,0.6);line-height:1;}
+.cw-val{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--c);text-shadow:0 0 12px rgba(0,212,255,0.6);line-height:1;}
 .cw-lbl{font-family:var(--font-mono);font-size:6px;letter-spacing:2px;color:rgba(0,212,255,0.3);margin-top:2px;text-align:center;}
 
 /* Clock */
-.clock-w{width:88px;height:88px;border-radius:50%;border:1px solid rgba(0,212,255,0.25);background:radial-gradient(circle,rgba(0,212,255,0.08),transparent);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;flex-shrink:0;}
+.clock-w{width:76px;height:76px;border-radius:50%;border:1px solid rgba(0,212,255,0.25);background:radial-gradient(circle,rgba(0,212,255,0.08),transparent);display:flex;flex-direction:column;align-items:center;justify-content:center;position:relative;flex-shrink:0;}
 .clock-w::before{content:'';position:absolute;inset:-4px;border-radius:50%;border:1px solid rgba(0,212,255,0.08);animation:spinR 12s linear infinite;}
 .clock-w::after{content:'';position:absolute;inset:-8px;border-radius:50%;border:1px solid rgba(0,212,255,0.04);}
-.cw-time{font-family:var(--font-display);font-size:13px;font-weight:700;color:var(--c);letter-spacing:2px;line-height:1;text-shadow:0 0 10px rgba(0,212,255,0.5);}
+.cw-time{font-family:var(--font-display);font-size:12px;font-weight:700;color:var(--c);letter-spacing:2px;line-height:1;text-shadow:0 0 10px rgba(0,212,255,0.5);}
 .cw-date{font-family:var(--font-mono);font-size:6px;color:rgba(0,212,255,0.3);margin-top:3px;letter-spacing:1px;text-align:center;}
 
 /* Title */
@@ -378,7 +378,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:var(--bg0);color:var
 .sc:hover .sc-pulse{opacity:1;}
 
 /* ── BOTTOM BAR ── */
-#botbar{display:flex;align-items:center;gap:8px;border-top:1px solid rgba(0,212,255,0.08);padding-top:6px;position:relative;}
+#botbar{display:flex;align-items:center;gap:8px;border-top:1px solid rgba(0,212,255,0.08);padding-top:6px;position:relative;flex-shrink:0;}
 #botbar::before{content:'';position:absolute;top:0;left:5%;right:5%;height:1px;background:linear-gradient(90deg,transparent,rgba(0,212,255,0.3),transparent);}
 .bot-diag{flex:1;display:grid;grid-template-columns:repeat(5,1fr);gap:6px;}
 .bd-item{background:rgba(0,212,255,0.02);border:1px solid rgba(0,212,255,0.07);border-radius:5px;padding:5px 7px;transition:all 0.25s;}
