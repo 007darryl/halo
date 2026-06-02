@@ -665,6 +665,12 @@ function setRipple(on){
 function speakText(text,onDone){
   isSpeaking=true;setWakeState('speaking');animWave(true);setRipple(true);
   
+  if(!audioUnlocked){
+    isSpeaking=false;animWave(false);setRipple(false);
+    if(alwaysOn){setWakeState('armed');startWakeLoop();}else setWakeState('standby');
+    onDone&&onDone();
+    return;
+  }
   function trySpeak(attempts){
     fetch('https://halo-server-d3h3.onrender.com/speak',{
       method:'POST',
@@ -820,23 +826,28 @@ async function loadWeather(){
 function bootGreeting(){
   const h=new Date().getHours();
   const intro=`${h<12?'Good morning':'Good afternoon'}. HALO systems are fully online. How may I assist you?`;
-  addChat('halo',intro);speakText(intro);
+  addChat('halo',intro);
+  if(audioUnlocked){
+    speakText(intro);
+  } else {
+    pendingGreeting=intro;
+  }
 }
 
 if(synth.onvoiceschanged!==undefined)synth.onvoiceschanged=()=>synth.getVoices();
 
-// Unlock audio on first user interaction
+// Unlock audio and play boot greeting on first user interaction
 let audioUnlocked=false;
+let pendingGreeting=null;
 function unlockAudio(){
   if(audioUnlocked)return;
   audioUnlocked=true;
   const ctx=new(window.AudioContext||window.webkitAudioContext)();
   ctx.resume();
-  const silence=ctx.createBuffer(1,1,22050);
-  const src=ctx.createBufferSource();
-  src.buffer=silence;
-  src.connect(ctx.destination);
-  src.start(0);
+  if(pendingGreeting){
+    speakText(pendingGreeting);
+    pendingGreeting=null;
+  }
 }
 document.addEventListener('click',unlockAudio,{once:false});
 document.addEventListener('keydown',unlockAudio,{once:false});
