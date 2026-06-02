@@ -754,58 +754,6 @@ function stopAmbientHum(){
 
 // TYPE BEEP — handled by playTypeBeep() above
 
-// BOOT LINE BEEP — for each line during boot
-function playBootLineBeep(idx){
-  const freqs=[440,480,520,460,500,540,420,490,510,470,530,450,480,440,520,460];
-  const f=freqs[idx%freqs.length];
-  playTone(f,0.04,'square',0.06);
-  if(Math.random()>0.6)playNoise(0.02,0.03,0.01);
-}
-
-// SEND BEEP — when user sends message
-function playSendBeep(){
-  playTone(660,0.05,'square',0.08);
-  playTone(880,0.08,'sine',0.06,0.06);
-}
-
-// RECEIVE BEEP — when HALO responds
-function playReceiveBeep(){
-  playTone(520,0.04,'square',0.07);
-  playTone(780,0.04,'square',0.07,0.05);
-  playTone(1040,0.12,'sine',0.06,0.1);
-  playNoise(0.03,0.03,0.05);
-}
-
-// INTEL OPEN — when intel panel opens
-function playIntelBeep(){
-  [0,0.04,0.08,0.12,0.16].forEach((t,i)=>{
-    playTone(400+i*80,0.04,'square',0.07,t);
-  });
-  playTone(800,0.2,'sine',0.05,0.2);
-  playNoise(0.04,0.04,0.04);
-  playNoise(0.04,0.04,0.12);
-}
-
-// WAKE WORD DETECTED
-function playWakeBeep(){
-  playTone(880,0.06,'square',0.1);
-  playTone(1100,0.06,'square',0.1,0.07);
-  playTone(1320,0.15,'sine',0.08,0.14);
-}
-
-// ERROR / CONNECTION FAILED
-function playErrorBeep(){
-  playTone(220,0.15,'sawtooth',0.08);
-  playTone(180,0.15,'sawtooth',0.08,0.18);
-}
-
-// POST CONTENT QUEUED
-function playSuccessBeep(){
-  playTone(660,0.06,'sine',0.08);
-  playTone(880,0.06,'sine',0.08,0.08);
-  playTone(1100,0.15,'sine',0.08,0.16);
-  playTone(1320,0.2,'sine',0.06,0.24);
-}
 
 // ─── BOOT SEQUENCE ───
 const bootMsgs=[
