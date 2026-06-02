@@ -1013,7 +1013,7 @@ function typewriteContent(source, target, delay){
         const idx=d;
         setTimeout(()=>{
           span.textContent+=ch;
-          if(i%5===0)playDataStreamSound();
+          if(ch===' '||ch==='.'||ch===',')playClickSound(0.35);
         },idx*6);
         d++;
       }
