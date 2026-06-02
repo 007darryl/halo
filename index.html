@@ -433,6 +433,11 @@ body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradi
           <input class="hi" id="textInp" placeholder="Ask HALO anything..."/>
           <button class="hb" onclick="sendText()">Send</button>
         </div>
+        <div style="margin-top:8px;">
+          <button id="activateVoiceBtn" onclick="activateVoice()" style="width:100%;background:rgba(0,229,255,0.1);border:1px solid rgba(0,229,255,0.5);color:#00e5ff;font-family:'Share Tech Mono',monospace;font-size:10px;padding:8px;border-radius:3px;cursor:pointer;letter-spacing:2px;text-transform:uppercase;">
+            &#9654; Tap to activate voice
+          </button>
+        </div>
         <div class="wake-toggle-row">
           <span class="wake-lbl">Always-on:</span>
           <button class="toggle-btn" id="alwaysOnBtn" onclick="toggleAlwaysOn()">Off</button>
@@ -821,6 +826,23 @@ async function loadWeather(){
     document.getElementById('wtemp').textContent=t+'°F';
     document.getElementById('wdesc').textContent=c===0?'Clear':c<=2?'Partly cloudy':c===3?'Overcast':c<=48?'Foggy':c<=67?'Rain':'Storm';
   }catch(e){document.getElementById('wtemp').textContent='--°F';}
+}
+
+function activateVoice(){
+  audioUnlocked=true;
+  const ctx=new(window.AudioContext||window.webkitAudioContext)();
+  ctx.resume();
+  document.getElementById('activateVoiceBtn').textContent='Voice activated';
+  document.getElementById('activateVoiceBtn').style.borderColor='rgba(0,255,170,0.5)';
+  document.getElementById('activateVoiceBtn').style.color='#00ffaa';
+  document.getElementById('activateVoiceBtn').disabled=true;
+  if(pendingGreeting){
+    speakText(pendingGreeting);
+    pendingGreeting=null;
+  } else {
+    const h=new Date().getHours();
+    speakText(`${h<12?'Good morning':'Good afternoon'}. Voice interface activated. I am ready.`);
+  }
 }
 
 function bootGreeting(){
