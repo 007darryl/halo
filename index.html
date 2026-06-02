@@ -556,17 +556,20 @@ function loadTypingAudio(){
 
 function playTypingSlice(){
   const ctx=getACtx();if(!ctx||!typingBuffer)return;
-  // Pick a random 0.12s slice from the first 3 seconds of the file
-  const start=Math.random()*2.5;
+  // Use a clean 0.2s slice — longer = better quality feel
+  const start=Math.random()*2.0;
   const src=ctx.createBufferSource();
   src.buffer=typingBuffer;
+  // High quality playback - no pitch shift
+  src.playbackRate.value=1.0;
   const g=ctx.createGain();
+  // Clean sharp attack, smooth tail
   g.gain.setValueAtTime(0,ctx.currentTime);
-  g.gain.linearRampToValueAtTime(0.45,ctx.currentTime+0.005);
-  g.gain.setValueAtTime(0.45,ctx.currentTime+0.08);
-  g.gain.linearRampToValueAtTime(0,ctx.currentTime+0.12);
+  g.gain.linearRampToValueAtTime(0.65,ctx.currentTime+0.003);
+  g.gain.setValueAtTime(0.65,ctx.currentTime+0.1);
+  g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.2);
   src.connect(g);g.connect(ctx.destination);
-  src.start(ctx.currentTime,start,0.12);
+  src.start(ctx.currentTime,start,0.22);
 }
 
 
@@ -717,7 +720,7 @@ function playUIClick(){
 }
 
 // ── TYPE SOUND — real sci-fi computer UI audio ──
-function playTypeBeep(){ playDataStreamSound(); }
+function playTypeBeep(){ }
 
 function playDataStreamSound(){
   playTypingSlice();
@@ -973,7 +976,7 @@ function typewriteContent(source, target, delay){
         const idx=d;
         setTimeout(()=>{
           span.textContent+=ch;
-          if(i%3===0)playDataStreamSound();
+          if(i%5===0)playDataStreamSound();
         },idx*6);
         d++;
       }
