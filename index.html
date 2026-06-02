@@ -780,6 +780,21 @@ function stopAmbientHum(){
   ambientNodes=[];
 }
 
+// Duck ambient volume while intel is typing
+function duckAmbient(){
+  const ctx=getACtx();if(!ctx)return;
+  ambientNodes.slice(0,4).forEach(n=>{
+    try{n.g.gain.linearRampToValueAtTime(0,ctx.currentTime+0.3);}catch(e){}
+  });
+}
+function restoreAmbient(){
+  const ctx=getACtx();if(!ctx)return;
+  const vols=[0.028,0.014,0.007,0.003];
+  ambientNodes.slice(0,4).forEach((n,i)=>{
+    try{n.g.gain.linearRampToValueAtTime(vols[i]||0.005,ctx.currentTime+1.5);}catch(e){}
+  });
+}
+
 // TYPE BEEP — handled by playTypeBeep() above
 
 
@@ -951,15 +966,18 @@ document.getElementById('rinp').addEventListener('keydown',e=>{if(e.key==='Enter
 // ─── INTEL ───
 function openIntel(title,html){
   playIntelBeep();
+  duckAmbient();
   document.getElementById('intelTitle').textContent=title.toUpperCase();
   document.getElementById('intelOverlay').style.display='block';
-  // Typewriter effect with beeps
   const body=document.getElementById('intelBody');
   body.innerHTML='';
-  // Parse html and type it out
   const temp=document.createElement('div');
   temp.innerHTML=html;
+  // Calculate total typing time and restore ambient after
+  const totalChars=html.replace(/<[^>]*>/g,'').length;
+  const totalTime=(totalChars*6)/1000+1.5;
   typewriteContent(temp, body, 0);
+  setTimeout(restoreAmbient, totalTime*1000);
 }
 
 function typewriteContent(source, target, delay){
