@@ -1183,7 +1183,6 @@ async function loadWeather(){
 // ─── VOICE ACTIVATE ───
 function activateVoice(){
   audioUnlocked=true;
-  loadHudAudio();
   setTimeout(playBootSound, 500);
   setTimeout(startAmbientHum, 1500);
   const btn=document.getElementById('activateVoiceBtn');
@@ -1355,7 +1354,6 @@ if(synth.onvoiceschanged!==undefined)synth.onvoiceschanged=()=>synth.getVoices()
 function unlockAudio(){
   if(audioUnlocked)return;audioUnlocked=true;
   try{const ctx=new(window.AudioContext||window.webkitAudioContext)();ctx.resume();}catch(e){}
-  loadHudAudio();
   if(pendingGreeting){speakText(pendingGreeting);pendingGreeting=null;}
 }
 document.addEventListener('click',unlockAudio,{once:false});
