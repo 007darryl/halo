@@ -267,6 +267,124 @@ body::after{content:'';position:fixed;inset:0;background:repeating-linear-gradie
 .connect-notice{font-family:'Share Tech Mono',monospace;font-size:8px;letter-spacing:1px;color:rgba(26,143,255,0.25);text-align:center;padding:8px;border:1px solid rgba(26,143,255,0.08);border-radius:2px;line-height:1.8;margin-top:8px;}
 
 div{position:relative;}
+
+/* ═══════════════════════════════════════
+   MOBILE LAYOUT — iPhone optimized
+═══════════════════════════════════════ */
+@media(max-width:768px){
+
+  /* Hide desktop elements on mobile */
+  #midrow .side-panel,
+  #botstrip,
+  #socialCircles{display:none!important;}
+
+  /* Full screen mobile layout */
+  #halo{
+    padding:6px 10px;
+    grid-template-rows:auto auto 1fr auto;
+    gap:6px;
+  }
+
+  /* Top bar — simplified */
+  #topbar{
+    grid-template-columns:auto auto 1fr auto;
+    gap:8px;
+    padding-bottom:6px;
+  }
+  .stark-logo{display:none;}
+  .clock-circle{width:72px;height:72px;}
+  .cc-time{font-size:11px;letter-spacing:1px;}
+  .cc-date{font-size:6px;}
+  .circle-widget{width:60px;height:60px;}
+  .cw-val{font-size:14px;}
+  .cw-lbl{font-size:6px;}
+  .cw-sub{display:none;}
+  .halo-title{font-size:14px;letter-spacing:6px;}
+  .halo-subtitle{font-size:6px;letter-spacing:2px;}
+  .st-row{font-size:7px;line-height:2;}
+
+  /* Mid row — single column */
+  #midrow{
+    grid-template-columns:1fr!important;
+    gap:8px;
+  }
+
+  /* Reactor smaller on mobile */
+  #reactorOuter{
+    width:140px!important;
+    height:140px!important;
+  }
+
+  /* Hub row stacked */
+  .hub-row{
+    flex-direction:column;
+    align-items:center;
+    gap:10px;
+  }
+
+  /* Voice box full width */
+  .voice-box{
+    max-width:100%!important;
+    width:100%;
+  }
+
+  /* Chat feed taller on mobile */
+  .chat-feed{height:160px;}
+
+  /* Intel panel full screen on mobile */
+  #intelOverlay{
+    top:0!important;
+    left:0!important;
+    right:0!important;
+    bottom:0!important;
+    width:100%!important;
+    z-index:8000;
+  }
+
+  /* Mobile bottom nav */
+  #mobileNav{
+    display:flex!important;
+    position:fixed;
+    bottom:0;left:0;right:0;
+    background:rgba(1,8,22,0.97);
+    border-top:1px solid rgba(26,143,255,0.2);
+    z-index:3000;
+    padding:6px 0;
+  }
+
+  /* Key banner adjusted */
+  .key-banner{font-size:9px;padding:6px 10px;}
+  .key-banner input{font-size:9px;}
+}
+
+/* Mobile nav — hidden on desktop */
+#mobileNav{display:none;}
+.mob-nav-btn{
+  flex:1;
+  background:none;
+  border:none;
+  color:rgba(26,143,255,0.35);
+  font-family:'Share Tech Mono',monospace;
+  font-size:7px;
+  letter-spacing:1px;
+  padding:6px 4px;
+  cursor:pointer;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:3px;
+  transition:all 0.2s;
+}
+.mob-nav-btn.active{color:var(--b2);}
+.mob-nav-btn svg{opacity:0.6;}
+.mob-nav-btn.active svg{opacity:1;}
+
+/* Mobile panels — shown/hidden via JS */
+.mob-panel{display:none;}
+@media(max-width:768px){
+  .mob-panel.active{display:block;}
+  .mob-panel{width:100%;}
+}
 </style>
 </head>
 <body>
@@ -1362,6 +1480,44 @@ function unlockAudio(){
 }
 document.addEventListener('click',unlockAudio,{once:false});
 document.addEventListener('keydown',unlockAudio,{once:false});
+
+// ─── MOBILE NAV ───
+function mobileNav(tab){
+  if(window.innerWidth>768)return;
+  playUIClick();
+  // Hide all panels
+  ['tasks','alerts','ops','social'].forEach(t=>{
+    const p=document.getElementById('mob-'+t+'-panel');
+    if(p)p.style.display='none';
+  });
+  // Update nav buttons
+  document.querySelectorAll('.mob-nav-btn').forEach(b=>b.classList.remove('active'));
+  const activeBtn=document.getElementById('mnav-'+tab);
+  if(activeBtn)activeBtn.classList.add('active');
+  // Show selected panel
+  if(tab!=='home'){
+    const panel=document.getElementById('mob-'+tab+'-panel');
+    if(panel){
+      panel.style.display='block';
+      if(tab==='tasks')renderMobTasks();
+      if(tab==='alerts')renderMobRems();
+    }
+  }
+}
+
+function renderMobTasks(){
+  const el=document.getElementById('mob-tlist');
+  if(!el)return;
+  el.innerHTML=tasks.map((t,i)=>`<div class="trow${t.done?' done':''}" onclick="mobTog(${i})"><div class="tcheck">${t.done?'✓':''}</div><span class="tlbl">${t.t}</span><span class="ttime">${t.time}</span></div>`).join('');
+}
+function renderMobRems(){
+  const el=document.getElementById('mob-rlist');
+  if(!el)return;
+  el.innerHTML=rems.map(r=>`<div class="rrow"><div class="rbar b${r.p}"></div><span class="rtxt">${r.t}</span><span class="rtag tt${r.p}">${r.p==='hi'?'URGENT':r.p==='md'?'MEDIUM':'LOW'}</span></div>`).join('');
+}
+function mobTog(i){tasks[i].done=!tasks[i].done;renderMobTasks();renderTasks();}
+function mobAddTask(){const v=document.getElementById('mob-tinp').value.trim();if(!v)return;tasks.unshift({t:v,time:'',done:false});document.getElementById('mob-tinp').value='';renderMobTasks();renderTasks();}
+function mobAddRem(){const v=document.getElementById('mob-rinp').value.trim(),p=document.getElementById('mob-rpri').value;if(!v)return;rems.unshift({t:v,p});document.getElementById('mob-rinp').value='';renderMobRems();renderRems();}
 </script>
 </body>
 </html>
