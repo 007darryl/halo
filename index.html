@@ -278,6 +278,36 @@ div{position:relative;}
   <div class="boot-bar-wrap"><div class="boot-bar" id="bootBar"></div></div>
 </div>
 
+<!-- INTEL PANEL OVERLAY -->
+<div id="intelOverlay" style="display:none;position:fixed;top:80px;left:10px;bottom:80px;width:min(380px,38vw);z-index:4000;pointer-events:all;">
+  <div style="height:100%;background:rgba(1,6,20,0.97);border:1px solid rgba(26,143,255,0.35);border-radius:4px;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 0 40px rgba(26,143,255,0.15);">
+    <!-- Top glow line -->
+    <div style="height:1px;background:linear-gradient(90deg,transparent,var(--b2),transparent);flex-shrink:0;"></div>
+    <!-- Corner accent -->
+    <div style="position:absolute;top:0;left:0;width:14px;height:14px;border-top:2px solid var(--b2);border-left:2px solid var(--b2);border-radius:4px 0 0 0;"></div>
+    <div style="position:absolute;top:0;right:0;width:14px;height:14px;border-top:2px solid var(--b2);border-right:2px solid var(--b2);border-radius:0 4px 0 0;"></div>
+    <div style="position:absolute;bottom:0;left:0;width:14px;height:14px;border-bottom:1px solid rgba(26,143,255,0.3);border-left:1px solid rgba(26,143,255,0.3);"></div>
+    <div style="position:absolute;bottom:0;right:0;width:14px;height:14px;border-bottom:1px solid rgba(26,143,255,0.3);border-right:1px solid rgba(26,143,255,0.3);"></div>
+    <!-- Scan line -->
+    <div style="position:absolute;left:0;right:0;height:60px;background:linear-gradient(180deg,transparent,rgba(26,143,255,0.04),transparent);animation:scanline 4s linear infinite;pointer-events:none;"></div>
+    <!-- Header -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px 10px;flex-shrink:0;border-bottom:1px solid rgba(26,143,255,0.08);">
+      <div style="display:flex;align-items:center;gap:8px;">
+        <div style="width:6px;height:6px;border-radius:50%;background:var(--b2);animation:pulse 1.5s infinite;box-shadow:0 0 8px var(--b2);"></div>
+        <div id="intelTitle" style="font-family:'Orbitron',monospace;font-size:9px;font-weight:700;color:var(--b2);letter-spacing:4px;">INTEL FEED</div>
+      </div>
+      <button onclick="closeIntel()" style="background:none;border:1px solid rgba(26,143,255,0.2);color:rgba(26,143,255,0.4);font-family:'Share Tech Mono',monospace;font-size:7px;padding:3px 8px;cursor:pointer;border-radius:2px;letter-spacing:1px;transition:all 0.2s;" onmouseover="this.style.color='var(--b2)'" onmouseout="this.style.color='rgba(26,143,255,0.4)'">✕ CLOSE</button>
+    </div>
+    <!-- Body — scrollable -->
+    <div id="intelBody" style="flex:1;overflow-y:auto;padding:14px;scrollbar-width:thin;scrollbar-color:rgba(26,143,255,0.2) transparent;font-size:11px;color:var(--text);line-height:1.9;font-weight:300;"></div>
+    <!-- Bottom bar -->
+    <div style="padding:8px 14px;border-top:1px solid rgba(26,143,255,0.06);flex-shrink:0;display:flex;align-items:center;gap:6px;">
+      <div style="width:4px;height:4px;border-radius:50%;background:rgba(26,143,255,0.3);animation:pulse 2s infinite;"></div>
+      <div style="font-family:'Share Tech Mono',monospace;font-size:7px;letter-spacing:2px;color:rgba(26,143,255,0.2);">HALO INTELLIGENCE SYSTEM // ACTIVE</div>
+    </div>
+  </div>
+</div>
+
 <!-- SOCIAL ANALYTICS OVERLAY -->
 <div id="socialOverlay" style="display:none;position:fixed;inset:0;z-index:5000;pointer-events:none;">
   <div id="socialPanel" style="position:absolute;background:rgba(1,8,22,0.97);border:1px solid rgba(26,143,255,0.4);border-radius:4px;padding:16px;min-width:280px;pointer-events:all;animation:glowPop 0.4s ease;">
@@ -405,14 +435,7 @@ div{position:relative;}
         </div>
       </div>
 
-      <!-- Intel Panel -->
-      <div class="intel-panel" id="intelPanel" style="position:relative;">
-        <div class="intel-hdr">
-          <div class="intel-title" id="intelTitle">INTEL FEED</div>
-          <button class="intel-close" onclick="closeIntel()">✕ CLOSE</button>
-        </div>
-        <div class="intel-body" id="intelBody"></div>
-      </div>
+
     </div>
 
     <!-- RIGHT SIDE PANEL -->
@@ -576,6 +599,20 @@ function playBootSound(){
   playNoise(0.04,0.04,0.3);
   playNoise(0.04,0.04,0.5);
   playNoise(0.08,0.06,0.92);
+}
+
+// TYPE BEEP — for intel typewriter effect
+function playTypeBeep(){
+  const ctx=getACtx();if(!ctx)return;
+  const freqs=[800,900,1000,850,950,1050,920,880];
+  const f=freqs[Math.floor(Math.random()*freqs.length)];
+  const o=ctx.createOscillator();const g=ctx.createGain();
+  o.connect(g);g.connect(ctx.destination);
+  o.type='square';o.frequency.value=f;
+  g.gain.setValueAtTime(0,ctx.currentTime);
+  g.gain.linearRampToValueAtTime(0.04,ctx.currentTime+0.005);
+  g.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+0.04);
+  o.start(ctx.currentTime);o.stop(ctx.currentTime+0.05);
 }
 
 // BOOT LINE BEEP — for each line during boot
@@ -799,14 +836,59 @@ document.getElementById('rinp').addEventListener('keydown',e=>{if(e.key==='Enter
 function openIntel(title,html){
   playIntelBeep();
   document.getElementById('intelTitle').textContent=title.toUpperCase();
-  document.getElementById('intelBody').innerHTML=html;
-  document.getElementById('intelPanel').className='intel-panel visible';
+  document.getElementById('intelOverlay').style.display='block';
+  // Typewriter effect with beeps
+  const body=document.getElementById('intelBody');
+  body.innerHTML='';
+  // Parse html and type it out
+  const temp=document.createElement('div');
+  temp.innerHTML=html;
+  typewriteContent(temp, body, 0);
 }
+
+function typewriteContent(source, target, delay){
+  const nodes=Array.from(source.childNodes);
+  let d=delay;
+  nodes.forEach((node,ni)=>{
+    if(node.nodeType===3){
+      // text node — type character by character
+      const text=node.textContent;
+      let span=document.createElement('span');
+      target.appendChild(span);
+      for(let i=0;i<text.length;i++){
+        const ch=text[i];
+        const idx=d;
+        setTimeout(()=>{
+          span.textContent+=ch;
+          // beep every 4 chars
+          if(i%4===0 && ch.trim())playTypeBeep();
+        },idx*18);
+        d++;
+      }
+    } else if(node.nodeType===1){
+      // element node
+      const el=document.createElement(node.tagName);
+      // copy classes and style
+      if(node.className)el.className=node.className;
+      if(node.getAttribute('style'))el.setAttribute('style',node.getAttribute('style'));
+      target.appendChild(el);
+      setTimeout(()=>{
+        el.style.opacity='1';
+      },d*18);
+      typewriteContent(node, el, d);
+      d+=node.textContent.length+5;
+    }
+  });
+}
+
 function showIntelLoading(){
-  document.getElementById('intelBody').innerHTML='<div class="intel-loading"><div class="intel-spin"></div><span>PROCESSING INTEL...</span></div>';
-  document.getElementById('intelPanel').className='intel-panel visible';
+  const body=document.getElementById('intelBody');
+  body.innerHTML='<div class="intel-loading"><div class="intel-spin"></div><span>PROCESSING INTEL...</span></div>';
+  document.getElementById('intelOverlay').style.display='block';
 }
-function closeIntel(){document.getElementById('intelPanel').className='intel-panel';}
+function closeIntel(){
+  document.getElementById('intelOverlay').style.display='none';
+}
 
 // ─── PARSE ───
 function parseResponse(raw){
