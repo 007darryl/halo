@@ -747,7 +747,7 @@ async function askHalo(text){
         }
       }
     }catch(pe){raw='Could not parse response.';}
-    const{spoken,intel}=parseResponse(raw);
+    const{spoken,intel,postContent}=parseResponse(raw);
     history.push({role:'assistant',content:raw});
     addChat('halo',spoken);
     if(intel)openIntel(intel.title,intel.content);
