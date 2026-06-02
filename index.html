@@ -764,8 +764,9 @@ async function askHalo(text){
     }
     speakText(spoken);
   }catch(e){
+    console.log('HALO error:', e.message, e.stack);
     const fb='Connection failed. Check your internet connection.';
-    addChat('halo',fb);speakText(fb);if(infoQ)closeIntel();
+    addChat('halo',fb);if(infoQ)closeIntel();
   }
 }
 
