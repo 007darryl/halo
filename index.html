@@ -1864,5 +1864,190 @@ document.addEventListener('DOMContentLoaded',()=>{
 });
 
 </script>
+
+<!-- HALO AMBIENT BACKGROUND NOISE CONTROL -->
+<div id="ambientControl">
+  <button onclick="toggleAmbientNoise()" id="ambientBtn">AMBIENT: OFF</button>
+</div>
+
+<style>
+#ambientControl{
+  position:fixed;
+  bottom:22px;
+  right:22px;
+  z-index:9999;
+}
+
+#ambientBtn{
+  background:rgba(0,212,255,0.08);
+  border:1px solid rgba(0,212,255,0.35);
+  color:#00d4ff;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  letter-spacing:2px;
+  padding:10px 14px;
+  border-radius:8px;
+  cursor:pointer;
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  box-shadow:0 0 20px rgba(0,212,255,0.18);
+  transition:all 0.25s ease;
+}
+
+#ambientBtn:hover{
+  background:rgba(0,212,255,0.16);
+  box-shadow:0 0 35px rgba(0,212,255,0.35);
+  transform:translateY(-1px);
+}
+
+#ambientBtn.active{
+  background:rgba(0,255,136,0.10);
+  border-color:rgba(0,255,136,0.35);
+  color:#00ff88;
+  box-shadow:0 0 25px rgba(0,255,136,0.22);
+}
+
+@media(max-width:768px){
+  #ambientControl{
+    bottom:70px;
+    right:14px;
+  }
+  #ambientBtn{
+    font-size:8px;
+    padding:8px 10px;
+  }
+}
+</style>
+
+<script>
+/* HALO Ambient Background Noise Engine */
+let ambientCtx;
+let ambientGain;
+let ambientOsc1;
+let ambientOsc2;
+let ambientNoise;
+let ambientFilter;
+let ambientOn = false;
+
+function createHaloNoiseBuffer(ctx){
+  const bufferSize = ctx.sampleRate * 2;
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+
+  for(let i = 0; i < bufferSize; i++){
+    data[i] = (Math.random() * 2 - 1) * 0.12;
+  }
+
+  return buffer;
+}
+
+function startAmbientNoise(){
+  if(ambientOn) return;
+
+  ambientCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+  ambientGain = ambientCtx.createGain();
+  ambientGain.gain.setValueAtTime(0.0001, ambientCtx.currentTime);
+  ambientGain.gain.exponentialRampToValueAtTime(0.035, ambientCtx.currentTime + 1.2);
+
+  ambientOsc1 = ambientCtx.createOscillator();
+  ambientOsc1.type = "sine";
+  ambientOsc1.frequency.value = 48;
+
+  ambientOsc2 = ambientCtx.createOscillator();
+  ambientOsc2.type = "triangle";
+  ambientOsc2.frequency.value = 91;
+
+  ambientNoise = ambientCtx.createBufferSource();
+  ambientNoise.buffer = createHaloNoiseBuffer(ambientCtx);
+  ambientNoise.loop = true;
+
+  ambientFilter = ambientCtx.createBiquadFilter();
+  ambientFilter.type = "lowpass";
+  ambientFilter.frequency.value = 420;
+  ambientFilter.Q.value = 0.8;
+
+  const lowGain = ambientCtx.createGain();
+  lowGain.gain.value = 0.55;
+
+  const midGain = ambientCtx.createGain();
+  midGain.gain.value = 0.18;
+
+  const noiseGain = ambientCtx.createGain();
+  noiseGain.gain.value = 0.45;
+
+  ambientOsc1.connect(lowGain);
+  ambientOsc2.connect(midGain);
+  ambientNoise.connect(ambientFilter);
+  ambientFilter.connect(noiseGain);
+
+  lowGain.connect(ambientGain);
+  midGain.connect(ambientGain);
+  noiseGain.connect(ambientGain);
+
+  ambientGain.connect(ambientCtx.destination);
+
+  ambientOsc1.start();
+  ambientOsc2.start();
+  ambientNoise.start();
+
+  ambientOn = true;
+
+  const btn = document.getElementById("ambientBtn");
+  if(btn){
+    btn.innerText = "AMBIENT: ON";
+    btn.classList.add("active");
+  }
+
+  if(typeof showHoloNotif === "function"){
+    showHoloNotif("AUDIO SYSTEM", "Ambient HALO background layer activated.", "success");
+  }
+}
+
+function stopAmbientNoise(){
+  if(!ambientOn) return;
+
+  try{
+    if(ambientGain && ambientCtx){
+      ambientGain.gain.exponentialRampToValueAtTime(0.0001, ambientCtx.currentTime + 0.5);
+    }
+
+    setTimeout(() => {
+      try{
+        if(ambientCtx) ambientCtx.close();
+      }catch(e){}
+      ambientCtx = null;
+      ambientGain = null;
+      ambientOsc1 = null;
+      ambientOsc2 = null;
+      ambientNoise = null;
+      ambientFilter = null;
+    }, 600);
+  }catch(e){
+    console.log("Ambient stop error:", e);
+  }
+
+  ambientOn = false;
+
+  const btn = document.getElementById("ambientBtn");
+  if(btn){
+    btn.innerText = "AMBIENT: OFF";
+    btn.classList.remove("active");
+  }
+
+  if(typeof showHoloNotif === "function"){
+    showHoloNotif("AUDIO SYSTEM", "Ambient background layer disabled.", "info");
+  }
+}
+
+function toggleAmbientNoise(){
+  if(!ambientOn){
+    startAmbientNoise();
+  }else{
+    stopAmbientNoise();
+  }
+}
+</script>
+
 </body>
 </html>
