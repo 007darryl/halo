@@ -1392,6 +1392,49 @@ async function askHalo(text){
   if(!API_KEY){addChat('halo','API key required. Please activate HALO.');return;}
   addChat('user',text);
   history.push({role:'user',content:text});
+  // ── DIRECT POST COMMAND INTERCEPTOR ──
+  // Catches "post X", "halo post X", "post the X from the Omkeer folder" etc.
+  const lowerText = text.toLowerCase().trim();
+  const postMatch = lowerText.match(/^(?:halo\s+)?post(?:\s+the)?\s+(.+?)(?:\s+(?:from|on|to)\s+.*)?$/);
+  if(postMatch){
+    console.log('POST COMMAND TRIGGERED');
+    const filename = postMatch[1].trim()
+      .replace(/\s+(?:from|on|to)\s+.*/i,'')
+      .replace(/\s+(?:folder|dropbox|omkeer).*/i,'')
+      .trim();
+    console.log('Extracted filename:', filename);
+    addChat('user', text);
+    const spoken = `Deploying ${filename} across all channels. Stand by.`;
+    addChat('halo', spoken);
+    speakText(spoken);
+    setOrbState('speaking');
+    console.log('Sending to Make.com');
+    fetch('https://halo-server-d3h3.onrender.com/post-content',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        description: filename,
+        filename: filename,
+        platforms: 'Instagram, TikTok, Pinterest'
+      })
+    }).then(r=>r.json()).then(d=>{
+      if(d.success){
+        playSuccessBeep();
+        const msg = d.filename ? `"${d.filename}" queued for deployment.` : 'Content queued for deployment.';
+        addChat('halo', msg);
+        if(typeof showHoloNotif==='function') showHoloNotif('CONTENT QUEUED', d.filename||filename, 'success', 4000);
+      } else {
+        addChat('halo','Posting issue: '+(d.error||'Unknown error'));
+      }
+    }).catch(e=>{
+      console.log('Post error:', e);
+      addChat('halo','Could not reach posting service.');
+    });
+    history.push({role:'user',content:text});
+    history.push({role:'assistant',content:spoken});
+    return;
+  }
+
   const socialCmd=text.toLowerCase();
   if(socialCmd.includes('instagram')&&(socialCmd.includes('analytic')||socialCmd.includes('stat')||socialCmd.includes('show'))){showSocialAnalytics('instagram');addChat('halo','Pulling Instagram analytics, Commander.');speakText('Pulling Instagram analytics now.');return;}
   if(socialCmd.includes('tiktok')&&(socialCmd.includes('analytic')||socialCmd.includes('stat')||socialCmd.includes('show'))){showSocialAnalytics('tiktok');addChat('halo','TikTok analytics on display.');speakText('TikTok analytics on display.');return;}
