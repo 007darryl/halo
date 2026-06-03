@@ -3044,62 +3044,439 @@ function toggleAmbientNoise(){
 </style>
 
 
-<!-- HALO SAFE AUDIO PATCH — disables extra voice activation ambience only -->
-<script id="halo-safe-audio-patch">
+<!-- HALO INTELLIGENT ORB + COMMAND CENTER UPGRADE -->
+<style id="halo-orb-command-upgrade">
+/* ═══════════════════════════════════════════════
+   HALO Intelligent Orb + Larger Command Center
+   Safe upgrade: visual/interaction layer only
+═══════════════════════════════════════════════ */
+
+/* Make center command panel feel like the main authority */
+.voice-box{
+  width:min(820px, 96vw) !important;
+  max-width:820px !important;
+  min-height:315px !important;
+  max-height:none !important;
+  padding:16px !important;
+  border-radius:24px !important;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.06), rgba(0,234,255,.035), rgba(0,0,0,.16)),
+    rgba(0,16,40,.58) !important;
+  border:1px solid rgba(0,234,255,.24) !important;
+  box-shadow:
+    0 30px 110px rgba(0,0,0,.52),
+    0 0 70px rgba(0,234,255,.16),
+    inset 0 0 0 1px rgba(255,255,255,.035) !important;
+}
+
+.chat-feed{
+  min-height:155px !important;
+  height:155px !important;
+  padding:14px !important;
+  border-radius:18px !important;
+  background:
+    linear-gradient(180deg, rgba(0,234,255,.035), rgba(0,8,24,.45)),
+    rgba(0,8,24,.42) !important;
+  border:1px solid rgba(0,234,255,.13) !important;
+}
+
+.inp-row{
+  min-height:62px !important;
+  border-radius:999px !important;
+  padding:8px !important;
+  background:rgba(0,10,30,.68) !important;
+  border:1px solid rgba(0,234,255,.24) !important;
+}
+
+.txt-inp{
+  font-size:14px !important;
+  min-height:48px !important;
+  padding:14px 20px !important;
+}
+
+.send-btn{
+  min-width:92px !important;
+  border-radius:999px !important;
+  font-size:9px !important;
+  letter-spacing:3px !important;
+}
+
+#activateVoiceBtn{
+  min-height:42px !important;
+  border-radius:10px !important;
+  letter-spacing:4px !important;
+}
+
+/* Slightly larger hero orb without pushing chat off screen */
+#orbWrap{
+  width:min(36vh, 340px) !important;
+  height:min(36vh, 340px) !important;
+  max-width:340px !important;
+  max-height:340px !important;
+  transition:filter .35s ease, transform .35s ease !important;
+}
+
+#orbCore{
+  width:112px !important;
+  height:112px !important;
+  transition:
+    transform .35s ease,
+    box-shadow .35s ease,
+    background .35s ease,
+    filter .35s ease !important;
+}
+
+/* Orb mode label */
+#haloOrbModeBadge{
+  position:absolute;
+  left:50%;
+  bottom:7%;
+  transform:translateX(-50%);
+  z-index:12;
+  pointer-events:none;
+  font-family:'JetBrains Mono', monospace;
+  font-size:7px;
+  letter-spacing:3px;
+  padding:6px 10px;
+  border-radius:999px;
+  color:rgba(190,250,255,.72);
+  background:rgba(0,14,34,.58);
+  border:1px solid rgba(0,234,255,.18);
+  box-shadow:0 0 20px rgba(0,234,255,.08);
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+}
+
+/* Shared orb effects */
+#orbWrap::before{
+  box-shadow:
+    0 0 50px rgba(0,234,255,.18),
+    inset 0 0 36px rgba(0,234,255,.06) !important;
+}
+
+#orbWrap.halo-thinking{
+  filter:
+    drop-shadow(0 0 34px rgba(255,191,95,.42))
+    drop-shadow(0 0 110px rgba(255,191,95,.16)) !important;
+}
+
+#orbWrap.halo-thinking #orbCore{
+  background:
+    radial-gradient(circle at 28% 22%, rgba(255,255,255,.92), rgba(255,222,140,.78) 18%, rgba(255,191,95,.68) 38%, rgba(187,94,0,.46) 65%, rgba(54,24,0,.42) 100%) !important;
+  box-shadow:
+    0 0 55px rgba(255,191,95,.80),
+    0 0 140px rgba(255,128,0,.36),
+    0 0 260px rgba(255,191,95,.12),
+    inset 0 0 38px rgba(255,255,255,.24) !important;
+  animation:haloThinkPulse .85s ease-in-out infinite !important;
+}
+
+#orbWrap.halo-listening{
+  filter:
+    drop-shadow(0 0 34px rgba(0,255,157,.42))
+    drop-shadow(0 0 110px rgba(0,255,157,.16)) !important;
+}
+
+#orbWrap.halo-listening #orbCore{
+  background:
+    radial-gradient(circle at 28% 22%, rgba(255,255,255,.9), rgba(147,255,211,.74) 18%, rgba(0,255,157,.62) 38%, rgba(0,116,82,.48) 65%, rgba(0,38,31,.42) 100%) !important;
+  box-shadow:
+    0 0 60px rgba(0,255,157,.72),
+    0 0 145px rgba(0,255,157,.30),
+    0 0 260px rgba(0,255,157,.12),
+    inset 0 0 38px rgba(255,255,255,.22) !important;
+  animation:haloListenPulse 1.4s ease-in-out infinite !important;
+}
+
+#orbWrap.halo-speaking{
+  filter:
+    drop-shadow(0 0 40px rgba(0,234,255,.55))
+    drop-shadow(0 0 130px rgba(20,123,255,.22)) !important;
+}
+
+#orbWrap.halo-speaking #orbCore{
+  animation:haloSpeakPulse .36s ease-in-out infinite !important;
+}
+
+#orbWrap.halo-success{
+  filter:
+    drop-shadow(0 0 42px rgba(0,255,136,.56))
+    drop-shadow(0 0 135px rgba(0,255,136,.24)) !important;
+}
+
+#orbWrap.halo-success #orbCore{
+  background:
+    radial-gradient(circle at 28% 22%, rgba(255,255,255,.94), rgba(144,255,198,.82) 18%, rgba(0,255,136,.68) 38%, rgba(0,140,74,.52) 65%, rgba(0,43,20,.42) 100%) !important;
+  box-shadow:
+    0 0 70px rgba(0,255,136,.86),
+    0 0 160px rgba(0,255,136,.32),
+    inset 0 0 38px rgba(255,255,255,.24) !important;
+}
+
+#orbWrap.halo-alert{
+  filter:
+    drop-shadow(0 0 42px rgba(255,68,102,.62))
+    drop-shadow(0 0 130px rgba(255,68,102,.20)) !important;
+}
+
+#orbWrap.halo-alert #orbCore{
+  background:
+    radial-gradient(circle at 28% 22%, rgba(255,255,255,.92), rgba(255,155,170,.78) 18%, rgba(255,68,102,.68) 38%, rgba(150,0,40,.52) 65%, rgba(55,0,16,.42) 100%) !important;
+  box-shadow:
+    0 0 70px rgba(255,68,102,.80),
+    0 0 150px rgba(255,68,102,.30),
+    inset 0 0 38px rgba(255,255,255,.24) !important;
+}
+
+/* scan burst rings */
+.halo-orb-scan-ring{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:130px;
+  height:130px;
+  border-radius:50%;
+  transform:translate(-50%,-50%) scale(.35);
+  border:1px solid rgba(0,234,255,.75);
+  box-shadow:0 0 28px rgba(0,234,255,.38);
+  pointer-events:none;
+  z-index:9;
+  animation:haloScanBurst 1.15s ease-out forwards;
+}
+
+.halo-orb-energy-spark{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:4px;
+  height:4px;
+  border-radius:50%;
+  background:rgba(210,255,255,.95);
+  box-shadow:0 0 12px rgba(0,234,255,.8);
+  pointer-events:none;
+  z-index:9;
+  animation:haloSparkFly .9s ease-out forwards;
+}
+
+@keyframes haloThinkPulse{
+  0%,100%{transform:scale(1); filter:brightness(1);}
+  50%{transform:scale(1.055); filter:brightness(1.22);}
+}
+
+@keyframes haloListenPulse{
+  0%,100%{transform:scale(1); filter:brightness(1);}
+  50%{transform:scale(1.035); filter:brightness(1.16);}
+}
+
+@keyframes haloSpeakPulse{
+  0%,100%{transform:scale(1);}
+  35%{transform:scale(1.08);}
+  70%{transform:scale(.985);}
+}
+
+@keyframes haloScanBurst{
+  0%{opacity:.95; transform:translate(-50%,-50%) scale(.35);}
+  100%{opacity:0; transform:translate(-50%,-50%) scale(3.4);}
+}
+
+@keyframes haloSparkFly{
+  0%{
+    opacity:.95;
+    transform:translate(-50%,-50%) rotate(var(--a)) translateX(46px) scale(1);
+  }
+  100%{
+    opacity:0;
+    transform:translate(-50%,-50%) rotate(var(--a)) translateX(var(--d)) scale(.2);
+  }
+}
+
+/* Responsive safety */
+@media(max-height:820px){
+  .voice-box{
+    min-height:285px !important;
+    padding:13px !important;
+  }
+  .chat-feed{
+    min-height:130px !important;
+    height:130px !important;
+  }
+  #orbWrap{
+    width:245px !important;
+    height:245px !important;
+  }
+  #orbCore{
+    width:88px !important;
+    height:88px !important;
+  }
+}
+
+@media(max-width:1050px){
+  .voice-box{
+    width:100% !important;
+    max-width:760px !important;
+  }
+}
+
+@media(max-width:768px){
+  .voice-box{
+    min-height:340px !important;
+  }
+  .chat-feed{
+    min-height:170px !important;
+    height:170px !important;
+  }
+  #orbWrap{
+    width:200px !important;
+    height:200px !important;
+  }
+  #orbCore{
+    width:76px !important;
+    height:76px !important;
+  }
+}
+</style>
+
+<script id="halo-orb-command-upgrade-js">
 (function(){
-  /*
-    Safe patch:
-    - Does NOT delete any original HALO code.
-    - Keeps the AMBIENT: ON/OFF button system.
-    - Prevents old Claude voice-activation ambience from continuing.
-  */
+  function ready(fn){
+    if(document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
 
-  const originalActivateVoice = window.activateVoice;
+  ready(function(){
+    const orbWrap = document.getElementById("orbWrap");
+    if(!orbWrap) return;
 
-  window.activateVoice = function(){
-    try{
-      // Stop/pause any HTML audio elements Claude may have attached to voice activation.
-      document.querySelectorAll("audio").forEach(function(a){
-        try{
-          a.pause();
-          a.currentTime = 0;
-          a.loop = false;
-        }catch(e){}
-      });
-    }catch(e){}
-
-    // Run HALO's original voice activation normally.
-    if(typeof originalActivateVoice === "function"){
-      const result = originalActivateVoice.apply(this, arguments);
-
-      // Stop any old ambience that starts immediately after activation.
-      setTimeout(function(){
-        try{
-          document.querySelectorAll("audio").forEach(function(a){
-            try{
-              a.pause();
-              a.currentTime = 0;
-              a.loop = false;
-            }catch(e){}
-          });
-        }catch(e){}
-      }, 250);
-
-      return result;
+    if(!document.getElementById("haloOrbModeBadge")){
+      const badge = document.createElement("div");
+      badge.id = "haloOrbModeBadge";
+      badge.textContent = "STANDBY";
+      orbWrap.appendChild(badge);
     }
-  };
 
-  // Disable common old sound helper names only after page loads.
-  // This does not affect our newer toggleAmbientNoise() system.
-  window.startVoiceAmbient = function(){};
-  window.stopVoiceAmbient = function(){};
-  window.startAmbientHum = function(){};
-  window.stopAmbientHum = function(){};
-  window.startSystemHum = function(){};
-  window.stopSystemHum = function(){};
-  window.startVoiceHum = function(){};
-  window.stopVoiceHum = function(){};
-  window.playVoiceActivationSound = function(){};
+    window.setHaloOrbMode = function(mode, label){
+      const wrap = document.getElementById("orbWrap");
+      const badge = document.getElementById("haloOrbModeBadge");
+      if(!wrap) return;
+
+      wrap.classList.remove(
+        "halo-thinking",
+        "halo-listening",
+        "halo-speaking",
+        "halo-success",
+        "halo-alert"
+      );
+
+      if(mode && mode !== "standby"){
+        wrap.classList.add("halo-" + mode);
+      }
+
+      if(badge){
+        badge.textContent = (label || mode || "STANDBY").toUpperCase();
+      }
+
+      if(mode === "thinking" || mode === "success" || mode === "alert"){
+        haloOrbScanBurst(mode);
+      }
+    };
+
+    window.haloOrbScanBurst = function(mode){
+      const wrap = document.getElementById("orbWrap");
+      if(!wrap) return;
+
+      const ring = document.createElement("span");
+      ring.className = "halo-orb-scan-ring";
+      if(mode === "success"){
+        ring.style.borderColor = "rgba(0,255,136,.85)";
+        ring.style.boxShadow = "0 0 28px rgba(0,255,136,.42)";
+      }
+      if(mode === "alert"){
+        ring.style.borderColor = "rgba(255,68,102,.85)";
+        ring.style.boxShadow = "0 0 28px rgba(255,68,102,.42)";
+      }
+      if(mode === "thinking"){
+        ring.style.borderColor = "rgba(255,191,95,.85)";
+        ring.style.boxShadow = "0 0 28px rgba(255,191,95,.42)";
+      }
+      wrap.appendChild(ring);
+      setTimeout(()=>ring.remove(), 1200);
+
+      for(let i=0;i<10;i++){
+        const spark = document.createElement("span");
+        spark.className = "halo-orb-energy-spark";
+        spark.style.setProperty("--a", (i * 36 + Math.random()*16) + "deg");
+        spark.style.setProperty("--d", (105 + Math.random()*90) + "px");
+        spark.style.animationDelay = (Math.random()*0.12) + "s";
+        wrap.appendChild(spark);
+        setTimeout(()=>spark.remove(), 1100);
+      }
+    };
+
+    // Smart mode detection from existing UI text/classes.
+    const wakeTxt = document.getElementById("wakeTxt");
+    const chatFeed = document.getElementById("chatFeed");
+
+    function inferMode(){
+      const wake = (wakeTxt?.textContent || "").toLowerCase();
+      const wrap = document.getElementById("orbWrap");
+
+      if(wake.includes("listening") || wake.includes("voice")) return ["listening","LISTENING"];
+      if(wake.includes("thinking") || wake.includes("processing") || wake.includes("searching")) return ["thinking","PROCESSING"];
+      if(wake.includes("speaking")) return ["speaking","SPEAKING"];
+      if(wake.includes("error") || wake.includes("alert")) return ["alert","ALERT"];
+      if(wrap?.classList.contains("thinking")) return ["thinking","PROCESSING"];
+      if(wrap?.classList.contains("speaking")) return ["speaking","SPEAKING"];
+      if(wrap?.classList.contains("listening")) return ["listening","LISTENING"];
+      return ["standby","STANDBY"];
+    }
+
+    setInterval(() => {
+      const [mode,label] = inferMode();
+      if(window.setHaloOrbMode) window.setHaloOrbMode(mode,label);
+    }, 1600);
+
+    // React to new HALO messages.
+    if(chatFeed){
+      const observer = new MutationObserver(() => {
+        const text = (chatFeed.textContent || "").toLowerCase();
+
+        if(text.includes("error") || text.includes("failed") || text.includes("no image url")){
+          window.setHaloOrbMode("alert","ALERT");
+          setTimeout(()=>window.setHaloOrbMode("standby","STANDBY"), 3000);
+          return;
+        }
+
+        if(text.includes("queued") || text.includes("online") || text.includes("success") || text.includes("deployed")){
+          window.setHaloOrbMode("success","SUCCESS");
+          setTimeout(()=>window.setHaloOrbMode("standby","STANDBY"), 2600);
+          return;
+        }
+
+        if(text.includes("searching") || text.includes("stand by") || text.includes("generating")){
+          window.setHaloOrbMode("thinking","PROCESSING");
+        }
+      });
+
+      observer.observe(chatFeed, {childList:true, subtree:true, characterData:true});
+    }
+
+    // React to input focus.
+    const input = document.getElementById("textInp");
+    if(input){
+      input.addEventListener("focus", () => window.setHaloOrbMode("listening","INPUT READY"));
+      input.addEventListener("blur", () => setTimeout(()=>window.setHaloOrbMode("standby","STANDBY"), 700));
+      input.addEventListener("keydown", (e) => {
+        if(e.key === "Enter") window.setHaloOrbMode("thinking","EXECUTING");
+      });
+    }
+
+    // React to send button clicks.
+    document.querySelectorAll(".send-btn").forEach(btn=>{
+      btn.addEventListener("click", () => window.setHaloOrbMode("thinking","EXECUTING"));
+    });
+
+    window.setHaloOrbMode("standby","STANDBY");
+  });
 })();
 </script>
 
