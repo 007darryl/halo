@@ -1866,431 +1866,541 @@ document.addEventListener('DOMContentLoaded',()=>{
 </script>
 
 
-<!-- HALO PREMIUM JARVIS VISUAL UPGRADE PACK -->
-<style id="halo-premium-jarvis-upgrade">
+<!-- HALO CINEMATIC REDESIGN PACK — MAJOR UI LAYOUT CHANGE -->
+<style id="halo-cinematic-redesign-pack">
 /* ═══════════════════════════════════════════════
-   HALO — Premium Jarvis/Holographic Upgrade
-   Safe overlay layer: keeps backend + commands intact
+   HALO CINEMATIC COCKPIT REDESIGN
+   Major visual/layout shift. Keeps existing JS + backend.
 ═══════════════════════════════════════════════ */
 
 :root{
-  --halo-premium-cyan:#00e5ff;
-  --halo-premium-blue:#2a8cff;
-  --halo-premium-deep:#020610;
-  --halo-premium-glass:rgba(2,18,38,0.34);
-  --halo-premium-glass-strong:rgba(4,24,50,0.48);
-  --halo-premium-border:rgba(0,229,255,0.18);
-  --halo-premium-border-hot:rgba(0,229,255,0.45);
-  --halo-premium-shadow:0 0 30px rgba(0,229,255,0.12), 0 0 80px rgba(0,136,255,0.06);
+  --cinema-cyan:#00eaff;
+  --cinema-blue:#147bff;
+  --cinema-green:#00ff9d;
+  --cinema-gold:#ffbf5f;
+  --cinema-bg:#01040a;
+  --cinema-glass:rgba(0,18,42,.28);
+  --cinema-glass2:rgba(4,28,62,.34);
+  --cinema-line:rgba(0,234,255,.20);
+  --cinema-line-hot:rgba(0,234,255,.55);
 }
 
-/* Premium spatial background */
-body::before{
-  content:"";
-  position:fixed;
-  inset:-20%;
-  z-index:0;
-  pointer-events:none;
+/* Full-screen cinematic environment */
+html,body{
+  background:#01040a !important;
+}
+
+body{
   background:
-    radial-gradient(circle at 50% 48%, rgba(0,229,255,0.12), transparent 22%),
-    radial-gradient(circle at 18% 20%, rgba(0,120,255,0.12), transparent 28%),
-    radial-gradient(circle at 82% 78%, rgba(0,255,200,0.07), transparent 26%),
-    linear-gradient(135deg, rgba(0,229,255,0.03), transparent 40%, rgba(42,140,255,0.035));
-  filter:blur(18px);
-  animation:haloAtmosphereDrift 18s ease-in-out infinite alternate;
+    radial-gradient(circle at 50% 46%, rgba(0,234,255,.16), transparent 20%),
+    radial-gradient(circle at 50% 100%, rgba(20,123,255,.10), transparent 36%),
+    radial-gradient(circle at 10% 18%, rgba(0,234,255,.08), transparent 28%),
+    radial-gradient(circle at 90% 14%, rgba(0,255,157,.055), transparent 28%),
+    linear-gradient(180deg,#01040a 0%,#03101c 50%,#01040a 100%) !important;
 }
 
-body::after{
-  content:"";
-  position:fixed;
-  inset:0;
-  z-index:1;
-  pointer-events:none;
-  background:
-    linear-gradient(120deg, transparent 0%, rgba(0,229,255,0.025) 45%, transparent 48%),
-    repeating-linear-gradient(90deg, rgba(0,229,255,0.018) 0 1px, transparent 1px 80px),
-    repeating-linear-gradient(0deg, rgba(0,229,255,0.012) 0 1px, transparent 1px 80px);
-  mask-image:radial-gradient(circle at center, black 0%, black 48%, transparent 88%);
-  animation:haloGridBreath 9s ease-in-out infinite;
+/* Hide old heavy dashboard feel by turning layout into cockpit */
+#app{
+  padding:18px 24px 18px !important;
+  display:grid !important;
+  grid-template-rows:auto 1fr auto !important;
+  gap:10px !important;
 }
 
-@keyframes haloAtmosphereDrift{
-  0%{transform:translate3d(-1%, -1%, 0) scale(1);}
-  100%{transform:translate3d(1%, 1%, 0) scale(1.04);}
-}
-
-@keyframes haloGridBreath{
-  0%,100%{opacity:.35; transform:scale(1);}
-  50%{opacity:.62; transform:scale(1.015);}
-}
-
-/* More expensive holographic panels */
-.gpnl,
-.voice-box,
-.intel-inner,
-#socialPanel,
-.notif-card,
-.holo-notif,
-.bd-item,
-.feat-card,
-.qbtn,
-.circle-w,
-.clock-w{
-  position:relative;
-  background:
-    linear-gradient(135deg, rgba(255,255,255,0.045), transparent 35%),
-    rgba(2,14,32,0.42) !important;
-  border:1px solid var(--halo-premium-border) !important;
-  backdrop-filter:blur(34px) saturate(145%) !important;
-  -webkit-backdrop-filter:blur(34px) saturate(145%) !important;
+/* Cleaner top command header */
+#topbar{
+  height:74px !important;
+  grid-template-columns:120px 100px 1fr 180px !important;
+  border:0 !important;
+  padding:10px 16px !important;
+  border-radius:20px !important;
+  background:linear-gradient(135deg, rgba(255,255,255,.045), rgba(0,234,255,.025), rgba(0,0,0,.12)) !important;
   box-shadow:
-    0 14px 50px rgba(0,0,0,0.38),
-    0 0 0 1px rgba(255,255,255,0.025) inset,
-    0 0 35px rgba(0,229,255,0.08) !important;
+    0 20px 70px rgba(0,0,0,.32),
+    inset 0 0 0 1px rgba(0,234,255,.13),
+    0 0 40px rgba(0,234,255,.06) !important;
+  backdrop-filter:blur(30px) saturate(140%) !important;
+  -webkit-backdrop-filter:blur(30px) saturate(140%) !important;
 }
 
-.gpnl::before,
-.voice-box::before,
-.intel-inner::before,
-#socialPanel::before,
-.notif-card::before,
-.holo-notif::before,
-.bd-item::before{
-  content:"" !important;
-  position:absolute !important;
-  left:0 !important;
-  right:0 !important;
-  top:0 !important;
-  height:1px !important;
-  background:linear-gradient(90deg, transparent, rgba(0,229,255,.85), rgba(255,255,255,.55), rgba(0,229,255,.85), transparent) !important;
-  opacity:.72 !important;
+#topbar > div:last-child{
+  display:none !important;
 }
 
-.gpnl::after,
-.voice-box::after,
-.bd-item::after,
-.feat-card::after{
+#topbar::after{
+  left:4% !important;
+  right:4% !important;
+  bottom:0 !important;
+  opacity:.85 !important;
+}
+
+.halo-title{
+  font-size:clamp(24px,3.5vw,46px) !important;
+  letter-spacing:22px !important;
+  color:#eaffff !important;
+  text-shadow:
+    0 0 10px rgba(255,255,255,.55),
+    0 0 35px rgba(0,234,255,.80),
+    0 0 100px rgba(20,123,255,.42) !important;
+}
+
+.halo-sub{
+  font-size:8px !important;
+  letter-spacing:6px !important;
+  color:rgba(170,245,255,.55) !important;
+}
+
+/* Remove old small HUD strip from view */
+#topbar + div[style*="display:flex"]{
+  display:none !important;
+}
+
+/* Main cockpit layout */
+#mid{
+  display:grid !important;
+  grid-template-columns:minmax(190px, 0.72fr) minmax(460px, 1.9fr) minmax(190px, 0.72fr) !important;
+  gap:22px !important;
+  align-items:center !important;
+  overflow:visible !important;
+}
+
+/* Side columns become floating wings */
+.left-col,
+.right-col{
+  gap:16px !important;
+  align-self:center !important;
+  overflow:visible !important;
+}
+
+.left-col{
+  transform:perspective(900px) rotateY(6deg) translateX(8px);
+  transform-origin:right center;
+}
+
+.right-col{
+  transform:perspective(900px) rotateY(-6deg) translateX(-8px);
+  transform-origin:left center;
+}
+
+/* Premium floating panels */
+.gpnl{
+  border-radius:22px !important;
+  padding:16px !important;
+  min-height:160px !important;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.07), rgba(0,234,255,.025) 42%, rgba(0,0,0,.08)),
+    rgba(0,18,42,.26) !important;
+  border:1px solid rgba(0,234,255,.18) !important;
+  box-shadow:
+    0 24px 90px rgba(0,0,0,.42),
+    0 0 0 1px rgba(255,255,255,.025) inset,
+    0 0 42px rgba(0,234,255,.10) !important;
+  backdrop-filter:blur(38px) saturate(155%) !important;
+  -webkit-backdrop-filter:blur(38px) saturate(155%) !important;
+  overflow:hidden !important;
+}
+
+.gpnl:hover{
+  transform:translateY(-6px) scale(1.015) !important;
+  border-color:rgba(0,234,255,.48) !important;
+}
+
+/* Center cockpit */
+.center-col{
+  justify-content:center !important;
+  overflow:visible !important;
+  position:relative !important;
+}
+
+.center-col::before{
   content:"";
   position:absolute;
-  inset:0;
-  pointer-events:none;
-  border-radius:inherit;
-  background:
-    linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.055) 18%, transparent 34%),
-    radial-gradient(circle at 30% 0%, rgba(0,229,255,0.08), transparent 35%);
-  opacity:.35;
-  mix-blend-mode:screen;
-}
-
-.gpnl:hover,
-.voice-box:focus-within,
-.feat-card:hover,
-.qbtn:hover,
-.bd-item:hover,
-.circle-w:hover,
-.clock-w:hover{
-  border-color:var(--halo-premium-border-hot) !important;
+  width:min(78vh,680px);
+  height:min(78vh,680px);
+  border-radius:50%;
+  border:1px solid rgba(0,234,255,.10);
   box-shadow:
-    0 18px 60px rgba(0,0,0,0.42),
-    0 0 45px rgba(0,229,255,0.18),
-    0 0 90px rgba(42,140,255,0.08) !important;
-}
-
-/* Thin neon corner brackets on all main panels */
-.gpnl .halo-corner,
-.voice-box .halo-corner{
-  position:absolute;
-  width:18px;
-  height:18px;
+    0 0 80px rgba(0,234,255,.08),
+    inset 0 0 80px rgba(0,234,255,.025);
   pointer-events:none;
-  opacity:.75;
+  animation:haloCockpitDisk 14s linear infinite;
 }
 
-.gpnl .halo-corner.tl,
-.voice-box .halo-corner.tl{
-  top:6px; left:6px;
-  border-top:1px solid rgba(0,229,255,.7);
-  border-left:1px solid rgba(0,229,255,.7);
+.center-col::after{
+  content:"";
+  position:absolute;
+  width:min(58vh,500px);
+  height:min(58vh,500px);
+  border-radius:50%;
+  border:1px dashed rgba(0,234,255,.16);
+  pointer-events:none;
+  animation:haloCockpitDiskReverse 20s linear infinite;
 }
 
-.gpnl .halo-corner.tr,
-.voice-box .halo-corner.tr{
-  top:6px; right:6px;
-  border-top:1px solid rgba(0,229,255,.45);
-  border-right:1px solid rgba(0,229,255,.45);
+@keyframes haloCockpitDisk{
+  from{transform:rotate(0deg);}
+  to{transform:rotate(360deg);}
 }
 
-.gpnl .halo-corner.bl,
-.voice-box .halo-corner.bl{
-  bottom:6px; left:6px;
-  border-bottom:1px solid rgba(0,229,255,.35);
-  border-left:1px solid rgba(0,229,255,.35);
+@keyframes haloCockpitDiskReverse{
+  from{transform:rotate(360deg);}
+  to{transform:rotate(0deg);}
 }
 
-.gpnl .halo-corner.br,
-.voice-box .halo-corner.br{
-  bottom:6px; right:6px;
-  border-bottom:1px solid rgba(0,229,255,.7);
-  border-right:1px solid rgba(0,229,255,.7);
+/* Orb + voice row becomes vertical hero stack */
+.center-col > div[style*="display:flex"]{
+  flex-direction:column !important;
+  gap:14px !important;
+  position:relative !important;
+  z-index:5 !important;
 }
 
-/* Central orb: more alive, more premium */
+/* Big center AI core */
 #orbWrap{
-  filter:drop-shadow(0 0 32px rgba(0,229,255,.22));
-  transform-style:preserve-3d;
+  width:min(54vh,430px) !important;
+  height:min(54vh,430px) !important;
+  margin-top:-6px !important;
+  filter:
+    drop-shadow(0 0 28px rgba(0,234,255,.40))
+    drop-shadow(0 0 110px rgba(20,123,255,.24)) !important;
 }
 
 #orbCore{
+  width:140px !important;
+  height:140px !important;
   background:
-    radial-gradient(circle at 30% 25%, rgba(255,255,255,.95), rgba(141,245,255,.72) 18%, rgba(0,229,255,.62) 35%, rgba(0,78,160,.46) 62%, rgba(0,18,48,.35) 100%) !important;
+    radial-gradient(circle at 28% 22%, rgba(255,255,255,.95), rgba(160,250,255,.75) 18%, rgba(0,234,255,.64) 36%, rgba(11,107,255,.44) 62%, rgba(0,18,60,.42) 100%) !important;
   box-shadow:
-    0 0 42px rgba(0,229,255,.75),
-    0 0 110px rgba(0,140,255,.38),
-    0 0 180px rgba(0,229,255,.12),
-    inset 0 0 22px rgba(255,255,255,.25) !important;
-  animation:haloOrbBreath 3.2s ease-in-out infinite !important;
+    0 0 48px rgba(0,234,255,.82),
+    0 0 140px rgba(0,140,255,.45),
+    0 0 260px rgba(0,234,255,.16),
+    inset 0 0 38px rgba(255,255,255,.26) !important;
 }
 
-@keyframes haloOrbBreath{
-  0%,100%{transform:scale(1); filter:hue-rotate(0deg) brightness(1);}
-  50%{transform:scale(1.045); filter:hue-rotate(8deg) brightness(1.18);}
+#orbWrap .orb-ring,
+#orbWrap > div[style*="border-radius:50%"]{
+  border-color:rgba(0,234,255,.18) !important;
 }
 
+/* New holographic halo around orb */
 #orbWrap::before{
   content:"";
   position:absolute;
-  inset:18%;
+  inset:12%;
   border-radius:50%;
-  border:1px solid rgba(0,229,255,.18);
-  box-shadow:
-    0 0 24px rgba(0,229,255,.18),
-    inset 0 0 24px rgba(0,229,255,.08);
-  animation:haloOrbRingTilt 7s linear infinite;
-  pointer-events:none;
+  border:1px solid rgba(0,234,255,.22);
+  transform:rotateX(67deg);
+  box-shadow:0 0 50px rgba(0,234,255,.15);
+  animation:haloOrbSaturn 8s linear infinite;
 }
 
 #orbWrap::after{
   content:"";
   position:absolute;
-  inset:4%;
+  inset:22%;
   border-radius:50%;
-  border:1px dashed rgba(0,229,255,.20);
-  animation:haloOrbRingTiltReverse 11s linear infinite;
-  pointer-events:none;
+  border:1px dashed rgba(0,234,255,.24);
+  transform:rotateX(73deg);
+  animation:haloOrbSaturnReverse 12s linear infinite;
 }
 
-@keyframes haloOrbRingTilt{
-  from{transform:rotateX(64deg) rotateZ(0deg);}
-  to{transform:rotateX(64deg) rotateZ(360deg);}
+@keyframes haloOrbSaturn{
+  from{transform:rotateX(67deg) rotateZ(0deg);}
+  to{transform:rotateX(67deg) rotateZ(360deg);}
 }
 
-@keyframes haloOrbRingTiltReverse{
-  from{transform:rotateX(72deg) rotateZ(360deg);}
-  to{transform:rotateX(72deg) rotateZ(0deg);}
+@keyframes haloOrbSaturnReverse{
+  from{transform:rotateX(73deg) rotateZ(360deg);}
+  to{transform:rotateX(73deg) rotateZ(0deg);}
 }
 
-/* Premium title lockup */
-.halo-title{
-  color:#dffbff !important;
-  letter-spacing:18px !important;
-  text-shadow:
-    0 0 10px rgba(255,255,255,.48),
-    0 0 28px rgba(0,229,255,.72),
-    0 0 76px rgba(0,140,255,.32) !important;
+/* Voice box becomes premium command console */
+.voice-box{
+  width:min(720px, 92vw) !important;
+  max-width:720px !important;
+  flex:none !important;
+  border-radius:24px !important;
+  padding:16px !important;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.065), rgba(0,234,255,.035), rgba(0,0,0,.12)),
+    rgba(0,16,40,.42) !important;
+  border:1px solid rgba(0,234,255,.22) !important;
+  box-shadow:
+    0 28px 95px rgba(0,0,0,.52),
+    0 0 70px rgba(0,234,255,.12),
+    inset 0 0 0 1px rgba(255,255,255,.035) !important;
+  backdrop-filter:blur(42px) saturate(160%) !important;
+  -webkit-backdrop-filter:blur(42px) saturate(160%) !important;
 }
 
-.halo-sub{
-  color:rgba(0,229,255,.48) !important;
-  text-shadow:0 0 14px rgba(0,229,255,.28);
+.chat-feed{
+  height:150px !important;
+  border-radius:16px !important;
+  padding:12px !important;
+  background:rgba(0,8,24,.35) !important;
+  border:1px solid rgba(0,234,255,.08);
 }
 
-/* Premium text/status accents */
-.plbl,
-.bd-lbl,
-.di-lbl,
-.wake-txt,
-.cw-lbl,
-.status-row,
-.sc-lbl,
-.feat-lbl{
-  color:rgba(178,242,255,.48) !important;
-  text-shadow:0 0 12px rgba(0,229,255,.12);
+.inp-row{
+  background:rgba(0,10,30,.55);
+  border:1px solid rgba(0,234,255,.16);
+  border-radius:999px;
+  padding:6px;
+  box-shadow:inset 0 0 22px rgba(0,234,255,.035);
 }
 
-.cw-val,
-.cw-time,
-.bd-val,
-.di-val,
-.son{
-  color:#9ff7ff !important;
-  text-shadow:0 0 14px rgba(0,229,255,.45) !important;
+.txt-inp{
+  border:0 !important;
+  background:transparent !important;
+  box-shadow:none !important;
+  padding:12px 16px !important;
+  font-size:13px !important;
 }
 
-/* Data stream layer */
-#haloDataRain{
+.send-btn{
+  border-radius:999px !important;
+  padding:12px 18px !important;
+  background:linear-gradient(135deg, rgba(0,234,255,.22), rgba(20,123,255,.10)) !important;
+}
+
+/* Make side content feel like modules, not old boxes */
+.plbl{
+  font-size:8px !important;
+  letter-spacing:4px !important;
+  color:rgba(184,248,255,.62) !important;
+  margin-bottom:14px !important;
+}
+
+.trow,
+.arow,
+.qbtn,
+.feat-card,
+.diag-item{
+  border-radius:14px !important;
+  background:rgba(0,18,42,.32) !important;
+  border:1px solid rgba(0,234,255,.08) !important;
+}
+
+.qbtn{
+  padding:12px 13px !important;
+  font-size:8.5px !important;
+  margin-bottom:8px !important;
+}
+
+.feat-grid{
+  gap:10px !important;
+}
+
+.feat-card{
+  padding:14px 10px !important;
+}
+
+.feat-icon{
+  font-size:19px !important;
+}
+
+/* Bottom bar becomes mission dock */
+#botbar{
+  height:86px !important;
+  border:0 !important;
+  padding:10px 14px !important;
+  border-radius:22px !important;
+  background:linear-gradient(135deg, rgba(255,255,255,.05), rgba(0,234,255,.025), rgba(0,0,0,.12)) !important;
+  box-shadow:
+    0 20px 70px rgba(0,0,0,.32),
+    inset 0 0 0 1px rgba(0,234,255,.12),
+    0 0 40px rgba(0,234,255,.06) !important;
+  backdrop-filter:blur(30px) saturate(140%) !important;
+  -webkit-backdrop-filter:blur(30px) saturate(140%) !important;
+}
+
+#socialCircles{
+  gap:22px !important;
+}
+
+.sc{
+  width:64px !important;
+  height:64px !important;
+}
+
+.sc-inner{
+  width:48px !important;
+  height:48px !important;
+  background:rgba(0,20,48,.48) !important;
+}
+
+.bot-diag{
+  gap:10px !important;
+}
+
+.bd-item{
+  border-radius:16px !important;
+  padding:9px 11px !important;
+}
+
+/* Add cinematic glass frame elements */
+#haloCinematicFrame{
   position:fixed;
-  inset:0;
+  inset:12px;
+  pointer-events:none;
+  z-index:2;
+  border-radius:26px;
+  border:1px solid rgba(0,234,255,.08);
+  box-shadow:inset 0 0 60px rgba(0,234,255,.035);
+}
+
+#haloCinematicFrame::before,
+#haloCinematicFrame::after{
+  content:"";
+  position:absolute;
+  width:220px;
+  height:90px;
+  border-color:rgba(0,234,255,.32);
+  opacity:.75;
+}
+
+#haloCinematicFrame::before{
+  top:0;
+  left:0;
+  border-top:1px solid;
+  border-left:1px solid;
+  border-radius:26px 0 0 0;
+}
+
+#haloCinematicFrame::after{
+  bottom:0;
+  right:0;
+  border-bottom:1px solid;
+  border-right:1px solid;
+  border-radius:0 0 26px 0;
+}
+
+#haloRadialHUD{
+  position:fixed;
+  left:50%;
+  top:50%;
+  width:min(86vh,760px);
+  height:min(86vh,760px);
+  transform:translate(-50%,-50%);
   z-index:1;
   pointer-events:none;
-  opacity:.28;
-  mix-blend-mode:screen;
-}
-
-/* Cursor glow */
-#haloCursorGlow{
-  position:fixed;
-  width:180px;
-  height:180px;
-  z-index:9998;
-  pointer-events:none;
+  opacity:.45;
   border-radius:50%;
-  background:radial-gradient(circle, rgba(0,229,255,.16), rgba(0,229,255,.045) 35%, transparent 70%);
-  transform:translate(-50%,-50%);
-  opacity:0;
-  transition:opacity .25s ease;
-  mix-blend-mode:screen;
-}
-
-/* Holographic depth/floating */
-.left-col .gpnl:nth-child(1){animation:haloFloatA 8s ease-in-out infinite;}
-.left-col .gpnl:nth-child(2){animation:haloFloatB 9s ease-in-out infinite;}
-.right-col .gpnl:nth-child(1){animation:haloFloatB 8.5s ease-in-out infinite;}
-.right-col .gpnl:nth-child(2){animation:haloFloatA 9.5s ease-in-out infinite;}
-
-@keyframes haloFloatA{
-  0%,100%{transform:translate3d(0,0,0);}
-  50%{transform:translate3d(0,-3px,0);}
-}
-
-@keyframes haloFloatB{
-  0%,100%{transform:translate3d(0,0,0);}
-  50%{transform:translate3d(0,3px,0);}
-}
-
-/* Holographic scan sweeps */
-.halo-sweepline{
-  position:absolute;
-  left:-30%;
-  top:0;
-  width:22%;
-  height:100%;
-  background:linear-gradient(90deg, transparent, rgba(0,229,255,.055), rgba(255,255,255,.06), transparent);
-  pointer-events:none;
-  transform:skewX(-18deg);
-  animation:haloPanelSweep 7s ease-in-out infinite;
-}
-
-@keyframes haloPanelSweep{
-  0%, 55%{left:-35%; opacity:0;}
-  60%{opacity:.75;}
-  100%{left:130%; opacity:0;}
-}
-
-/* Better buttons */
-.qbtn,
-.send-btn,
-.addbtn,
-#activateVoiceBtn,
-.tog-btn,
-#ambientBtn{
-  text-transform:uppercase;
   background:
-    linear-gradient(135deg, rgba(0,229,255,.10), rgba(42,140,255,.035)) !important;
-  border:1px solid rgba(0,229,255,.22) !important;
+    repeating-conic-gradient(from 0deg, rgba(0,234,255,.13) 0deg 1deg, transparent 1deg 9deg),
+    radial-gradient(circle, transparent 0 47%, rgba(0,234,255,.08) 48%, transparent 49% 62%, rgba(0,234,255,.055) 63%, transparent 64%);
+  mask-image:radial-gradient(circle, transparent 0 31%, black 32% 68%, transparent 74%);
+  animation:haloRadialSpin 28s linear infinite;
 }
 
-.qbtn:hover,
-.send-btn:hover,
-.addbtn:hover,
-#activateVoiceBtn:hover,
-.tog-btn:hover,
-#ambientBtn:hover{
-  transform:translateY(-1px);
+@keyframes haloRadialSpin{
+  from{transform:translate(-50%,-50%) rotate(0deg);}
+  to{transform:translate(-50%,-50%) rotate(360deg);}
 }
 
-/* Chat messages: more Jarvis */
-.msg-h{
-  background:linear-gradient(135deg, rgba(0,229,255,.075), rgba(42,140,255,.035)) !important;
-  border-left:2px solid rgba(0,229,255,.75) !important;
-  box-shadow:0 0 22px rgba(0,229,255,.06);
+#haloLightBeam{
+  position:fixed;
+  left:50%;
+  top:50%;
+  width:70vw;
+  height:70vh;
+  transform:translate(-50%,-50%);
+  z-index:0;
+  pointer-events:none;
+  background:
+    conic-gradient(from 180deg at 50% 50%, transparent, rgba(0,234,255,.07), transparent, rgba(20,123,255,.055), transparent);
+  filter:blur(22px);
+  opacity:.75;
+  animation:haloLightRotate 18s ease-in-out infinite alternate;
 }
 
-.msg-u{
-  color:rgba(180,245,255,.72) !important;
-  border-right:2px solid rgba(0,229,255,.45) !important;
+@keyframes haloLightRotate{
+  from{transform:translate(-50%,-50%) rotate(-10deg) scale(1);}
+  to{transform:translate(-50%,-50%) rotate(10deg) scale(1.08);}
 }
 
-/* Premium top/bottom HUD strips */
-#topbar,
-#botbar{
-  border-color:rgba(0,229,255,.14) !important;
-}
-
-#topbar::after,
-#botbar::before{
-  background:linear-gradient(90deg, transparent, rgba(0,229,255,.62), rgba(255,255,255,.38), rgba(0,229,255,.62), transparent) !important;
-}
-
-/* Make inputs more premium */
-.txt-inp,
-.addinp,
-#keyInp{
-  background:rgba(0,12,32,.44) !important;
-  border:1px solid rgba(0,229,255,.16) !important;
-  box-shadow:inset 0 0 18px rgba(0,229,255,.035);
-}
-
-.txt-inp:focus,
-.addinp:focus,
-#keyInp:focus{
-  border-color:rgba(0,229,255,.45) !important;
-  box-shadow:0 0 24px rgba(0,229,255,.12), inset 0 0 24px rgba(0,229,255,.055) !important;
-}
-
-/* Give main app real depth */
-#app{
-  z-index:3 !important;
-  perspective:1200px;
-}
-
-/* Mobile tuning */
+/* Mobile version: still usable */
 @media(max-width:768px){
+  #app{
+    padding:10px !important;
+    grid-template-rows:auto 1fr auto !important;
+  }
+  #topbar{
+    height:auto !important;
+    grid-template-columns:60px 64px 1fr 78px !important;
+    padding:8px !important;
+    border-radius:16px !important;
+  }
   .halo-title{
-    letter-spacing:9px !important;
+    font-size:20px !important;
+    letter-spacing:8px !important;
   }
-  #haloCursorGlow{
-    display:none;
+  .halo-sub{
+    font-size:6px !important;
+    letter-spacing:2px !important;
   }
-  body::after{
-    opacity:.55;
+  .circle-w{
+    width:50px !important;
+    height:50px !important;
   }
-  .left-col .gpnl,
-  .right-col .gpnl{
-    animation:none !important;
+  .clock-w{
+    width:56px !important;
+    height:56px !important;
+  }
+  #mid{
+    display:block !important;
+    overflow:hidden !important;
+  }
+  .center-col > div[style*="display:flex"]{
+    padding-top:6px !important;
+  }
+  #orbWrap{
+    width:245px !important;
+    height:245px !important;
+  }
+  #orbCore{
+    width:92px !important;
+    height:92px !important;
+  }
+  .voice-box{
+    width:100% !important;
+    padding:12px !important;
+    border-radius:18px !important;
+  }
+  .chat-feed{
+    height:170px !important;
+  }
+  #botbar{
+    display:none !important;
+  }
+  #haloRadialHUD{
+    width:320px;
+    height:320px;
+  }
+  #haloCinematicFrame{
+    inset:6px;
+    border-radius:18px;
   }
 }
 
-/* Respect reduced motion */
+/* Reduced motion */
 @media(prefers-reduced-motion:reduce){
-  *,
-  *::before,
-  *::after{
-    animation-duration:.001ms !important;
-    animation-iteration-count:1 !important;
-    scroll-behavior:auto !important;
+  #haloRadialHUD,
+  #haloLightBeam,
+  .center-col::before,
+  .center-col::after,
+  #orbWrap::before,
+  #orbWrap::after{
+    animation:none !important;
   }
 }
 </style>
 
-<canvas id="haloDataRain"></canvas>
-<div id="haloCursorGlow"></div>
+<div id="haloLightBeam"></div>
+<div id="haloRadialHUD"></div>
+<div id="haloCinematicFrame"></div>
 
-<script id="halo-premium-jarvis-upgrade-js">
-/* ═══════════════════════════════════════════════
-   HALO Premium Visual Upgrade JS
-   Safe visual-only layer. Does not change backend.
-═══════════════════════════════════════════════ */
-
+<script id="halo-cinematic-redesign-js">
 (function(){
   function ready(fn){
     if(document.readyState !== "loading") fn();
@@ -2298,147 +2408,92 @@ body::after{
   }
 
   ready(function(){
-    addPanelDetails();
-    initCursorGlow();
-    initDataRain();
-    initParallax();
-    initOrbMicroReactions();
+    document.body.classList.add("halo-cinematic-active");
+    addCinematicLabels();
+    addEnergyBursts();
   });
 
-  function addPanelDetails(){
-    const panelSelectors = [".gpnl", ".voice-box"];
-    document.querySelectorAll(panelSelectors.join(",")).forEach((panel, index) => {
-      if(panel.dataset.haloPremium === "true") return;
-      panel.dataset.haloPremium = "true";
+  function addCinematicLabels(){
+    const center = document.querySelector(".center-col");
+    if(!center || document.getElementById("haloModePlate")) return;
 
-      ["tl","tr","bl","br"].forEach(pos => {
-        const c = document.createElement("span");
-        c.className = "halo-corner " + pos;
-        panel.appendChild(c);
-      });
+    const plate = document.createElement("div");
+    plate.id = "haloModePlate";
+    plate.innerHTML = `
+      <div class="hmp-kicker">ACTIVE MODE</div>
+      <div class="hmp-title">COGNITIVE OPERATIONS</div>
+    `;
+    center.appendChild(plate);
 
-      const sweep = document.createElement("span");
-      sweep.className = "halo-sweepline";
-      sweep.style.animationDelay = (index * 0.45 % 5).toFixed(2) + "s";
-      panel.appendChild(sweep);
-    });
-  }
-
-  function initCursorGlow(){
-    const glow = document.getElementById("haloCursorGlow");
-    if(!glow) return;
-
-    let visible = false;
-    window.addEventListener("mousemove", (e) => {
-      glow.style.left = e.clientX + "px";
-      glow.style.top = e.clientY + "px";
-      if(!visible){
-        visible = true;
-        glow.style.opacity = "1";
+    const style = document.createElement("style");
+    style.textContent = `
+      #haloModePlate{
+        position:absolute;
+        top:4%;
+        left:50%;
+        transform:translateX(-50%);
+        z-index:4;
+        text-align:center;
+        pointer-events:none;
+        opacity:.86;
       }
-    }, {passive:true});
-
-    window.addEventListener("mouseleave", () => {
-      visible = false;
-      glow.style.opacity = "0";
-    });
+      .hmp-kicker{
+        font-family:'JetBrains Mono', monospace;
+        font-size:7px;
+        letter-spacing:5px;
+        color:rgba(0,234,255,.45);
+        margin-bottom:4px;
+      }
+      .hmp-title{
+        font-family:'Syne', sans-serif;
+        font-size:10px;
+        letter-spacing:7px;
+        color:rgba(230,252,255,.82);
+        text-shadow:0 0 24px rgba(0,234,255,.42);
+      }
+      @media(max-width:768px){
+        #haloModePlate{display:none;}
+      }
+    `;
+    document.head.appendChild(style);
   }
 
-  function initDataRain(){
-    const canvas = document.getElementById("haloDataRain");
-    if(!canvas) return;
-
-    const ctx = canvas.getContext("2d", { alpha:true });
-    let w, h, particles;
-
-    function resize(){
-      w = canvas.width = window.innerWidth * Math.min(window.devicePixelRatio || 1, 2);
-      h = canvas.height = window.innerHeight * Math.min(window.devicePixelRatio || 1, 2);
-      canvas.style.width = window.innerWidth + "px";
-      canvas.style.height = window.innerHeight + "px";
-
-      const count = Math.min(80, Math.floor(window.innerWidth / 18));
-      particles = Array.from({length:count}, (_, i) => ({
-        x:Math.random()*w,
-        y:Math.random()*h,
-        speed:(0.16 + Math.random()*0.42) * (window.devicePixelRatio || 1),
-        len:18 + Math.random()*80,
-        opacity:.08 + Math.random()*0.26,
-        glyph:Math.random() > .5 ? "01" : "HALO"
-      }));
-    }
-
-    function draw(){
-      ctx.clearRect(0,0,w,h);
-      ctx.font = `${9 * Math.min(window.devicePixelRatio || 1, 2)}px JetBrains Mono, monospace`;
-      ctx.textBaseline = "top";
-
-      particles.forEach(p => {
-        const grad = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.len);
-        grad.addColorStop(0, `rgba(0,229,255,0)`);
-        grad.addColorStop(.45, `rgba(0,229,255,${p.opacity})`);
-        grad.addColorStop(1, `rgba(0,229,255,0)`);
-        ctx.strokeStyle = grad;
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(p.x, p.y);
-        ctx.lineTo(p.x, p.y + p.len);
-        ctx.stroke();
-
-        if(Math.random() > .985){
-          ctx.fillStyle = `rgba(190,250,255,${p.opacity + .16})`;
-          ctx.fillText(p.glyph, p.x + 4, p.y + p.len * .5);
-        }
-
-        p.y += p.speed;
-        if(p.y > h + p.len){
-          p.y = -p.len;
-          p.x = Math.random()*w;
-        }
-      });
-
-      requestAnimationFrame(draw);
-    }
-
-    resize();
-    draw();
-    window.addEventListener("resize", resize, {passive:true});
-  }
-
-  function initParallax(){
-    const app = document.getElementById("app");
-    if(!app) return;
-
-    let tx = 0, ty = 0, cx = 0, cy = 0;
-
-    window.addEventListener("mousemove", e => {
-      tx = (e.clientX / window.innerWidth - .5) * 5;
-      ty = (e.clientY / window.innerHeight - .5) * 5;
-    }, {passive:true});
-
-    function animate(){
-      cx += (tx - cx) * .04;
-      cy += (ty - cy) * .04;
-      app.style.transform = `rotateX(${-cy * .08}deg) rotateY(${cx * .08}deg)`;
-      requestAnimationFrame(animate);
-    }
-    animate();
-  }
-
-  function initOrbMicroReactions(){
+  function addEnergyBursts(){
     const orb = document.getElementById("orbCore");
     const wrap = document.getElementById("orbWrap");
     if(!orb || !wrap) return;
 
-    orb.addEventListener("mouseenter", () => {
-      wrap.classList.add("success");
-      setTimeout(()=>wrap.classList.remove("success"), 900);
+    orb.addEventListener("click", function(){
+      const burst = document.createElement("span");
+      burst.className = "halo-energy-burst";
+      wrap.appendChild(burst);
+      setTimeout(()=>burst.remove(), 900);
     });
 
-    const input = document.getElementById("textInp");
-    if(input){
-      input.addEventListener("focus", () => wrap.classList.add("listening"));
-      input.addEventListener("blur", () => wrap.classList.remove("listening"));
+    if(!document.getElementById("haloEnergyBurstStyle")){
+      const style = document.createElement("style");
+      style.id = "haloEnergyBurstStyle";
+      style.textContent = `
+        .halo-energy-burst{
+          position:absolute;
+          left:50%;
+          top:50%;
+          width:120px;
+          height:120px;
+          border-radius:50%;
+          border:1px solid rgba(0,234,255,.9);
+          transform:translate(-50%,-50%) scale(.2);
+          animation:haloEnergyBurst .9s ease-out forwards;
+          pointer-events:none;
+          z-index:10;
+          box-shadow:0 0 30px rgba(0,234,255,.45);
+        }
+        @keyframes haloEnergyBurst{
+          0%{opacity:.9; transform:translate(-50%,-50%) scale(.2);}
+          100%{opacity:0; transform:translate(-50%,-50%) scale(2.3);}
+        }
+      `;
+      document.head.appendChild(style);
     }
   }
 })();
