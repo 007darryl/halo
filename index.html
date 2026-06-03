@@ -1865,6 +1865,585 @@ document.addEventListener('DOMContentLoaded',()=>{
 
 </script>
 
+
+<!-- HALO PREMIUM JARVIS VISUAL UPGRADE PACK -->
+<style id="halo-premium-jarvis-upgrade">
+/* ═══════════════════════════════════════════════
+   HALO — Premium Jarvis/Holographic Upgrade
+   Safe overlay layer: keeps backend + commands intact
+═══════════════════════════════════════════════ */
+
+:root{
+  --halo-premium-cyan:#00e5ff;
+  --halo-premium-blue:#2a8cff;
+  --halo-premium-deep:#020610;
+  --halo-premium-glass:rgba(2,18,38,0.34);
+  --halo-premium-glass-strong:rgba(4,24,50,0.48);
+  --halo-premium-border:rgba(0,229,255,0.18);
+  --halo-premium-border-hot:rgba(0,229,255,0.45);
+  --halo-premium-shadow:0 0 30px rgba(0,229,255,0.12), 0 0 80px rgba(0,136,255,0.06);
+}
+
+/* Premium spatial background */
+body::before{
+  content:"";
+  position:fixed;
+  inset:-20%;
+  z-index:0;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at 50% 48%, rgba(0,229,255,0.12), transparent 22%),
+    radial-gradient(circle at 18% 20%, rgba(0,120,255,0.12), transparent 28%),
+    radial-gradient(circle at 82% 78%, rgba(0,255,200,0.07), transparent 26%),
+    linear-gradient(135deg, rgba(0,229,255,0.03), transparent 40%, rgba(42,140,255,0.035));
+  filter:blur(18px);
+  animation:haloAtmosphereDrift 18s ease-in-out infinite alternate;
+}
+
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  background:
+    linear-gradient(120deg, transparent 0%, rgba(0,229,255,0.025) 45%, transparent 48%),
+    repeating-linear-gradient(90deg, rgba(0,229,255,0.018) 0 1px, transparent 1px 80px),
+    repeating-linear-gradient(0deg, rgba(0,229,255,0.012) 0 1px, transparent 1px 80px);
+  mask-image:radial-gradient(circle at center, black 0%, black 48%, transparent 88%);
+  animation:haloGridBreath 9s ease-in-out infinite;
+}
+
+@keyframes haloAtmosphereDrift{
+  0%{transform:translate3d(-1%, -1%, 0) scale(1);}
+  100%{transform:translate3d(1%, 1%, 0) scale(1.04);}
+}
+
+@keyframes haloGridBreath{
+  0%,100%{opacity:.35; transform:scale(1);}
+  50%{opacity:.62; transform:scale(1.015);}
+}
+
+/* More expensive holographic panels */
+.gpnl,
+.voice-box,
+.intel-inner,
+#socialPanel,
+.notif-card,
+.holo-notif,
+.bd-item,
+.feat-card,
+.qbtn,
+.circle-w,
+.clock-w{
+  position:relative;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.045), transparent 35%),
+    rgba(2,14,32,0.42) !important;
+  border:1px solid var(--halo-premium-border) !important;
+  backdrop-filter:blur(34px) saturate(145%) !important;
+  -webkit-backdrop-filter:blur(34px) saturate(145%) !important;
+  box-shadow:
+    0 14px 50px rgba(0,0,0,0.38),
+    0 0 0 1px rgba(255,255,255,0.025) inset,
+    0 0 35px rgba(0,229,255,0.08) !important;
+}
+
+.gpnl::before,
+.voice-box::before,
+.intel-inner::before,
+#socialPanel::before,
+.notif-card::before,
+.holo-notif::before,
+.bd-item::before{
+  content:"" !important;
+  position:absolute !important;
+  left:0 !important;
+  right:0 !important;
+  top:0 !important;
+  height:1px !important;
+  background:linear-gradient(90deg, transparent, rgba(0,229,255,.85), rgba(255,255,255,.55), rgba(0,229,255,.85), transparent) !important;
+  opacity:.72 !important;
+}
+
+.gpnl::after,
+.voice-box::after,
+.bd-item::after,
+.feat-card::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  border-radius:inherit;
+  background:
+    linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.055) 18%, transparent 34%),
+    radial-gradient(circle at 30% 0%, rgba(0,229,255,0.08), transparent 35%);
+  opacity:.35;
+  mix-blend-mode:screen;
+}
+
+.gpnl:hover,
+.voice-box:focus-within,
+.feat-card:hover,
+.qbtn:hover,
+.bd-item:hover,
+.circle-w:hover,
+.clock-w:hover{
+  border-color:var(--halo-premium-border-hot) !important;
+  box-shadow:
+    0 18px 60px rgba(0,0,0,0.42),
+    0 0 45px rgba(0,229,255,0.18),
+    0 0 90px rgba(42,140,255,0.08) !important;
+}
+
+/* Thin neon corner brackets on all main panels */
+.gpnl .halo-corner,
+.voice-box .halo-corner{
+  position:absolute;
+  width:18px;
+  height:18px;
+  pointer-events:none;
+  opacity:.75;
+}
+
+.gpnl .halo-corner.tl,
+.voice-box .halo-corner.tl{
+  top:6px; left:6px;
+  border-top:1px solid rgba(0,229,255,.7);
+  border-left:1px solid rgba(0,229,255,.7);
+}
+
+.gpnl .halo-corner.tr,
+.voice-box .halo-corner.tr{
+  top:6px; right:6px;
+  border-top:1px solid rgba(0,229,255,.45);
+  border-right:1px solid rgba(0,229,255,.45);
+}
+
+.gpnl .halo-corner.bl,
+.voice-box .halo-corner.bl{
+  bottom:6px; left:6px;
+  border-bottom:1px solid rgba(0,229,255,.35);
+  border-left:1px solid rgba(0,229,255,.35);
+}
+
+.gpnl .halo-corner.br,
+.voice-box .halo-corner.br{
+  bottom:6px; right:6px;
+  border-bottom:1px solid rgba(0,229,255,.7);
+  border-right:1px solid rgba(0,229,255,.7);
+}
+
+/* Central orb: more alive, more premium */
+#orbWrap{
+  filter:drop-shadow(0 0 32px rgba(0,229,255,.22));
+  transform-style:preserve-3d;
+}
+
+#orbCore{
+  background:
+    radial-gradient(circle at 30% 25%, rgba(255,255,255,.95), rgba(141,245,255,.72) 18%, rgba(0,229,255,.62) 35%, rgba(0,78,160,.46) 62%, rgba(0,18,48,.35) 100%) !important;
+  box-shadow:
+    0 0 42px rgba(0,229,255,.75),
+    0 0 110px rgba(0,140,255,.38),
+    0 0 180px rgba(0,229,255,.12),
+    inset 0 0 22px rgba(255,255,255,.25) !important;
+  animation:haloOrbBreath 3.2s ease-in-out infinite !important;
+}
+
+@keyframes haloOrbBreath{
+  0%,100%{transform:scale(1); filter:hue-rotate(0deg) brightness(1);}
+  50%{transform:scale(1.045); filter:hue-rotate(8deg) brightness(1.18);}
+}
+
+#orbWrap::before{
+  content:"";
+  position:absolute;
+  inset:18%;
+  border-radius:50%;
+  border:1px solid rgba(0,229,255,.18);
+  box-shadow:
+    0 0 24px rgba(0,229,255,.18),
+    inset 0 0 24px rgba(0,229,255,.08);
+  animation:haloOrbRingTilt 7s linear infinite;
+  pointer-events:none;
+}
+
+#orbWrap::after{
+  content:"";
+  position:absolute;
+  inset:4%;
+  border-radius:50%;
+  border:1px dashed rgba(0,229,255,.20);
+  animation:haloOrbRingTiltReverse 11s linear infinite;
+  pointer-events:none;
+}
+
+@keyframes haloOrbRingTilt{
+  from{transform:rotateX(64deg) rotateZ(0deg);}
+  to{transform:rotateX(64deg) rotateZ(360deg);}
+}
+
+@keyframes haloOrbRingTiltReverse{
+  from{transform:rotateX(72deg) rotateZ(360deg);}
+  to{transform:rotateX(72deg) rotateZ(0deg);}
+}
+
+/* Premium title lockup */
+.halo-title{
+  color:#dffbff !important;
+  letter-spacing:18px !important;
+  text-shadow:
+    0 0 10px rgba(255,255,255,.48),
+    0 0 28px rgba(0,229,255,.72),
+    0 0 76px rgba(0,140,255,.32) !important;
+}
+
+.halo-sub{
+  color:rgba(0,229,255,.48) !important;
+  text-shadow:0 0 14px rgba(0,229,255,.28);
+}
+
+/* Premium text/status accents */
+.plbl,
+.bd-lbl,
+.di-lbl,
+.wake-txt,
+.cw-lbl,
+.status-row,
+.sc-lbl,
+.feat-lbl{
+  color:rgba(178,242,255,.48) !important;
+  text-shadow:0 0 12px rgba(0,229,255,.12);
+}
+
+.cw-val,
+.cw-time,
+.bd-val,
+.di-val,
+.son{
+  color:#9ff7ff !important;
+  text-shadow:0 0 14px rgba(0,229,255,.45) !important;
+}
+
+/* Data stream layer */
+#haloDataRain{
+  position:fixed;
+  inset:0;
+  z-index:1;
+  pointer-events:none;
+  opacity:.28;
+  mix-blend-mode:screen;
+}
+
+/* Cursor glow */
+#haloCursorGlow{
+  position:fixed;
+  width:180px;
+  height:180px;
+  z-index:9998;
+  pointer-events:none;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(0,229,255,.16), rgba(0,229,255,.045) 35%, transparent 70%);
+  transform:translate(-50%,-50%);
+  opacity:0;
+  transition:opacity .25s ease;
+  mix-blend-mode:screen;
+}
+
+/* Holographic depth/floating */
+.left-col .gpnl:nth-child(1){animation:haloFloatA 8s ease-in-out infinite;}
+.left-col .gpnl:nth-child(2){animation:haloFloatB 9s ease-in-out infinite;}
+.right-col .gpnl:nth-child(1){animation:haloFloatB 8.5s ease-in-out infinite;}
+.right-col .gpnl:nth-child(2){animation:haloFloatA 9.5s ease-in-out infinite;}
+
+@keyframes haloFloatA{
+  0%,100%{transform:translate3d(0,0,0);}
+  50%{transform:translate3d(0,-3px,0);}
+}
+
+@keyframes haloFloatB{
+  0%,100%{transform:translate3d(0,0,0);}
+  50%{transform:translate3d(0,3px,0);}
+}
+
+/* Holographic scan sweeps */
+.halo-sweepline{
+  position:absolute;
+  left:-30%;
+  top:0;
+  width:22%;
+  height:100%;
+  background:linear-gradient(90deg, transparent, rgba(0,229,255,.055), rgba(255,255,255,.06), transparent);
+  pointer-events:none;
+  transform:skewX(-18deg);
+  animation:haloPanelSweep 7s ease-in-out infinite;
+}
+
+@keyframes haloPanelSweep{
+  0%, 55%{left:-35%; opacity:0;}
+  60%{opacity:.75;}
+  100%{left:130%; opacity:0;}
+}
+
+/* Better buttons */
+.qbtn,
+.send-btn,
+.addbtn,
+#activateVoiceBtn,
+.tog-btn,
+#ambientBtn{
+  text-transform:uppercase;
+  background:
+    linear-gradient(135deg, rgba(0,229,255,.10), rgba(42,140,255,.035)) !important;
+  border:1px solid rgba(0,229,255,.22) !important;
+}
+
+.qbtn:hover,
+.send-btn:hover,
+.addbtn:hover,
+#activateVoiceBtn:hover,
+.tog-btn:hover,
+#ambientBtn:hover{
+  transform:translateY(-1px);
+}
+
+/* Chat messages: more Jarvis */
+.msg-h{
+  background:linear-gradient(135deg, rgba(0,229,255,.075), rgba(42,140,255,.035)) !important;
+  border-left:2px solid rgba(0,229,255,.75) !important;
+  box-shadow:0 0 22px rgba(0,229,255,.06);
+}
+
+.msg-u{
+  color:rgba(180,245,255,.72) !important;
+  border-right:2px solid rgba(0,229,255,.45) !important;
+}
+
+/* Premium top/bottom HUD strips */
+#topbar,
+#botbar{
+  border-color:rgba(0,229,255,.14) !important;
+}
+
+#topbar::after,
+#botbar::before{
+  background:linear-gradient(90deg, transparent, rgba(0,229,255,.62), rgba(255,255,255,.38), rgba(0,229,255,.62), transparent) !important;
+}
+
+/* Make inputs more premium */
+.txt-inp,
+.addinp,
+#keyInp{
+  background:rgba(0,12,32,.44) !important;
+  border:1px solid rgba(0,229,255,.16) !important;
+  box-shadow:inset 0 0 18px rgba(0,229,255,.035);
+}
+
+.txt-inp:focus,
+.addinp:focus,
+#keyInp:focus{
+  border-color:rgba(0,229,255,.45) !important;
+  box-shadow:0 0 24px rgba(0,229,255,.12), inset 0 0 24px rgba(0,229,255,.055) !important;
+}
+
+/* Give main app real depth */
+#app{
+  z-index:3 !important;
+  perspective:1200px;
+}
+
+/* Mobile tuning */
+@media(max-width:768px){
+  .halo-title{
+    letter-spacing:9px !important;
+  }
+  #haloCursorGlow{
+    display:none;
+  }
+  body::after{
+    opacity:.55;
+  }
+  .left-col .gpnl,
+  .right-col .gpnl{
+    animation:none !important;
+  }
+}
+
+/* Respect reduced motion */
+@media(prefers-reduced-motion:reduce){
+  *,
+  *::before,
+  *::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    scroll-behavior:auto !important;
+  }
+}
+</style>
+
+<canvas id="haloDataRain"></canvas>
+<div id="haloCursorGlow"></div>
+
+<script id="halo-premium-jarvis-upgrade-js">
+/* ═══════════════════════════════════════════════
+   HALO Premium Visual Upgrade JS
+   Safe visual-only layer. Does not change backend.
+═══════════════════════════════════════════════ */
+
+(function(){
+  function ready(fn){
+    if(document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+
+  ready(function(){
+    addPanelDetails();
+    initCursorGlow();
+    initDataRain();
+    initParallax();
+    initOrbMicroReactions();
+  });
+
+  function addPanelDetails(){
+    const panelSelectors = [".gpnl", ".voice-box"];
+    document.querySelectorAll(panelSelectors.join(",")).forEach((panel, index) => {
+      if(panel.dataset.haloPremium === "true") return;
+      panel.dataset.haloPremium = "true";
+
+      ["tl","tr","bl","br"].forEach(pos => {
+        const c = document.createElement("span");
+        c.className = "halo-corner " + pos;
+        panel.appendChild(c);
+      });
+
+      const sweep = document.createElement("span");
+      sweep.className = "halo-sweepline";
+      sweep.style.animationDelay = (index * 0.45 % 5).toFixed(2) + "s";
+      panel.appendChild(sweep);
+    });
+  }
+
+  function initCursorGlow(){
+    const glow = document.getElementById("haloCursorGlow");
+    if(!glow) return;
+
+    let visible = false;
+    window.addEventListener("mousemove", (e) => {
+      glow.style.left = e.clientX + "px";
+      glow.style.top = e.clientY + "px";
+      if(!visible){
+        visible = true;
+        glow.style.opacity = "1";
+      }
+    }, {passive:true});
+
+    window.addEventListener("mouseleave", () => {
+      visible = false;
+      glow.style.opacity = "0";
+    });
+  }
+
+  function initDataRain(){
+    const canvas = document.getElementById("haloDataRain");
+    if(!canvas) return;
+
+    const ctx = canvas.getContext("2d", { alpha:true });
+    let w, h, particles;
+
+    function resize(){
+      w = canvas.width = window.innerWidth * Math.min(window.devicePixelRatio || 1, 2);
+      h = canvas.height = window.innerHeight * Math.min(window.devicePixelRatio || 1, 2);
+      canvas.style.width = window.innerWidth + "px";
+      canvas.style.height = window.innerHeight + "px";
+
+      const count = Math.min(80, Math.floor(window.innerWidth / 18));
+      particles = Array.from({length:count}, (_, i) => ({
+        x:Math.random()*w,
+        y:Math.random()*h,
+        speed:(0.16 + Math.random()*0.42) * (window.devicePixelRatio || 1),
+        len:18 + Math.random()*80,
+        opacity:.08 + Math.random()*0.26,
+        glyph:Math.random() > .5 ? "01" : "HALO"
+      }));
+    }
+
+    function draw(){
+      ctx.clearRect(0,0,w,h);
+      ctx.font = `${9 * Math.min(window.devicePixelRatio || 1, 2)}px JetBrains Mono, monospace`;
+      ctx.textBaseline = "top";
+
+      particles.forEach(p => {
+        const grad = ctx.createLinearGradient(p.x, p.y, p.x, p.y + p.len);
+        grad.addColorStop(0, `rgba(0,229,255,0)`);
+        grad.addColorStop(.45, `rgba(0,229,255,${p.opacity})`);
+        grad.addColorStop(1, `rgba(0,229,255,0)`);
+        ctx.strokeStyle = grad;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(p.x, p.y);
+        ctx.lineTo(p.x, p.y + p.len);
+        ctx.stroke();
+
+        if(Math.random() > .985){
+          ctx.fillStyle = `rgba(190,250,255,${p.opacity + .16})`;
+          ctx.fillText(p.glyph, p.x + 4, p.y + p.len * .5);
+        }
+
+        p.y += p.speed;
+        if(p.y > h + p.len){
+          p.y = -p.len;
+          p.x = Math.random()*w;
+        }
+      });
+
+      requestAnimationFrame(draw);
+    }
+
+    resize();
+    draw();
+    window.addEventListener("resize", resize, {passive:true});
+  }
+
+  function initParallax(){
+    const app = document.getElementById("app");
+    if(!app) return;
+
+    let tx = 0, ty = 0, cx = 0, cy = 0;
+
+    window.addEventListener("mousemove", e => {
+      tx = (e.clientX / window.innerWidth - .5) * 5;
+      ty = (e.clientY / window.innerHeight - .5) * 5;
+    }, {passive:true});
+
+    function animate(){
+      cx += (tx - cx) * .04;
+      cy += (ty - cy) * .04;
+      app.style.transform = `rotateX(${-cy * .08}deg) rotateY(${cx * .08}deg)`;
+      requestAnimationFrame(animate);
+    }
+    animate();
+  }
+
+  function initOrbMicroReactions(){
+    const orb = document.getElementById("orbCore");
+    const wrap = document.getElementById("orbWrap");
+    if(!orb || !wrap) return;
+
+    orb.addEventListener("mouseenter", () => {
+      wrap.classList.add("success");
+      setTimeout(()=>wrap.classList.remove("success"), 900);
+    });
+
+    const input = document.getElementById("textInp");
+    if(input){
+      input.addEventListener("focus", () => wrap.classList.add("listening"));
+      input.addEventListener("blur", () => wrap.classList.remove("listening"));
+    }
+  }
+})();
+</script>
+
 <!-- HALO AMBIENT BACKGROUND NOISE CONTROL -->
 <div id="ambientControl">
   <button onclick="toggleAmbientNoise()" id="ambientBtn">AMBIENT: OFF</button>
