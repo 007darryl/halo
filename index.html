@@ -5450,5 +5450,710 @@ function haloAdvancedBrief(){
 })();
 </script>
 
+
+<!-- HALO APPLE-MAPS STYLE NAVIGATION OVERLAY PATCH -->
+<style id="halo-navigation-map-overlay-patch">
+/* Floating route shortcut rail */
+#haloNavShortcutRail{
+  position:fixed;
+  left:50%;
+  bottom:92px;
+  transform:translateX(-50%);
+  z-index:5200;
+  display:flex;
+  gap:8px;
+  padding:9px;
+  border-radius:999px;
+  border:1px solid rgba(0,234,255,.18);
+  background:rgba(0,10,26,.76);
+  backdrop-filter:blur(22px);
+  -webkit-backdrop-filter:blur(22px);
+  box-shadow:0 18px 60px rgba(0,0,0,.38), 0 0 34px rgba(0,234,255,.10);
+}
+
+.halo-nav-shortcut{
+  padding:10px 13px;
+  border-radius:999px;
+  border:1px solid rgba(0,234,255,.16);
+  background:rgba(0,234,255,.04);
+  color:#bffaff;
+  font-family:'JetBrains Mono', monospace;
+  font-size:8px;
+  letter-spacing:1.5px;
+  cursor:pointer;
+  transition:.22s ease;
+  white-space:nowrap;
+}
+
+.halo-nav-shortcut:hover{
+  color:#00eaff;
+  border-color:rgba(0,234,255,.45);
+  box-shadow:0 0 22px rgba(0,234,255,.15);
+  transform:translateY(-1px);
+}
+
+#haloAdvancedMapOverlay.active #haloNavMapHUD{
+  display:block;
+}
+
+#haloNavMapHUD{
+  display:none;
+  position:absolute;
+  left:22px;
+  bottom:22px;
+  z-index:900;
+  width:min(410px, calc(100% - 44px));
+  border-radius:22px;
+  border:1px solid rgba(0,234,255,.20);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.055), rgba(0,234,255,.035), rgba(0,0,0,.18)),
+    rgba(0,10,26,.82);
+  backdrop-filter:blur(26px);
+  -webkit-backdrop-filter:blur(26px);
+  box-shadow:0 22px 80px rgba(0,0,0,.48), 0 0 45px rgba(0,234,255,.13);
+  overflow:hidden;
+}
+
+.halo-nav-hud-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:15px 16px 12px;
+  border-bottom:1px solid rgba(0,234,255,.10);
+}
+
+.halo-nav-hud-title{
+  font-family:'JetBrains Mono', monospace;
+  font-size:10px;
+  letter-spacing:3px;
+  color:#00eaff;
+  text-shadow:0 0 18px rgba(0,234,255,.52);
+}
+
+.halo-nav-hud-status{
+  font-family:'JetBrains Mono', monospace;
+  font-size:8px;
+  letter-spacing:1.5px;
+  padding:6px 8px;
+  border-radius:999px;
+  border:1px solid currentColor;
+}
+
+.halo-nav-hud-body{
+  padding:15px 16px 16px;
+}
+
+.halo-nav-destination{
+  font-family:'Space Grotesk', sans-serif;
+  font-size:14px;
+  color:rgba(232,252,255,.86);
+  margin-bottom:12px;
+}
+
+.halo-nav-stats{
+  display:grid;
+  grid-template-columns:repeat(4, minmax(0,1fr));
+  gap:8px;
+  margin-bottom:12px;
+}
+
+.halo-nav-stat{
+  padding:10px 8px;
+  border-radius:14px;
+  background:rgba(0,234,255,.045);
+  border:1px solid rgba(0,234,255,.10);
+}
+
+.halo-nav-label{
+  font-family:'JetBrains Mono', monospace;
+  font-size:7px;
+  letter-spacing:1.5px;
+  color:rgba(0,234,255,.46);
+  margin-bottom:5px;
+}
+
+.halo-nav-value{
+  font-family:'JetBrains Mono', monospace;
+  font-size:14px;
+  letter-spacing:1px;
+  color:#efffff;
+}
+
+.halo-nav-section{
+  margin-top:12px;
+}
+
+.halo-nav-section-title{
+  font-family:'JetBrains Mono', monospace;
+  font-size:8px;
+  letter-spacing:2px;
+  color:rgba(0,234,255,.55);
+  margin-bottom:8px;
+}
+
+.halo-nav-list{
+  display:grid;
+  gap:7px;
+}
+
+.halo-nav-place{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  padding:8px 10px;
+  border-radius:12px;
+  border:1px solid rgba(0,234,255,.08);
+  background:rgba(0,8,22,.35);
+  font-size:12px;
+  color:rgba(220,245,255,.72);
+}
+
+.halo-nav-place span:last-child{
+  color:rgba(0,234,255,.55);
+  font-family:'JetBrains Mono', monospace;
+  font-size:8px;
+  letter-spacing:1px;
+}
+
+.halo-route-option-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:8px 10px;
+  border-radius:12px;
+  border:1px solid rgba(0,234,255,.10);
+  background:rgba(0,234,255,.035);
+  cursor:pointer;
+  transition:.2s ease;
+}
+
+.halo-route-option-row:hover,
+.halo-route-option-row.active{
+  border-color:rgba(0,234,255,.42);
+  box-shadow:0 0 18px rgba(0,234,255,.12);
+}
+
+.halo-route-option-row strong{
+  color:#eaffff;
+  font-size:12px;
+}
+
+.halo-route-option-row small{
+  color:rgba(0,234,255,.55);
+  font-family:'JetBrains Mono', monospace;
+  font-size:8px;
+  letter-spacing:1px;
+}
+
+.halo-nav-clear{color:#00ff9d;}
+.halo-nav-light{color:#ffe83f;}
+.halo-nav-moderate{color:#ff9d2e;}
+.halo-nav-heavy{color:#ff4545;}
+
+/* HALO map markers */
+.halo-nav-marker{
+  width:28px;
+  height:28px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.75);
+  background:rgba(0,13,31,.88);
+  color:#00eaff;
+  font-size:15px;
+  box-shadow:0 0 28px currentColor, 0 0 55px rgba(0,234,255,.20);
+}
+
+.halo-nav-marker.destination{
+  color:#00ff9d;
+}
+
+.halo-nav-marker.gas{
+  color:#ffe83f;
+}
+
+.halo-nav-marker.parking{
+  color:#bd70ff;
+}
+
+.halo-nav-marker.start{
+  color:#00eaff;
+}
+
+@media(max-width:900px){
+  #haloNavShortcutRail{
+    bottom:76px;
+    max-width:calc(100% - 18px);
+    overflow-x:auto;
+    justify-content:flex-start;
+  }
+  .halo-nav-stats{
+    grid-template-columns:repeat(2, minmax(0,1fr));
+  }
+}
+</style>
+
+<div id="haloNavShortcutRail">
+  <button class="halo-nav-shortcut" onclick="haloRoutePlusCommand('work')">💼 WORK</button>
+  <button class="halo-nav-shortcut" onclick="haloRoutePlusCommand('gym')">🏋️ GYM</button>
+  <button class="halo-nav-shortcut" onclick="haloRoutePlusCommand('lax')">✈️ LAX</button>
+  <button class="halo-nav-shortcut" onclick="haloRoutePlusCommand('beach')">🏖 BEACH</button>
+  <button class="halo-nav-shortcut" onclick="haloRoutePlusCommand('dodgers')">⚾ DODGERS</button>
+</div>
+
+<script id="halo-navigation-map-overlay-patch-js">
+(function(){
+  const ROUTE_PLUS_API = 'https://halo-server-d3h3.onrender.com/route-plus';
+
+  let haloNavRouteLayers = [];
+  let haloNavMarkerLayers = [];
+  let haloNavLastRoutePlus = null;
+
+  function escapeHTML(str){
+    return String(str ?? '').replace(/[&<>"']/g, m => ({
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#039;'
+    })[m]);
+  }
+
+  function trafficClass(level){
+    const l = String(level || '').toLowerCase();
+    if(l.includes('heavy')) return 'halo-nav-heavy';
+    if(l.includes('moderate')) return 'halo-nav-moderate';
+    if(l.includes('light')) return 'halo-nav-light';
+    return 'halo-nav-clear';
+  }
+
+  function routeColor(level){
+    const l = String(level || '').toLowerCase();
+    if(l.includes('heavy')) return '#ff4545';
+    if(l.includes('moderate')) return '#ff9d2e';
+    if(l.includes('light')) return '#ffe83f';
+    return '#00ff9d';
+  }
+
+  // Google encoded polyline decoder
+  function decodePolyline(encoded){
+    if(!encoded) return [];
+    let points = [];
+    let index = 0, lat = 0, lng = 0;
+
+    while(index < encoded.length){
+      let b, shift = 0, result = 0;
+      do{
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      }while(b >= 0x20);
+      const dlat = ((result & 1) ? ~(result >> 1) : (result >> 1));
+      lat += dlat;
+
+      shift = 0;
+      result = 0;
+      do{
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      }while(b >= 0x20);
+      const dlng = ((result & 1) ? ~(result >> 1) : (result >> 1));
+      lng += dlng;
+
+      points.push([lat / 1e5, lng / 1e5]);
+    }
+
+    return points;
+  }
+
+  function getLeafletMap(){
+    return window.haloRealMap || window.haloRealWorldMap || haloRealMap;
+  }
+
+  function clearNavMap(){
+    const map = getLeafletMap();
+    if(!map || typeof L === 'undefined') return;
+    haloNavRouteLayers.forEach(layer => {
+      try{ map.removeLayer(layer); }catch(e){}
+    });
+    haloNavMarkerLayers.forEach(layer => {
+      try{ map.removeLayer(layer); }catch(e){}
+    });
+    haloNavRouteLayers = [];
+    haloNavMarkerLayers = [];
+  }
+
+  function markerIcon(type, label){
+    return L.divIcon({
+      className:'',
+      html:`<div class="halo-nav-marker ${type}">${label}</div>`,
+      iconSize:[28,28],
+      iconAnchor:[14,14],
+      popupAnchor:[0,-16]
+    });
+  }
+
+  function addMarker(map, loc, type, label, popup){
+    if(!loc) return null;
+    const lat = loc.latitude ?? loc.lat;
+    const lng = loc.longitude ?? loc.lng;
+    if(typeof lat !== 'number' || typeof lng !== 'number') return null;
+
+    const marker = L.marker([lat, lng], {
+      icon: markerIcon(type, label)
+    }).addTo(map);
+
+    if(popup) marker.bindPopup(popup, {className:'ham-popup'});
+    haloNavMarkerLayers.push(marker);
+    return marker;
+  }
+
+  function ensureMapOpen(){
+    if(typeof openHaloAdvancedMap === 'function'){
+      openHaloAdvancedMap();
+    }
+
+    return new Promise(resolve => {
+      setTimeout(() => {
+        if(typeof initHaloRealMap === 'function') initHaloRealMap();
+        const map = getLeafletMap();
+        if(map && typeof map.invalidateSize === 'function') map.invalidateSize();
+        ensureNavHUD();
+        resolve(map);
+      }, 500);
+    });
+  }
+
+  function ensureNavHUD(){
+    const overlay = document.getElementById('haloAdvancedMapOverlay');
+    if(!overlay) return;
+
+    if(document.getElementById('haloNavMapHUD')) return;
+
+    const hud = document.createElement('div');
+    hud.id = 'haloNavMapHUD';
+    hud.innerHTML = `
+      <div class="halo-nav-hud-header">
+        <div class="halo-nav-hud-title">NAVIGATION INTEL</div>
+        <div class="halo-nav-hud-status halo-nav-clear">READY</div>
+      </div>
+      <div class="halo-nav-hud-body" id="haloNavHUDBody">
+        <div class="halo-nav-destination">Route system standing by.</div>
+      </div>
+    `;
+
+    const mapPanel = overlay.querySelector('.ham-map-panel') || overlay.querySelector('.hgi-map-wrap') || overlay;
+    mapPanel.appendChild(hud);
+  }
+
+  function updateNavHUD(routePlus, selectedIndex = 0){
+    ensureNavHUD();
+    const body = document.getElementById('haloNavHUDBody');
+    const status = document.querySelector('#haloNavMapHUD .halo-nav-hud-status');
+    if(!body) return;
+
+    const routeData = routePlus.route || {};
+    const routes = routeData.routes || [routeData];
+    const selected = routes[selectedIndex] || routes[0] || routeData;
+    const gas = routePlus.gas || [];
+    const parking = routePlus.parking || [];
+    const cls = trafficClass(selected.traffic_level);
+    const delay = Number(selected.delay_minutes || 0);
+
+    if(status){
+      status.className = 'halo-nav-hud-status ' + cls;
+      status.textContent = selected.traffic_level || 'LIVE';
+    }
+
+    const routeOptions = routes.slice(0,3).map((r, idx) => `
+      <div class="halo-route-option-row ${idx === selectedIndex ? 'active' : ''}" onclick="haloDrawRouteOption(${idx})">
+        <div>
+          <strong>${escapeHTML(r.label || ('Option ' + (idx+1)))}</strong><br>
+          <small>${escapeHTML(r.description || 'Route option')}</small>
+        </div>
+        <small>${escapeHTML(r.eta_minutes)} MIN</small>
+      </div>
+    `).join('');
+
+    const gasList = gas.slice(0,3).map(p => `
+      <div class="halo-nav-place">
+        <span>⛽ ${escapeHTML(p.name)}</span>
+        <span>${p.rating ? escapeHTML(p.rating) + '★' : 'GAS'}</span>
+      </div>
+    `).join('') || '<div class="halo-nav-place"><span>No gas results.</span><span>—</span></div>';
+
+    const parkingList = parking.slice(0,3).map(p => `
+      <div class="halo-nav-place">
+        <span>🅿️ ${escapeHTML(p.name)}</span>
+        <span>${p.rating ? escapeHTML(p.rating) + '★' : 'PARK'}</span>
+      </div>
+    `).join('') || '<div class="halo-nav-place"><span>No parking results.</span><span>—</span></div>';
+
+    body.innerHTML = `
+      <div class="halo-nav-destination">
+        <strong>${escapeHTML(routeData.origin || 'Origin')}</strong> → <strong>${escapeHTML(routeData.destination || 'Destination')}</strong>
+      </div>
+
+      <div class="halo-nav-stats">
+        <div class="halo-nav-stat">
+          <div class="halo-nav-label">ETA</div>
+          <div class="halo-nav-value">${escapeHTML(selected.eta_minutes)}M</div>
+        </div>
+        <div class="halo-nav-stat">
+          <div class="halo-nav-label">NORMAL</div>
+          <div class="halo-nav-value">${escapeHTML(selected.normal_minutes)}M</div>
+        </div>
+        <div class="halo-nav-stat">
+          <div class="halo-nav-label">DELAY</div>
+          <div class="halo-nav-value ${cls}">+${escapeHTML(delay)}M</div>
+        </div>
+        <div class="halo-nav-stat">
+          <div class="halo-nav-label">DISTANCE</div>
+          <div class="halo-nav-value">${escapeHTML(selected.distance_miles)}MI</div>
+        </div>
+      </div>
+
+      <div class="halo-nav-section">
+        <div class="halo-nav-section-title">ROUTE OPTIONS</div>
+        <div class="halo-nav-list">${routeOptions}</div>
+      </div>
+
+      <div class="halo-nav-section">
+        <div class="halo-nav-section-title">GAS NEAR DESTINATION</div>
+        <div class="halo-nav-list">${gasList}</div>
+      </div>
+
+      <div class="halo-nav-section">
+        <div class="halo-nav-section-title">PARKING NEAR DESTINATION</div>
+        <div class="halo-nav-list">${parkingList}</div>
+      </div>
+    `;
+  }
+
+  function drawRoutePlus(routePlus, selectedIndex = 0){
+    haloNavLastRoutePlus = routePlus;
+    const map = getLeafletMap();
+    if(!map || typeof L === 'undefined') return;
+
+    clearNavMap();
+
+    const routeData = routePlus.route || {};
+    const routes = routeData.routes || [routeData];
+    const selected = routes[selectedIndex] || routes[0] || routeData;
+
+    // Draw alternate routes first
+    routes.forEach((r, idx) => {
+      const points = decodePolyline(r.polyline);
+      if(!points.length) return;
+      const isSelected = idx === selectedIndex;
+      const layer = L.polyline(points, {
+        color: isSelected ? routeColor(r.traffic_level) : '#00eaff',
+        weight: isSelected ? 7 : 3,
+        opacity: isSelected ? .92 : .22,
+        lineCap:'round',
+        lineJoin:'round'
+      }).addTo(map);
+
+      if(isSelected){
+        // Glow layer underneath
+        const glow = L.polyline(points, {
+          color: routeColor(r.traffic_level),
+          weight: 16,
+          opacity: .20,
+          lineCap:'round',
+          lineJoin:'round'
+        }).addTo(map);
+        haloNavRouteLayers.push(glow);
+      }
+
+      haloNavRouteLayers.push(layer);
+    });
+
+    const start = selected.start_location || routeData.start_location;
+    const end = selected.end_location || routeData.end_location;
+
+    addMarker(map, start, 'start', '●', 'Route origin');
+    addMarker(map, end, 'destination', '◆', `${escapeHTML(routeData.destination || 'Destination')}<br>${escapeHTML(selected.eta_minutes)} min`);
+
+    (routePlus.gas || []).slice(0,5).forEach(place => {
+      addMarker(
+        map,
+        place.location,
+        'gas',
+        '⛽',
+        `<strong>${escapeHTML(place.name)}</strong><br>${escapeHTML(place.address || '')}<br>${place.rating ? escapeHTML(place.rating) + '★' : ''}`
+      );
+    });
+
+    (routePlus.parking || []).slice(0,5).forEach(place => {
+      addMarker(
+        map,
+        place.location,
+        'parking',
+        'P',
+        `<strong>${escapeHTML(place.name)}</strong><br>${escapeHTML(place.address || '')}<br>${place.rating ? escapeHTML(place.rating) + '★' : ''}`
+      );
+    });
+
+    const selectedPoints = decodePolyline(selected.polyline);
+    if(selectedPoints.length){
+      map.fitBounds(selectedPoints, {padding:[60,60]});
+    }
+
+    updateNavHUD(routePlus, selectedIndex);
+  }
+
+  async function runRoutePlus(destination, origin = 'home'){
+    const resolvedDestination = String(destination || '').trim();
+    if(!resolvedDestination) return;
+
+    if(window.setHaloOrbMode) window.setHaloOrbMode('thinking', 'NAV SCAN');
+
+    const map = await ensureMapOpen();
+
+    try{
+      const response = await fetch(ROUTE_PLUS_API, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({origin, destination:resolvedDestination})
+      });
+
+      const data = await response.json();
+
+      if(!response.ok || !data.success){
+        const err = data.error || 'Route Plus failed.';
+        if(window.setHaloOrbMode) window.setHaloOrbMode('alert', 'NAV ERROR');
+        if(typeof showIntel === 'function'){
+          showIntel('NAVIGATION ERROR', `<h3>Route Failed</h3><p>${escapeHTML(err)}</p>`);
+        }
+        return;
+      }
+
+      drawRoutePlus(data, 0);
+
+      const primary = data.route || {};
+      const level = String(primary.traffic_level || '').toLowerCase();
+      if(window.setHaloOrbMode){
+        if(level.includes('heavy')) window.setHaloOrbMode('alert', 'HEAVY TRAFFIC');
+        else if(level.includes('moderate')) window.setHaloOrbMode('thinking', 'TRAFFIC MODERATE');
+        else window.setHaloOrbMode('success', 'ROUTE READY');
+      }
+
+      if(typeof showIntel === 'function'){
+        showIntel(
+          'NAVIGATION INTEL // ' + escapeHTML(primary.destination || resolvedDestination),
+          `<h3>Route Analysis Complete</h3>
+          <p><strong>ETA:</strong> ${escapeHTML(primary.eta_minutes)} minutes<br>
+          <strong>Traffic:</strong> ${escapeHTML(primary.traffic_level)}<br>
+          <strong>Delay:</strong> +${escapeHTML(primary.delay_minutes)} minutes<br>
+          <strong>Distance:</strong> ${escapeHTML(primary.distance_miles)} miles</p>
+          <h3>Nearby Support</h3>
+          <p>Gas stations found: ${(data.gas || []).length}<br>Parking options found: ${(data.parking || []).length}</p>`
+        );
+      }
+
+    }catch(error){
+      if(window.setHaloOrbMode) window.setHaloOrbMode('alert', 'NAV ERROR');
+      if(typeof showIntel === 'function'){
+        showIntel('NAVIGATION ERROR', `<h3>System Error</h3><p>${escapeHTML(error.message)}</p>`);
+      }
+    }
+  }
+
+  // Expose for shortcut buttons and route option selector
+  window.haloRoutePlusCommand = function(destination){
+    return runRoutePlus(destination, 'home');
+  };
+
+  window.haloDrawRouteOption = function(index){
+    if(haloNavLastRoutePlus) drawRoutePlus(haloNavLastRoutePlus, index);
+  };
+
+  // Upgrade existing route command handler, if present
+  const oldHaloRouteIntel = window.haloRouteIntel;
+  window.haloRouteIntel = async function(destination){
+    await runRoutePlus(destination, 'home');
+    return true;
+  };
+
+  // Extra interception for gas/parking commands
+  function parseNavPlusCommand(input){
+    const text = String(input || '').trim();
+
+    const patterns = [
+      /^(?:halo\s+)?(?:route|navigate|directions|drive)\s+(?:to|towards?)\s+(.+)$/i,
+      /^(?:halo\s+)?(?:traffic|traffic\s+check|check\s+traffic)\s+(?:to|towards?|for)\s+(.+)$/i,
+      /^(?:halo\s+)?(?:how\s+long|eta)\s+(?:to|towards?|for)\s+(.+)$/i,
+      /^(?:halo\s+)?(?:gas|gas\s+stations)\s+(?:near|by|around|to)\s+(.+)$/i,
+      /^(?:halo\s+)?(?:parking)\s+(?:near|by|around|at|to)\s+(.+)$/i
+    ];
+
+    for(const pattern of patterns){
+      const m = text.match(pattern);
+      if(m && m[1]) return m[1].trim();
+    }
+
+    return null;
+  }
+
+  function addUserMessage(text){
+    const chatFeed = document.getElementById('chatFeed');
+    if(!chatFeed) return;
+    const msg = document.createElement('div');
+    msg.className = 'msg user-msg';
+    msg.textContent = text;
+    chatFeed.appendChild(msg);
+    chatFeed.scrollTop = chatFeed.scrollHeight;
+  }
+
+  function patchNavigationInput(){
+    const input = document.getElementById('textInp');
+    const sendBtn = document.querySelector('.send-btn');
+
+    if(!input || !sendBtn || sendBtn.dataset.navPlusPatched === 'true') return;
+    sendBtn.dataset.navPlusPatched = 'true';
+
+    sendBtn.addEventListener('click', async function(e){
+      const value = input.value || '';
+      const dest = parseNavPlusCommand(value);
+      if(dest){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        addUserMessage(value);
+        input.value = '';
+        await runRoutePlus(dest, 'home');
+      }
+    }, true);
+
+    input.addEventListener('keydown', async function(e){
+      if(e.key !== 'Enter') return;
+      const value = input.value || '';
+      const dest = parseNavPlusCommand(value);
+      if(dest){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+        addUserMessage(value);
+        input.value = '';
+        await runRoutePlus(dest, 'home');
+      }
+    }, true);
+  }
+
+  function boot(){
+    patchNavigationInput();
+    setInterval(patchNavigationInput, 1500);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', boot);
+  }else{
+    boot();
+  }
+})();
+</script>
+
 </body>
 </html>
