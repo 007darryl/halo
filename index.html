@@ -4050,5 +4050,904 @@ function haloGlobalIntelBrief(){if(typeof showIntel==="function"){showIntel("GLO
 (function(){function u(){const e=document.getElementById("hgiClock");if(e)e.textContent=new Date().toISOString().slice(11,19)+" UTC"}u();setInterval(u,1000);document.addEventListener("keydown",e=>{if(e.key==="Escape")closeHaloGlobalIntel()})})();
 </script>
 
+
+<!-- HALO ADVANCED REAL GLOBAL MAP MODULE -->
+<link
+  rel="stylesheet"
+  href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style id="halo-advanced-global-map-module">
+/* Hide older abstract Global Intel module/button if present */
+#haloGlobalIntelBtn,
+#haloGlobalIntelOverlay{
+  display:none !important;
+}
+
+/* New button */
+#haloAdvancedMapBtn{
+  position:fixed;
+  right:22px;
+  top:50%;
+  transform:translateY(-50%);
+  z-index:4300;
+  width:58px;
+  height:58px;
+  border-radius:18px;
+  border:1px solid rgba(0,234,255,.32);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.06), rgba(0,234,255,.07)),
+    rgba(0,14,34,.78);
+  color:#00eaff;
+  font-size:24px;
+  cursor:pointer;
+  box-shadow:0 0 30px rgba(0,234,255,.18);
+  backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
+  transition:all .25s ease;
+}
+#haloAdvancedMapBtn:hover{
+  transform:translateY(-50%) scale(1.06);
+  border-color:rgba(0,234,255,.7);
+  box-shadow:0 0 46px rgba(0,234,255,.34);
+}
+
+/* Overlay */
+#haloAdvancedMapOverlay{
+  position:fixed;
+  inset:14px;
+  z-index:8500;
+  display:none;
+  color:#dffcff;
+  font-family:Inter, sans-serif;
+}
+#haloAdvancedMapOverlay.active{
+  display:block;
+  animation:hamIn .28s ease-out both;
+}
+
+.ham-shell{
+  position:absolute;
+  inset:0;
+  border-radius:26px;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(0,234,255,.10), transparent 28%),
+    radial-gradient(circle at 82% 18%, rgba(255,70,70,.07), transparent 24%),
+    rgba(1,6,16,.96);
+  border:1px solid rgba(0,234,255,.24);
+  box-shadow:
+    0 32px 150px rgba(0,0,0,.82),
+    0 0 100px rgba(0,234,255,.18),
+    inset 0 0 0 1px rgba(255,255,255,.03);
+  backdrop-filter:blur(38px) saturate(145%);
+  -webkit-backdrop-filter:blur(38px) saturate(145%);
+}
+.ham-shell::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background:
+    repeating-linear-gradient(90deg, rgba(0,234,255,.022) 0 1px, transparent 1px 78px),
+    repeating-linear-gradient(0deg, rgba(0,234,255,.016) 0 1px, transparent 1px 78px);
+  z-index:2;
+}
+
+/* Header */
+.ham-header{
+  height:72px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 22px;
+  border-bottom:1px solid rgba(0,234,255,.18);
+  background:linear-gradient(90deg, rgba(0,234,255,.075), transparent 55%, rgba(255,70,70,.035));
+  position:relative;
+  z-index:5;
+}
+.ham-brand{
+  display:flex;
+  align-items:center;
+  gap:14px;
+}
+.ham-logo{
+  width:42px;
+  height:42px;
+  display:grid;
+  place-items:center;
+  border-radius:14px;
+  background:rgba(0,234,255,.08);
+  border:1px solid rgba(0,234,255,.25);
+  box-shadow:0 0 26px rgba(0,234,255,.18);
+  font-size:22px;
+}
+.ham-title{
+  font-family:'JetBrains Mono', monospace;
+  font-size:18px;
+  letter-spacing:7px;
+  font-weight:900;
+  color:#effeff;
+  text-shadow:0 0 28px rgba(0,234,255,.66);
+}
+.ham-sub{
+  margin-top:4px;
+  font-family:'JetBrains Mono', monospace;
+  font-size:8px;
+  letter-spacing:3px;
+  color:rgba(0,234,255,.45);
+}
+.ham-status{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  font-family:'JetBrains Mono', monospace;
+  font-size:9px;
+  letter-spacing:2px;
+  color:rgba(210,250,255,.65);
+}
+.ham-live-dot{
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  background:#00ff9d;
+  box-shadow:0 0 16px rgba(0,255,157,.9);
+}
+.ham-close{
+  padding:10px 14px;
+  border-radius:999px;
+  border:1px solid rgba(0,234,255,.24);
+  background:rgba(0,234,255,.06);
+  color:#00eaff;
+  font-family:'JetBrains Mono', monospace;
+  font-size:9px;
+  letter-spacing:2px;
+  cursor:pointer;
+}
+
+/* Layout */
+.ham-body{
+  position:absolute;
+  inset:72px 0 0;
+  display:grid;
+  grid-template-columns:300px 1fr 330px;
+  grid-template-rows:1fr 170px;
+  gap:14px;
+  padding:14px;
+  z-index:4;
+}
+.ham-panel{
+  position:relative;
+  border-radius:18px;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.045), rgba(0,234,255,.025), rgba(0,0,0,.12)),
+    rgba(0,13,31,.72);
+  border:1px solid rgba(0,234,255,.16);
+  box-shadow:0 20px 70px rgba(0,0,0,.34);
+  overflow:hidden;
+}
+.ham-panel::before{
+  content:'';
+  position:absolute;
+  left:0;
+  right:0;
+  top:0;
+  height:1px;
+  background:linear-gradient(90deg, transparent, rgba(0,234,255,.7), transparent);
+}
+.ham-left{
+  grid-row:1/3;
+  padding:18px;
+  overflow:auto;
+}
+.ham-map-panel{
+  padding:14px;
+}
+.ham-right{
+  grid-row:1/3;
+  padding:18px;
+  overflow:auto;
+}
+.ham-bottom{
+  padding:14px;
+}
+.ham-section-title{
+  font-family:'JetBrains Mono', monospace;
+  font-size:10px;
+  letter-spacing:4px;
+  color:#bffaff;
+  margin-bottom:16px;
+  text-shadow:0 0 18px rgba(0,234,255,.42);
+}
+
+/* Map */
+#haloRealWorldMap{
+  height:100%;
+  min-height:430px;
+  border-radius:16px;
+  overflow:hidden;
+  border:1px solid rgba(0,234,255,.14);
+  background:#020b16;
+  z-index:1;
+}
+.leaflet-container{
+  background:#020b16 !important;
+  font-family:Inter, sans-serif;
+}
+.leaflet-control-zoom{
+  border:1px solid rgba(0,234,255,.18) !important;
+  border-radius:12px !important;
+  overflow:hidden !important;
+  box-shadow:0 0 20px rgba(0,234,255,.08) !important;
+}
+.leaflet-control-zoom a{
+  background:rgba(0,14,34,.88) !important;
+  color:#00eaff !important;
+  border-bottom:1px solid rgba(0,234,255,.12) !important;
+}
+.leaflet-control-attribution{
+  background:rgba(0,14,34,.7) !important;
+  color:rgba(180,240,255,.48) !important;
+  font-size:9px !important;
+}
+
+/* Custom marker */
+.ham-marker{
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  border:2px solid rgba(255,255,255,.75);
+  box-shadow:0 0 20px currentColor, 0 0 45px currentColor;
+  position:relative;
+}
+.ham-marker::after{
+  content:'';
+  position:absolute;
+  inset:-9px;
+  border-radius:50%;
+  border:1px solid currentColor;
+  opacity:.65;
+  animation:hamRipple 1.8s ease-out infinite;
+}
+.ham-marker.red{background:#ff4545;color:#ff4545;}
+.ham-marker.orange{background:#ff9d2e;color:#ff9d2e;}
+.ham-marker.yellow{background:#ffe83f;color:#ffe83f;}
+.ham-marker.cyan{background:#00eaff;color:#00eaff;}
+.ham-marker.green{background:#00ff9d;color:#00ff9d;}
+.ham-marker.purple{background:#bd70ff;color:#bd70ff;}
+
+.ham-popup .leaflet-popup-content-wrapper{
+  background:rgba(0,12,32,.94);
+  color:#dffcff;
+  border:1px solid rgba(0,234,255,.24);
+  border-radius:14px;
+  box-shadow:0 0 38px rgba(0,234,255,.18);
+}
+.ham-popup .leaflet-popup-tip{
+  background:rgba(0,12,32,.94);
+}
+.ham-popup-title{
+  font-family:'JetBrains Mono', monospace;
+  font-size:12px;
+  letter-spacing:2px;
+  color:#00eaff;
+  margin-bottom:6px;
+}
+.ham-popup-type{
+  font-family:'JetBrains Mono', monospace;
+  font-size:8px;
+  letter-spacing:1.5px;
+  color:#ffb347;
+  margin-bottom:8px;
+}
+.ham-popup-copy{
+  font-size:12px;
+  line-height:1.45;
+  color:rgba(220,245,255,.72);
+}
+.ham-popup-btn{
+  margin-top:10px;
+  width:100%;
+  padding:8px;
+  border-radius:9px;
+  border:1px solid rgba(0,234,255,.22);
+  background:rgba(0,234,255,.07);
+  color:#00eaff;
+  font-family:'JetBrains Mono', monospace;
+  font-size:8px;
+  letter-spacing:1.5px;
+  cursor:pointer;
+}
+
+/* Layers */
+.ham-layer-controls{
+  position:absolute;
+  left:28px;
+  top:28px;
+  z-index:700;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.ham-layer-btn{
+  padding:9px 12px;
+  border-radius:12px;
+  border:1px solid rgba(0,234,255,.16);
+  background:rgba(0,8,22,.78);
+  color:rgba(220,250,255,.75);
+  font-family:'JetBrains Mono', monospace;
+  font-size:8px;
+  letter-spacing:1.4px;
+  cursor:pointer;
+}
+.ham-layer-btn.active{
+  color:#00eaff;
+  border-color:rgba(0,234,255,.42);
+  box-shadow:0 0 18px rgba(0,234,255,.12);
+}
+
+/* Cards */
+.ham-intel-card{
+  padding:13px 0;
+  border-bottom:1px solid rgba(0,234,255,.08);
+}
+.ham-intel-card:last-child{border-bottom:0;}
+.ham-intel-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:8px;
+  margin-bottom:7px;
+}
+.ham-intel-name{
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px;
+  letter-spacing:2px;
+}
+.ham-red{color:#ff4545}.ham-orange{color:#ff9d2e}.ham-yellow{color:#ffe83f}.ham-cyan{color:#00eaff}.ham-green{color:#00ff9d}.ham-purple{color:#bd70ff}
+.ham-count{
+  min-width:28px;
+  height:28px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  font-family:'JetBrains Mono', monospace;
+  font-size:12px;
+  border:1px solid currentColor;
+  background:rgba(255,255,255,.035);
+}
+.ham-copy{
+  font-size:12px;
+  color:rgba(218,239,255,.64);
+  line-height:1.55;
+}
+.ham-tag{
+  display:inline-block;
+  margin-top:8px;
+  padding:5px 8px;
+  border-radius:7px;
+  font-family:'JetBrains Mono', monospace;
+  font-size:8px;
+  letter-spacing:1px;
+  background:rgba(255,70,70,.12);
+  color:#ff5757;
+}
+.ham-ai-box{
+  margin-top:16px;
+  padding:15px;
+  border-radius:16px;
+  border:1px solid rgba(0,234,255,.12);
+  background:rgba(0,234,255,.035);
+}
+.ham-btn{
+  margin-top:12px;
+  width:100%;
+  padding:12px;
+  border-radius:12px;
+  border:1px solid rgba(0,234,255,.22);
+  background:rgba(0,234,255,.08);
+  color:#00eaff;
+  font-family:'JetBrains Mono', monospace;
+  font-size:9px;
+  letter-spacing:2px;
+  cursor:pointer;
+}
+.ham-bottom-grid{
+  display:grid;
+  grid-template-columns:1.2fr 1fr .8fr 1fr;
+  gap:14px;
+  height:100%;
+}
+.ham-feed-line{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  padding:7px 0;
+  border-bottom:1px solid rgba(0,234,255,.06);
+  font-size:12px;
+  color:rgba(218,239,255,.65);
+}
+.ham-region-row{
+  display:flex;
+  justify-content:space-between;
+  padding:5px 0;
+  font-family:'JetBrains Mono', monospace;
+  font-size:9px;
+  letter-spacing:1px;
+}
+.ham-threat-ring{
+  width:104px;
+  height:104px;
+  margin:0 auto;
+  border-radius:50%;
+  display:grid;
+  place-items:center;
+  background:conic-gradient(#ff3434 0 68%, rgba(255,52,52,.15) 68% 100%);
+  box-shadow:0 0 28px rgba(255,52,52,.18);
+}
+.ham-threat-ring span{
+  width:76px;
+  height:76px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:rgba(1,8,22,.95);
+  color:#ff4545;
+  font-family:'JetBrains Mono', monospace;
+  font-size:18px;
+  letter-spacing:2px;
+}
+.ham-quick{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+}
+.ham-quick button{
+  padding:10px 8px;
+  border-radius:12px;
+  border:1px solid rgba(0,234,255,.14);
+  background:rgba(0,234,255,.04);
+  color:rgba(220,250,255,.75);
+  font-family:'JetBrains Mono', monospace;
+  font-size:8px;
+  letter-spacing:1.3px;
+  cursor:pointer;
+}
+
+@keyframes hamRipple{
+  from{opacity:.62; transform:scale(.6);}
+  to{opacity:0; transform:scale(2.6);}
+}
+@keyframes hamIn{
+  from{opacity:0; transform:scale(.985); filter:blur(8px);}
+  to{opacity:1; transform:scale(1); filter:blur(0);}
+}
+
+@media(max-width:1100px){
+  .ham-body{
+    grid-template-columns:1fr;
+    grid-template-rows:auto 520px auto auto;
+    overflow:auto;
+  }
+  .ham-left,
+  .ham-right{
+    grid-row:auto;
+  }
+  .ham-bottom-grid{
+    grid-template-columns:1fr;
+  }
+}
+@media(max-width:768px){
+  #haloAdvancedMapBtn{
+    right:14px;
+    top:auto;
+    bottom:148px;
+    transform:none;
+    width:50px;
+    height:50px;
+    font-size:20px;
+  }
+  #haloAdvancedMapOverlay{inset:6px;}
+  .ham-header{height:66px;padding:0 12px;}
+  .ham-title{font-size:13px;letter-spacing:4px;}
+  .ham-sub,.ham-status span:not(.ham-live-dot){display:none;}
+  .ham-body{inset:66px 0 0;padding:8px;gap:8px;grid-template-rows:auto 430px auto auto;}
+  #haloRealWorldMap{min-height:410px;}
+  .ham-layer-controls{left:18px;top:18px;max-width:80%;}
+}
+</style>
+
+<button id="haloAdvancedMapBtn" onclick="openHaloAdvancedMap()" title="Advanced Global Intel">🌍</button>
+
+<div id="haloAdvancedMapOverlay">
+  <div class="ham-shell">
+    <div class="ham-header">
+      <div class="ham-brand">
+        <div class="ham-logo">🌍</div>
+        <div>
+          <div class="ham-title">GLOBAL INTEL</div>
+          <div class="ham-sub">REAL-TIME TACTICAL MAP // OMKEER WORLD LAYER</div>
+        </div>
+      </div>
+      <div class="ham-status">
+        <span class="ham-live-dot"></span>
+        <span>LIVE MAP</span>
+        <span id="hamClock">--:-- UTC</span>
+        <button class="ham-close" onclick="closeHaloAdvancedMap()">CLOSE</button>
+      </div>
+    </div>
+
+    <div class="ham-body">
+      <section class="ham-panel ham-left">
+        <div class="ham-section-title">GLOBAL BRIEFING</div>
+
+        <div class="ham-intel-card">
+          <div class="ham-intel-top">
+            <div class="ham-intel-name ham-red">CONFLICT WATCH</div>
+            <div class="ham-count ham-red">7</div>
+          </div>
+          <div class="ham-copy">Live conflict markers are plotted on the tactical map. Click red zones for regional briefs.</div>
+        </div>
+
+        <div class="ham-intel-card">
+          <div class="ham-intel-top">
+            <div class="ham-intel-name ham-orange">ELEVATED REGIONS</div>
+            <div class="ham-count ham-orange">12</div>
+          </div>
+          <div class="ham-copy">Political, maritime, infrastructure, and cyber pressure points are being monitored.</div>
+        </div>
+
+        <div class="ham-intel-card">
+          <div class="ham-intel-top">
+            <div class="ham-intel-name ham-green">OMKEER MARKETS</div>
+            <div class="ham-count ham-green">5</div>
+          </div>
+          <div class="ham-copy">Brand growth targets include Japan, Mexico, France, Los Angeles, and production contacts.</div>
+        </div>
+
+        <div class="ham-ai-box">
+          <div class="ham-section-title" style="margin-bottom:8px;">HALO ANALYSIS</div>
+          <div class="ham-copy">Use GLOBAL INTEL for awareness. Use OMKEER LAYER for brand expansion, campaign locations, manufacturing, and influencer targets.</div>
+          <button class="ham-btn" onclick="haloAdvancedBrief()">GENERATE BRIEF →</button>
+        </div>
+      </section>
+
+      <section class="ham-panel ham-map-panel">
+        <div class="ham-layer-controls">
+          <button class="ham-layer-btn active" onclick="setHaloMapLayer('all', this)">ALL</button>
+          <button class="ham-layer-btn" onclick="setHaloMapLayer('global', this)">GLOBAL</button>
+          <button class="ham-layer-btn" onclick="setHaloMapLayer('omkeer', this)">OMKEER</button>
+          <button class="ham-layer-btn" onclick="window.open('https://worldmonitor.app','_blank')">WORLD MONITOR ↗</button>
+        </div>
+        <div id="haloRealWorldMap"></div>
+      </section>
+
+      <section class="ham-panel ham-right">
+        <div class="ham-section-title">ACTIVE EVENTS</div>
+
+        <div class="ham-intel-card">
+          <div class="ham-intel-name ham-red">UKRAINE</div>
+          <div class="ham-copy">Eastern region escalation and military engagement signals.</div>
+          <span class="ham-tag">HIGH</span>
+        </div>
+
+        <div class="ham-intel-card">
+          <div class="ham-intel-name ham-red">MIDDLE EAST</div>
+          <div class="ham-copy">Regional pressure, maritime routes, and cross-border instability.</div>
+          <span class="ham-tag">HIGH</span>
+        </div>
+
+        <div class="ham-intel-card">
+          <div class="ham-intel-name ham-orange">SOUTH CHINA SEA</div>
+          <div class="ham-copy">Maritime dispute and naval activity monitoring.</div>
+          <span class="ham-tag" style="background:rgba(255,157,46,.12);color:#ffb347;">ELEVATED</span>
+        </div>
+
+        <div class="ham-intel-card">
+          <div class="ham-intel-name ham-green">TOKYO</div>
+          <div class="ham-copy">OMKEER target market: techwear, streetwear, sport-luxury campaign fit.</div>
+          <span class="ham-tag" style="background:rgba(0,255,157,.10);color:#00ff9d;">BRAND TARGET</span>
+        </div>
+
+        <button class="ham-btn" onclick="window.open('https://worldmonitor.app','_blank')">OPEN FULL WORLD MONITOR →</button>
+      </section>
+
+      <section class="ham-panel ham-bottom">
+        <div class="ham-bottom-grid">
+          <div>
+            <div class="ham-section-title">LATEST INTELLIGENCE</div>
+            <div class="ham-feed-line"><span>Satellite update: port activity</span><span>18m</span></div>
+            <div class="ham-feed-line"><span>Cyber advisory: infrastructure monitoring</span><span>2h</span></div>
+            <div class="ham-feed-line"><span>OMKEER target market review: Japan</span><span>Live</span></div>
+          </div>
+
+          <div>
+            <div class="ham-section-title">REGIONAL STATUS</div>
+            <div class="ham-region-row"><span>NORTH AMERICA</span><span class="ham-cyan">MONITOR</span></div>
+            <div class="ham-region-row"><span>EUROPE</span><span class="ham-orange">ELEVATED</span></div>
+            <div class="ham-region-row"><span>MIDDLE EAST</span><span class="ham-red">HIGH</span></div>
+            <div class="ham-region-row"><span>ASIA PACIFIC</span><span class="ham-green">OMKEER TARGET</span></div>
+          </div>
+
+          <div>
+            <div class="ham-section-title">THREAT LEVEL</div>
+            <div class="ham-threat-ring"><span>HIGH</span></div>
+          </div>
+
+          <div>
+            <div class="ham-section-title">QUICK ACCESS</div>
+            <div class="ham-quick">
+              <button onclick="zoomHaloMap('ukraine')">UKRAINE</button>
+              <button onclick="zoomHaloMap('tokyo')">TOKYO</button>
+              <button onclick="zoomHaloMap('mexico')">MEXICO</button>
+              <button onclick="zoomHaloMap('la')">LA</button>
+            </div>
+            <button class="ham-btn" onclick="setHaloMapLayer('omkeer')">OMKEER LAYER</button>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+</div>
+
+<script id="halo-advanced-global-map-module-js">
+let haloRealMap;
+let haloMapMarkers = [];
+let haloMapInitialized = false;
+
+const haloMapLocations = [
+  {
+    id:'ukraine',
+    name:'Ukraine',
+    lat:49.487,
+    lng:31.271,
+    layer:'global',
+    color:'red',
+    type:'Conflict Watch',
+    level:'HIGH',
+    note:'Eastern Europe conflict zone. Monitor escalation, energy routes, and regional pressure.'
+  },
+  {
+    id:'middleeast',
+    name:'Middle East',
+    lat:31.768,
+    lng:35.213,
+    layer:'global',
+    color:'red',
+    type:'Regional Tension',
+    level:'HIGH',
+    note:'Cross-border instability, maritime pressure, and regional diplomatic risk.'
+  },
+  {
+    id:'southchina',
+    name:'South China Sea',
+    lat:13.5,
+    lng:114.5,
+    layer:'global',
+    color:'orange',
+    type:'Maritime Watch',
+    level:'ELEVATED',
+    note:'Increased naval activity and strategic maritime route monitoring.'
+  },
+  {
+    id:'usa',
+    name:'United States',
+    lat:39.828,
+    lng:-98.579,
+    layer:'global',
+    color:'yellow',
+    type:'Cyber / Infrastructure',
+    level:'MONITOR',
+    note:'Infrastructure and cyber activity under monitoring.'
+  },
+  {
+    id:'tokyo',
+    name:'Tokyo',
+    lat:35.6762,
+    lng:139.6503,
+    layer:'omkeer',
+    color:'green',
+    type:'OMKEER Target Market',
+    level:'BRAND TARGET',
+    note:'High streetwear, techwear, and sport-luxury potential. Strong location for futuristic editorial campaigns.'
+  },
+  {
+    id:'mexico',
+    name:'Mexico City',
+    lat:19.4326,
+    lng:-99.1332,
+    layer:'omkeer',
+    color:'green',
+    type:'Boxing Drop Market',
+    level:'BRAND TARGET',
+    note:'Strong fit for OMKEER Fight Club and NO BELIEF NO FIGHT direction.'
+  },
+  {
+    id:'paris',
+    name:'Paris',
+    lat:48.8566,
+    lng:2.3522,
+    layer:'omkeer',
+    color:'purple',
+    type:'Luxury Influence',
+    level:'CREATIVE TARGET',
+    note:'Luxury, sport-fashion, and editorial reference zone for OMKEER positioning.'
+  },
+  {
+    id:'la',
+    name:'Los Angeles',
+    lat:34.0522,
+    lng:-118.2437,
+    layer:'omkeer',
+    color:'cyan',
+    type:'Home Base',
+    level:'ACTIVE',
+    note:'OMKEER creative command center and content production base.'
+  },
+  {
+    id:'lahore',
+    name:'Lahore',
+    lat:31.5204,
+    lng:74.3587,
+    layer:'omkeer',
+    color:'orange',
+    type:'Production Contact',
+    level:'SUPPLY CHAIN',
+    note:'Potential manufacturer / production contact region. Track samples, quality, and timelines.'
+  }
+];
+
+function openHaloAdvancedMap(){
+  const overlay = document.getElementById('haloAdvancedMapOverlay');
+  if(overlay) overlay.classList.add('active');
+
+  if(window.setHaloOrbMode) window.setHaloOrbMode('thinking','GLOBAL MAP');
+
+  setTimeout(() => {
+    initHaloRealMap();
+    if(haloRealMap) haloRealMap.invalidateSize();
+  }, 120);
+}
+
+function closeHaloAdvancedMap(){
+  const overlay = document.getElementById('haloAdvancedMapOverlay');
+  if(overlay) overlay.classList.remove('active');
+  if(window.setHaloOrbMode) window.setHaloOrbMode('standby','STANDBY');
+}
+
+function initHaloRealMap(){
+  if(haloMapInitialized || typeof L === 'undefined') return;
+
+  haloRealMap = L.map('haloRealWorldMap', {
+    zoomControl:true,
+    worldCopyJump:true,
+    minZoom:2,
+    maxZoom:7
+  }).setView([20, 0], 2);
+
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    attribution:'© OpenStreetMap © CARTO',
+    subdomains:'abcd',
+    maxZoom:19
+  }).addTo(haloRealMap);
+
+  addHaloMarkers('all');
+
+  haloMapInitialized = true;
+}
+
+function haloMarkerIcon(color){
+  return L.divIcon({
+    className:'',
+    html:'<div class="ham-marker '+color+'"></div>',
+    iconSize:[18,18],
+    iconAnchor:[9,9],
+    popupAnchor:[0,-12]
+  });
+}
+
+function addHaloMarkers(layer){
+  if(!haloRealMap) return;
+
+  haloMapMarkers.forEach(m => haloRealMap.removeLayer(m));
+  haloMapMarkers = [];
+
+  haloMapLocations
+    .filter(loc => layer === 'all' || loc.layer === layer)
+    .forEach(loc => {
+      const marker = L.marker([loc.lat, loc.lng], {
+        icon: haloMarkerIcon(loc.color)
+      }).addTo(haloRealMap);
+
+      marker.bindPopup(`
+        <div class="ham-popup-title">${loc.name}</div>
+        <div class="ham-popup-type">${loc.type} // ${loc.level}</div>
+        <div class="ham-popup-copy">${loc.note}</div>
+        <button class="ham-popup-btn" onclick="haloMapBrief('${loc.id}')">OPEN HALO BRIEF</button>
+      `, {className:'ham-popup'});
+
+      marker.on('click', () => {
+        if(window.setHaloOrbMode){
+          window.setHaloOrbMode(loc.level === 'HIGH' ? 'alert' : (loc.layer === 'omkeer' ? 'success' : 'thinking'), loc.level);
+        }
+      });
+
+      haloMapMarkers.push(marker);
+    });
+}
+
+function setHaloMapLayer(layer, btn){
+  if(!haloMapInitialized) initHaloRealMap();
+  addHaloMarkers(layer);
+
+  document.querySelectorAll('.ham-layer-btn').forEach(b => b.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+
+  if(layer === 'omkeer' && haloRealMap){
+    haloRealMap.setView([25, 20], 2);
+    if(window.setHaloOrbMode) window.setHaloOrbMode('success','OMKEER LAYER');
+  }else if(layer === 'global' && haloRealMap){
+    haloRealMap.setView([28, 30], 2);
+    if(window.setHaloOrbMode) window.setHaloOrbMode('thinking','GLOBAL LAYER');
+  }
+}
+
+function zoomHaloMap(id){
+  if(!haloMapInitialized) initHaloRealMap();
+  const loc = haloMapLocations.find(x => x.id === id);
+  if(!loc || !haloRealMap) return;
+  haloRealMap.setView([loc.lat, loc.lng], 5);
+  const marker = haloMapMarkers.find(m => {
+    const ll = m.getLatLng();
+    return Math.abs(ll.lat - loc.lat) < .01 && Math.abs(ll.lng - loc.lng) < .01;
+  });
+  if(marker) marker.openPopup();
+  if(window.setHaloOrbMode){
+    window.setHaloOrbMode(loc.layer === 'omkeer' ? 'success' : (loc.level === 'HIGH' ? 'alert' : 'thinking'), loc.level);
+  }
+}
+
+function haloMapBrief(id){
+  const loc = haloMapLocations.find(x => x.id === id);
+  if(!loc) return;
+
+  const isOmkeer = loc.layer === 'omkeer';
+  const html = isOmkeer
+    ? `<h3>${loc.type}</h3><p>${loc.note}</p><h3>OMKEER Action Plan</h3><ul><li>Build a campaign concept for ${loc.name}.</li><li>Research micro-influencers and streetwear communities.</li><li>Save visual references and Dropbox assets under this region.</li></ul>`
+    : `<h3>${loc.type}</h3><p>${loc.note}</p><h3>HALO Assessment</h3><ul><li>Monitor adjacent regions and economic impact.</li><li>Track travel, logistics, and communication disruption signals.</li><li>Open World Monitor for live third-party details.</li></ul>`;
+
+  if(typeof showIntel === 'function'){
+    showIntel(loc.name + ' // ' + loc.level, html);
+  }
+
+  if(window.setHaloOrbMode){
+    window.setHaloOrbMode(isOmkeer ? 'success' : (loc.level === 'HIGH' ? 'alert' : 'thinking'), loc.level);
+  }
+}
+
+function haloAdvancedBrief(){
+  if(typeof showIntel === 'function'){
+    showIntel(
+      'GLOBAL + OMKEER MAP BRIEF',
+      '<h3>System Overview</h3><p>The tactical map is active with two layers: global awareness and OMKEER brand intelligence.</p><h3>Best Uses</h3><ul><li>Use GLOBAL for regional awareness and route/logistics thinking.</li><li>Use OMKEER for market expansion, campaign locations, and production targets.</li><li>Click map markers to open HALO briefs.</li></ul>'
+    );
+  }
+  if(window.setHaloOrbMode) window.setHaloOrbMode('success','BRIEF READY');
+}
+
+(function(){
+  function updateHamClock(){
+    const el = document.getElementById('hamClock');
+    if(el) el.textContent = new Date().toISOString().slice(11,19) + ' UTC';
+  }
+  updateHamClock();
+  setInterval(updateHamClock, 1000);
+  document.addEventListener('keydown', e => {
+    if(e.key === 'Escape') closeHaloAdvancedMap();
+  });
+})();
+</script>
+
 </body>
 </html>
