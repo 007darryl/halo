@@ -6612,5 +6612,315 @@ function haloAdvancedBrief(){
 })();
 </script>
 
+
+<!-- HALO ROUTE LINE VISIBILITY + CLOSE ZOOM FIX -->
+<style id="halo-route-line-visibility-close-zoom-fix">
+/* Make Leaflet vectors visibly sit above dark basemap */
+.leaflet-overlay-pane svg path{
+  filter: drop-shadow(0 0 9px rgba(0,234,255,.85)) drop-shadow(0 0 22px rgba(0,234,255,.45));
+}
+
+/* Route line class injected by JS */
+.halo-visible-route-line{
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+  filter: drop-shadow(0 0 10px currentColor) drop-shadow(0 0 24px currentColor) !important;
+}
+
+.halo-visible-route-glow{
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+  filter: blur(1px) drop-shadow(0 0 18px currentColor) !important;
+}
+
+/* Make nav HUD less blocking so route can be seen */
+#haloNavMapHUD{
+  width:min(360px, calc(100% - 44px)) !important;
+  max-height:52vh !important;
+  overflow:auto !important;
+  left:18px !important;
+  bottom:18px !important;
+  background:rgba(0,10,26,.74) !important;
+}
+
+#haloNavMapHUD .halo-nav-hud-body{
+  padding:13px !important;
+}
+
+#haloNavMapHUD .halo-nav-stats{
+  grid-template-columns:repeat(2,minmax(0,1fr)) !important;
+}
+
+#haloNavMapHUD .halo-nav-section{
+  margin-top:9px !important;
+}
+
+#haloNavMapHUD .halo-nav-place:nth-child(n+3){
+  display:none !important;
+}
+
+/* Route visible status chip */
+#haloRouteLineStatusChip{
+  position:absolute;
+  right:22px;
+  bottom:22px;
+  z-index:1100;
+  padding:11px 14px;
+  border-radius:999px;
+  border:1px solid rgba(0,255,157,.35);
+  background:rgba(0,20,24,.82);
+  color:#00ff9d;
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  letter-spacing:1.6px;
+  box-shadow:0 0 32px rgba(0,255,157,.18);
+  display:none;
+  pointer-events:none;
+}
+#haloRouteLineStatusChip.active{
+  display:block;
+}
+</style>
+
+<script id="halo-route-line-visibility-close-zoom-fix-js">
+(function(){
+  function log(){ try{ console.log('[HALO ROUTE VISIBILITY FIX]', ...arguments); }catch(e){} }
+
+  function getMap(){
+    try{
+      if(window.haloRealMap) return window.haloRealMap;
+      if(typeof haloRealMap !== 'undefined' && haloRealMap) return haloRealMap;
+    }catch(e){}
+    return null;
+  }
+
+  function ensureChip(){
+    const overlay = document.getElementById('haloAdvancedMapOverlay');
+    if(!overlay) return null;
+    let chip = document.getElementById('haloRouteLineStatusChip');
+    if(chip) return chip;
+    chip = document.createElement('div');
+    chip.id = 'haloRouteLineStatusChip';
+    chip.textContent = 'ROUTE LINE ACTIVE';
+    const mapPanel = overlay.querySelector('.ham-map-panel') || overlay;
+    mapPanel.appendChild(chip);
+    return chip;
+  }
+
+  function showChip(text){
+    const chip = ensureChip();
+    if(!chip) return;
+    chip.textContent = text || 'ROUTE LINE ACTIVE';
+    chip.classList.add('active');
+    clearTimeout(chip._t);
+    chip._t = setTimeout(()=>chip.classList.remove('active'), 4500);
+  }
+
+  function routeColor(level){
+    const l = String(level || '').toLowerCase();
+    if(l.includes('heavy')) return '#ff4545';
+    if(l.includes('moderate')) return '#ff9d2e';
+    if(l.includes('light')) return '#ffe83f';
+    return '#00ff9d';
+  }
+
+  function decodePolyline(encoded){
+    if(!encoded) return [];
+    let points = [];
+    let index = 0, lat = 0, lng = 0;
+
+    while(index < encoded.length){
+      let b, shift = 0, result = 0;
+      do{
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      }while(b >= 0x20);
+      lat += ((result & 1) ? ~(result >> 1) : (result >> 1));
+
+      shift = 0;
+      result = 0;
+      do{
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      }while(b >= 0x20);
+      lng += ((result & 1) ? ~(result >> 1) : (result >> 1));
+
+      points.push([lat / 1e5, lng / 1e5]);
+    }
+    return points;
+  }
+
+  function forceRouteToFront(){
+    const map = getMap();
+    if(!map) return;
+
+    try{
+      map.eachLayer(layer => {
+        if(layer && layer.options && layer.options.haloRouteLine){
+          if(typeof layer.bringToFront === 'function') layer.bringToFront();
+        }
+      });
+    }catch(e){}
+  }
+
+  function clearOldVisibleRoutes(){
+    const map = getMap();
+    if(!map) return;
+
+    const remove = [];
+    map.eachLayer(layer => {
+      if(layer && layer.options && layer.options.haloVisibilityFixRoute){
+        remove.push(layer);
+      }
+    });
+    remove.forEach(layer => {
+      try{ map.removeLayer(layer); }catch(e){}
+    });
+  }
+
+  function drawVisibleRouteFromPayload(payload, selectedIndex=0){
+    const map = getMap();
+    if(!map || typeof L === 'undefined' || !payload) return false;
+
+    const routeData = payload.route || {};
+    const routes = routeData.routes || [routeData];
+    const selected = routes[selectedIndex] || routes[0] || routeData;
+    const points = decodePolyline(selected.polyline);
+
+    if(!points.length){
+      log('No polyline points found');
+      return false;
+    }
+
+    clearOldVisibleRoutes();
+
+    const color = routeColor(selected.traffic_level);
+
+    // Add an extra bold route line specifically for visibility.
+    const glow = L.polyline(points, {
+      color,
+      weight:24,
+      opacity:.26,
+      lineCap:'round',
+      lineJoin:'round',
+      interactive:false,
+      haloVisibilityFixRoute:true,
+      haloRouteLine:true,
+      className:'halo-visible-route-glow'
+    }).addTo(map);
+
+    const line = L.polyline(points, {
+      color,
+      weight:9,
+      opacity:1,
+      lineCap:'round',
+      lineJoin:'round',
+      interactive:false,
+      haloVisibilityFixRoute:true,
+      haloRouteLine:true,
+      className:'halo-visible-route-line'
+    }).addTo(map);
+
+    const dash = L.polyline(points, {
+      color:'#eaffff',
+      weight:3,
+      opacity:.75,
+      dashArray:'10 18',
+      lineCap:'round',
+      lineJoin:'round',
+      interactive:false,
+      haloVisibilityFixRoute:true,
+      haloRouteLine:true,
+      className:'halo-visible-route-line'
+    }).addTo(map);
+
+    try{
+      glow.bringToFront();
+      line.bringToFront();
+      dash.bringToFront();
+    }catch(e){}
+
+    // Close zoom. Fit bounds first, then prevent it from staying too far out.
+    const bounds = L.latLngBounds(points);
+    map.fitBounds(bounds, {
+      paddingTopLeft:[90,90],
+      paddingBottomRight:[90,90],
+      maxZoom:13
+    });
+
+    setTimeout(() => {
+      try{
+        const current = map.getZoom();
+        if(current < 10){
+          map.setZoom(10);
+        }
+        forceRouteToFront();
+      }catch(e){}
+    }, 450);
+
+    showChip('GLOWING ROUTE ACTIVE');
+    log('Visible route drawn:', points.length, 'points', 'zoom', map.getZoom());
+
+    return true;
+  }
+
+  // Wrap existing draw option if available.
+  const oldDrawOption = window.haloForceDrawRouteOption;
+  window.haloForceDrawRouteOption = function(index){
+    if(typeof oldDrawOption === 'function'){
+      oldDrawOption(index);
+    }
+    setTimeout(() => {
+      try{
+        if(window.__haloLastRoutePayloadVisibilityFix){
+          drawVisibleRouteFromPayload(window.__haloLastRoutePayloadVisibilityFix, index);
+        }
+      }catch(e){}
+    }, 250);
+  };
+
+  // Capture route payload by wrapping fetch route-plus responses globally.
+  const originalFetch = window.fetch;
+  if(originalFetch && !window.__haloRouteVisibilityFetchPatched){
+    window.__haloRouteVisibilityFetchPatched = true;
+    window.fetch = async function(){
+      const response = await originalFetch.apply(this, arguments);
+
+      try{
+        const url = String(arguments[0] || '');
+        const isRoutePlus = url.includes('/route-plus');
+
+        if(isRoutePlus){
+          const clone = response.clone();
+          clone.json().then(data => {
+            if(data && data.success && data.route){
+              window.__haloLastRoutePayloadVisibilityFix = data;
+
+              setTimeout(() => {
+                drawVisibleRouteFromPayload(data, 0);
+              }, 1100);
+            }
+          }).catch(()=>{});
+        }
+      }catch(e){}
+
+      return response;
+    };
+  }
+
+  // Add a manual console/test helper.
+  window.haloForceVisibleRouteLine = function(index=0){
+    return drawVisibleRouteFromPayload(window.__haloLastRoutePayloadVisibilityFix, index);
+  };
+
+  // Keep route lines on top after map moves/zooms.
+  setInterval(forceRouteToFront, 2000);
+
+  log('Loaded');
+})();
+</script>
+
 </body>
 </html>
