@@ -1096,13 +1096,13 @@ const SYSTEM=`You are HALO — Highly Advanced Logistics Operator. Calm, confide
 
 You manage an Omkeer clothing brand social media account. Omkeer is a luxury faith-driven streetwear brand. Tagline: "Not a team. A belief."
 
-POSTING RULE: When user asks to post content to social media, Instagram, TikTok, or Pinterest, extract the description and image URL from their message and respond with a POST_CONTENT block.
+POSTING RULE: When user says things like "post the cream jersey", "post maybach editorial", "post lamb crest", or any "post [name]" command — extract the filename they mentioned and respond with a POST_CONTENT block.
 
 Format for posting:
 [SPOKEN]Short confirmation spoken reply.[/SPOKEN]
 [POST_CONTENT]
-DESCRIPTION: what the post is about
-IMAGE_URL: the image URL if provided, or leave blank
+DESCRIPTION: describe the content based on the filename (e.g. "cream jersey product shot")
+FILENAME: the exact words they mentioned (e.g. "cream jersey", "maybach editorial", "lamb crest")
 PLATFORMS: Instagram, TikTok, Pinterest
 [/POST_CONTENT]
 
@@ -1354,7 +1354,7 @@ function parseResponse(raw){
   let spoken=sm?sm[1].trim():raw.replace(/\[DISPLAY_INTEL\][\s\S]*?\[\/DISPLAY_INTEL\]/g,'').replace(/\[POST_CONTENT\][\s\S]*?\[\/POST_CONTENT\]/g,'').trim();
   let intel=null,postContent=null;
   if(im){const b=im[1];const tm=b.match(/TITLE:\s*(.+)/);const cm=b.match(/CONTENT:\s*([\s\S]*)/);intel={title:tm?tm[1].trim():'Intel',content:cm?cm[1].trim():b};}
-  if(pm){const b=pm[1];const dm=b.match(/DESCRIPTION:\s*(.+)/);const iu=b.match(/IMAGE_URL:\s*(.+)/);const pl=b.match(/PLATFORMS:\s*(.+)/);postContent={description:dm?dm[1].trim():'',image_url:iu?iu[1].trim():'',platforms:pl?pl[1].trim():'Instagram, TikTok'};}
+  if(pm){const b=pm[1];const dm=b.match(/DESCRIPTION:\s*(.+)/);const fm=b.match(/FILENAME:\s*(.+)/);const iu=b.match(/IMAGE_URL:\s*(.+)/);const pl=b.match(/PLATFORMS:\s*(.+)/);postContent={description:dm?dm[1].trim():'',filename:fm?fm[1].trim():'',image_url:iu?iu[1].trim():'',platforms:pl?pl[1].trim():'Instagram, TikTok'};}
   return{spoken,intel,postContent};
 }
 
@@ -1409,8 +1409,21 @@ async function askHalo(text){
     addChat('halo',spoken);
     if(intel)openIntel(intel.title,intel.content);else if(infoQ)closeIntel();
     if(postContent){
-      fetch('https://halo-server-d3h3.onrender.com/post-content',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(postContent)})
-      .then(r=>r.json()).then(d=>{if(d.success){playSuccessBeep();addChat('halo','Content queued for deployment.');}else addChat('halo','Posting issue: '+d.error);})
+      const payload={
+        description:postContent.description||postContent.filename||'',
+        filename:postContent.filename||'',
+        image_url:postContent.image_url||'',
+        platforms:postContent.platforms||'Instagram, TikTok, Pinterest'
+      };
+      fetch('https://halo-server-d3h3.onrender.com/post-content',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+      .then(r=>r.json()).then(d=>{
+        if(d.success){
+          playSuccessBeep();
+          const msg=d.filename?`"${d.filename}" queued for deployment.`:'Content queued for deployment.';
+          addChat('halo',msg);
+          if(typeof showHoloNotif==='function')showHoloNotif('CONTENT QUEUED',d.filename?`File: ${d.filename}`:'Posting to Instagram & TikTok','success',4000);
+        }else addChat('halo','Posting issue: '+d.error);
+      })
       .catch(()=>addChat('halo','Could not reach posting service.'));
     }
     speakText(spoken);
