@@ -3936,5 +3936,119 @@ function toggleAmbientNoise(){
 })();
 </script>
 
+
+<!-- HALO GLOBAL INTEL MAP MODULE -->
+<style id="halo-global-intel-module">
+#haloGlobalIntelBtn{
+  position:fixed;right:22px;top:50%;transform:translateY(-50%);z-index:4200;
+  width:58px;height:58px;border-radius:18px;border:1px solid rgba(0,234,255,.28);
+  background:linear-gradient(135deg,rgba(255,255,255,.06),rgba(0,234,255,.06)),rgba(0,14,34,.72);
+  color:#00eaff;font-size:24px;cursor:pointer;box-shadow:0 0 28px rgba(0,234,255,.16);
+  backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);transition:.25s ease;
+}
+#haloGlobalIntelBtn:hover{transform:translateY(-50%) scale(1.06);border-color:rgba(0,234,255,.62);box-shadow:0 0 40px rgba(0,234,255,.32)}
+#haloGlobalIntelOverlay{position:fixed;inset:16px;z-index:8000;display:none;color:#dffcff;font-family:Inter,sans-serif}
+#haloGlobalIntelOverlay.active{display:block;animation:hgiIn .28s ease-out both}
+.hgi-shell{position:absolute;inset:0;border-radius:26px;overflow:hidden;background:radial-gradient(circle at 50% 35%,rgba(0,234,255,.12),transparent 28%),radial-gradient(circle at 80% 20%,rgba(255,60,60,.08),transparent 24%),rgba(1,6,16,.94);border:1px solid rgba(0,234,255,.22);box-shadow:0 30px 140px rgba(0,0,0,.78),0 0 90px rgba(0,234,255,.18);backdrop-filter:blur(40px)}
+.hgi-shell::before{content:'';position:absolute;inset:0;pointer-events:none;background:repeating-linear-gradient(90deg,rgba(0,234,255,.025) 0 1px,transparent 1px 80px),repeating-linear-gradient(0deg,rgba(0,234,255,.018) 0 1px,transparent 1px 80px)}
+.hgi-header{height:74px;display:flex;align-items:center;justify-content:space-between;padding:0 22px;border-bottom:1px solid rgba(0,234,255,.18);background:linear-gradient(90deg,rgba(0,234,255,.075),transparent 55%,rgba(255,60,60,.035))}
+.hgi-brand{display:flex;align-items:center;gap:14px}.hgi-logo{width:42px;height:42px;display:grid;place-items:center;border-radius:14px;background:rgba(0,234,255,.08);border:1px solid rgba(0,234,255,.25);box-shadow:0 0 26px rgba(0,234,255,.18);font-size:22px}
+.hgi-title{font-family:'JetBrains Mono',monospace;font-size:18px;letter-spacing:7px;font-weight:900;color:#effeff;text-shadow:0 0 28px rgba(0,234,255,.66)}
+.hgi-sub{margin-top:4px;font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:3px;color:rgba(0,234,255,.45)}
+.hgi-status{display:flex;align-items:center;gap:14px;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;color:rgba(210,250,255,.65)}
+.hgi-live-dot{width:8px;height:8px;border-radius:50%;background:#00ff9d;box-shadow:0 0 16px rgba(0,255,157,.9)}
+.hgi-close{padding:10px 14px;border-radius:999px;border:1px solid rgba(0,234,255,.24);background:rgba(0,234,255,.06);color:#00eaff;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;cursor:pointer}
+.hgi-body{position:absolute;inset:74px 0 0;display:grid;grid-template-columns:280px 1fr 310px;grid-template-rows:1fr 178px;gap:14px;padding:14px}
+.hgi-panel{position:relative;border-radius:18px;background:linear-gradient(135deg,rgba(255,255,255,.045),rgba(0,234,255,.025),rgba(0,0,0,.12)),rgba(0,13,31,.68);border:1px solid rgba(0,234,255,.16);box-shadow:0 20px 70px rgba(0,0,0,.34);overflow:hidden}
+.hgi-panel::before{content:'';position:absolute;left:0;right:0;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(0,234,255,.7),transparent)}
+.hgi-left{grid-row:1/3;padding:18px}.hgi-map-wrap{padding:16px}.hgi-events{grid-row:1/3;padding:18px}.hgi-bottom{padding:16px}
+.hgi-section-title{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:4px;color:#bffaff;margin-bottom:18px;text-shadow:0 0 18px rgba(0,234,255,.42)}
+.hgi-threat-card{padding:14px 0;border-bottom:1px solid rgba(0,234,255,.08)}.hgi-threat-card:last-child{border-bottom:0}.hgi-threat-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.hgi-threat-name{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2px}.hgi-red{color:#ff4545}.hgi-orange{color:#ff9d2e}.hgi-yellow{color:#ffe83f}.hgi-cyan{color:#00eaff}.hgi-purple{color:#bd70ff}
+.hgi-count{min-width:28px;height:28px;display:grid;place-items:center;border-radius:50%;font-family:'JetBrains Mono',monospace;font-size:12px;border:1px solid currentColor;background:rgba(255,255,255,.035)}
+.hgi-threat-copy{font-size:12px;color:rgba(218,239,255,.64);line-height:1.55}.hgi-ai-summary{margin-top:18px;padding:16px;border-radius:16px;border:1px solid rgba(0,234,255,.12);background:rgba(0,234,255,.035)}
+.hgi-ai-summary button,.hgi-open-btn{margin-top:12px;width:100%;padding:12px;border-radius:12px;border:1px solid rgba(0,234,255,.22);background:rgba(0,234,255,.08);color:#00eaff;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:2px;cursor:pointer}
+.hgi-map{position:relative;height:100%;min-height:420px;border-radius:16px;overflow:hidden;border:1px solid rgba(0,234,255,.12);background:radial-gradient(circle at 51% 48%,rgba(0,234,255,.08),transparent 34%),linear-gradient(180deg,rgba(0,20,48,.85),rgba(0,8,22,.95))}
+.hgi-map svg{position:absolute;inset:0;width:100%;height:100%;opacity:.9}.hgi-map-grid{position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(0,234,255,.035) 0 1px,transparent 1px 70px),repeating-linear-gradient(0deg,rgba(0,234,255,.025) 0 1px,transparent 1px 70px);pointer-events:none}
+.hgi-map-toolbar{position:absolute;left:18px;top:18px;display:flex;gap:8px;z-index:3}.hgi-map-pill{padding:9px 12px;border-radius:12px;background:rgba(0,8,22,.72);border:1px solid rgba(0,234,255,.16);font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1.5px}
+.hgi-map-legend{position:absolute;left:18px;bottom:18px;display:flex;gap:12px;padding:10px 13px;border-radius:12px;background:rgba(0,8,22,.75);border:1px solid rgba(0,234,255,.14);font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1px;z-index:3}
+.hgi-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}
+.hgi-hotspot{position:absolute;width:11px;height:11px;border-radius:50%;transform:translate(-50%,-50%);z-index:4;cursor:pointer;box-shadow:0 0 18px currentColor;animation:hgiPulse 1.9s ease-in-out infinite}
+.hgi-hotspot::after{content:'';position:absolute;inset:-9px;border-radius:50%;border:1px solid currentColor;opacity:.55;animation:hgiRipple 1.9s ease-out infinite}.hgi-hotspot.red{color:#ff4545;background:#ff4545}.hgi-hotspot.orange{color:#ff9d2e;background:#ff9d2e}.hgi-hotspot.yellow{color:#ffe83f;background:#ffe83f}.hgi-hotspot.cyan{color:#00eaff;background:#00eaff}.hgi-hotspot.purple{color:#bd70ff;background:#bd70ff}
+.hgi-event-card{padding:14px 0;border-bottom:1px solid rgba(0,234,255,.08)}.hgi-event-name{font-family:'JetBrains Mono',monospace;font-size:12px;letter-spacing:1.5px;margin-bottom:5px}.hgi-event-copy{color:rgba(218,239,255,.65);font-size:12px;line-height:1.5}
+.hgi-tag{display:inline-block;margin-top:8px;padding:5px 8px;border-radius:7px;font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1px;background:rgba(255,70,70,.12);color:#ff5757}
+.hgi-bottom-grid{display:grid;grid-template-columns:1.3fr 1fr .8fr 1fr;gap:14px;height:100%}.hgi-feed-line{display:flex;justify-content:space-between;gap:14px;padding:8px 0;border-bottom:1px solid rgba(0,234,255,.06);font-size:12px;color:rgba(218,239,255,.65)}
+.hgi-region-row{display:flex;justify-content:space-between;padding:6px 0;font-family:'JetBrains Mono',monospace;font-size:9px;letter-spacing:1px}.hgi-threat-ring{width:108px;height:108px;margin:0 auto;border-radius:50%;display:grid;place-items:center;background:conic-gradient(#ff3434 0 68%,rgba(255,52,52,.15) 68% 100%);box-shadow:0 0 28px rgba(255,52,52,.18)}.hgi-threat-ring span{width:78px;height:78px;display:grid;place-items:center;border-radius:50%;background:rgba(1,8,22,.95);color:#ff4545;font-family:'JetBrains Mono',monospace;font-size:18px;letter-spacing:2px}
+.hgi-quick{display:grid;grid-template-columns:1fr 1fr;gap:8px}.hgi-quick button{padding:11px 8px;border-radius:12px;border:1px solid rgba(0,234,255,.14);background:rgba(0,234,255,.04);color:rgba(220,250,255,.75);font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.3px;cursor:pointer}
+@keyframes hgiPulse{0%,100%{filter:brightness(1);transform:translate(-50%,-50%) scale(1)}50%{filter:brightness(1.45);transform:translate(-50%,-50%) scale(1.25)}}@keyframes hgiRipple{from{opacity:.62;transform:scale(.6)}to{opacity:0;transform:scale(2.5)}}@keyframes hgiIn{from{opacity:0;transform:scale(.985);filter:blur(8px)}to{opacity:1;transform:scale(1);filter:blur(0)}}
+@media(max-width:1100px){.hgi-body{grid-template-columns:1fr;grid-template-rows:auto 1fr auto;overflow:auto}.hgi-left,.hgi-events{grid-row:auto}.hgi-bottom-grid{grid-template-columns:1fr}}
+@media(max-width:768px){#haloGlobalIntelBtn{right:14px;top:auto;bottom:148px;transform:none;width:50px;height:50px;font-size:20px}#haloGlobalIntelOverlay{inset:6px}.hgi-header{height:66px;padding:0 12px}.hgi-title{font-size:13px;letter-spacing:4px}.hgi-sub,.hgi-status span:not(.hgi-live-dot){display:none}.hgi-body{inset:66px 0 0;padding:8px;gap:8px}.hgi-map{min-height:360px}}
+</style>
+
+<button id="haloGlobalIntelBtn" onclick="openHaloGlobalIntel()" title="Global Intel">🌍</button>
+<div id="haloGlobalIntelOverlay">
+  <div class="hgi-shell">
+    <div class="hgi-header">
+      <div class="hgi-brand"><div class="hgi-logo">🌍</div><div><div class="hgi-title">GLOBAL INTEL</div><div class="hgi-sub">HALO TACTICAL INTELLIGENCE SYSTEM</div></div></div>
+      <div class="hgi-status"><span class="hgi-live-dot"></span><span>LIVE SIMULATION</span><span id="hgiClock">--:-- UTC</span><button class="hgi-close" onclick="closeHaloGlobalIntel()">CLOSE</button></div>
+    </div>
+    <div class="hgi-body">
+      <section class="hgi-panel hgi-left">
+        <div class="hgi-section-title">GLOBAL BRIEFING</div>
+        <div class="hgi-threat-card"><div class="hgi-threat-top"><div class="hgi-threat-name hgi-red">CONFLICTS</div><div class="hgi-count hgi-red">7</div></div><div class="hgi-threat-copy">3 escalating, 4 ongoing. Monitor Eastern Europe and Middle East regions.</div></div>
+        <div class="hgi-threat-card"><div class="hgi-threat-top"><div class="hgi-threat-name hgi-orange">POLITICAL INSTABILITY</div><div class="hgi-count hgi-orange">12</div></div><div class="hgi-threat-copy">Regional pressure elevated across multiple zones.</div></div>
+        <div class="hgi-threat-card"><div class="hgi-threat-top"><div class="hgi-threat-name hgi-yellow">NUCLEAR SITES</div><div class="hgi-count hgi-yellow">48</div></div><div class="hgi-threat-copy">Secure. No immediate threat indicators.</div></div>
+        <div class="hgi-threat-card"><div class="hgi-threat-top"><div class="hgi-threat-name hgi-purple">NATURAL DISASTERS</div><div class="hgi-count hgi-purple">5</div></div><div class="hgi-threat-copy">2 active, 3 monitoring.</div></div>
+        <div class="hgi-threat-card"><div class="hgi-threat-top"><div class="hgi-threat-name hgi-cyan">CYBER THREATS</div><div class="hgi-count hgi-cyan">8</div></div><div class="hgi-threat-copy">Infrastructure monitoring recommended.</div></div>
+        <div class="hgi-ai-summary"><div class="hgi-section-title" style="margin-bottom:8px;">AI SUMMARY</div><div class="hgi-threat-copy">Global tensions remain elevated. HALO recommends monitoring maritime activity, energy routes, and major regional instability signals.</div><button onclick="haloGlobalIntelBrief()">FULL SUMMARY →</button></div>
+      </section>
+      <section class="hgi-panel hgi-map-wrap">
+        <div class="hgi-map">
+          <div class="hgi-map-grid"></div>
+          <div class="hgi-map-toolbar"><div class="hgi-map-pill">LAYERS</div><div class="hgi-map-pill"><span class="hgi-dot" style="background:#ff4545"></span>HIGH ALERT</div><div class="hgi-map-pill"><span class="hgi-dot" style="background:#ff9d2e"></span>ELEVATED</div><div class="hgi-map-pill"><span class="hgi-dot" style="background:#ffe83f"></span>MONITORING</div></div>
+          <svg viewBox="0 0 1000 520" preserveAspectRatio="none" aria-hidden="true">
+            <defs><filter id="hgiGlow"><feGaussianBlur stdDeviation="2.5" result="coloredBlur"/><feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+            <path d="M115,170 C170,110 250,115 305,145 C350,168 400,132 455,148 C505,165 548,125 610,142 C690,165 740,135 830,165 C900,188 930,245 900,300 C860,370 765,345 705,380 C640,418 565,390 500,410 C420,435 355,385 285,405 C210,428 125,390 95,315 C75,260 75,210 115,170Z" fill="rgba(0,234,255,.055)" stroke="rgba(0,234,255,.34)" stroke-width="1.2" filter="url(#hgiGlow)"/>
+            <path d="M170,250 C205,205 265,205 310,235 C355,265 400,258 430,290 C455,318 438,365 390,376 C325,392 262,354 210,352 C155,350 135,295 170,250Z" fill="rgba(0,234,255,.04)" stroke="rgba(0,234,255,.24)" stroke-width="1"/>
+            <path d="M585,245 C635,205 710,207 760,248 C812,291 810,355 758,390 C700,430 625,405 585,360 C548,318 550,275 585,245Z" fill="rgba(255,70,70,.05)" stroke="rgba(255,70,70,.26)" stroke-width="1"/>
+            <path d="M690,170 C748,128 855,138 900,196 C950,260 900,330 830,318 C765,307 735,268 695,250 C650,230 645,203 690,170Z" fill="rgba(255,157,46,.045)" stroke="rgba(0,234,255,.22)" stroke-width="1"/>
+            <path d="M475,225 C510,185 558,190 580,225 C604,264 575,313 528,310 C485,307 445,265 475,225Z" fill="rgba(255,70,70,.12)" stroke="rgba(255,70,70,.44)" stroke-width="1.4" filter="url(#hgiGlow)"/>
+            <path d="M540,286 C570,250 620,258 645,300 C670,342 628,384 578,370 C540,358 515,322 540,286Z" fill="rgba(255,70,70,.11)" stroke="rgba(255,70,70,.38)" stroke-width="1.2" filter="url(#hgiGlow)"/>
+          </svg>
+          <span class="hgi-hotspot red" style="left:54%; top:43%;" onclick="haloGlobalIntelEvent('Eastern Europe','Conflict zone elevated. Military movement and regional escalation signals detected.','HIGH')"></span>
+          <span class="hgi-hotspot red" style="left:59%; top:57%;" onclick="haloGlobalIntelEvent('Middle East','Cross-border instability and regional pressure elevated.','HIGH')"></span>
+          <span class="hgi-hotspot orange" style="left:72%; top:52%;" onclick="haloGlobalIntelEvent('South Asia','Monitoring regional diplomatic and infrastructure pressure.','ELEVATED')"></span>
+          <span class="hgi-hotspot yellow" style="left:22%; top:45%;" onclick="haloGlobalIntelEvent('United States','Cyber and infrastructure activity under observation.','MONITORING')"></span>
+          <span class="hgi-hotspot cyan" style="left:48%; top:61%;" onclick="haloGlobalIntelEvent('North Africa','Energy corridor and maritime route monitoring active.','MONITORING')"></span>
+          <span class="hgi-hotspot purple" style="left:69%; top:70%;" onclick="haloGlobalIntelEvent('Southeast Asia','Weather and supply-chain disruption signals active.','WATCH')"></span>
+          <div class="hgi-map-legend"><span><i class="hgi-dot" style="background:#ff4545"></i>High Alert</span><span><i class="hgi-dot" style="background:#ff9d2e"></i>Elevated</span><span><i class="hgi-dot" style="background:#ffe83f"></i>Monitoring</span><span><i class="hgi-dot" style="background:#00eaff"></i>Base</span></div>
+        </div>
+      </section>
+      <section class="hgi-panel hgi-events">
+        <div class="hgi-section-title">ACTIVE EVENTS</div>
+        <div class="hgi-event-card"><div class="hgi-event-name hgi-red">UKRAINE</div><div class="hgi-event-copy">Eastern region: escalation of military engagements reported.</div><span class="hgi-tag">HIGH</span></div>
+        <div class="hgi-event-card"><div class="hgi-event-name hgi-red">MIDDLE EAST</div><div class="hgi-event-copy">Cross-border strikes and regional pressure reported.</div><span class="hgi-tag">HIGH</span></div>
+        <div class="hgi-event-card"><div class="hgi-event-name hgi-orange">SOUTH CHINA SEA</div><div class="hgi-event-copy">Maritime dispute and increased naval activity detected.</div><span class="hgi-tag" style="background:rgba(255,157,46,.12);color:#ffb347;">ELEVATED</span></div>
+        <div class="hgi-event-card"><div class="hgi-event-name hgi-orange">SAHEL REGION</div><div class="hgi-event-copy">Multiple locations: armed group activity increasing.</div><span class="hgi-tag" style="background:rgba(255,157,46,.12);color:#ffb347;">ELEVATED</span></div>
+        <button class="hgi-open-btn" onclick="window.open('https://worldmonitor.app','_blank')">OPEN FULL WORLD MONITOR →</button>
+      </section>
+      <section class="hgi-panel hgi-bottom"><div class="hgi-bottom-grid">
+        <div><div class="hgi-section-title">LATEST INTELLIGENCE</div><div class="hgi-feed-line"><span>Satellite imagery update: port activity</span><span>18m</span></div><div class="hgi-feed-line"><span>New sanctions announced targeting exports</span><span>25m</span></div><div class="hgi-feed-line"><span>Cybersecurity advisory: critical vulnerabilities</span><span>2h</span></div></div>
+        <div><div class="hgi-section-title">REGIONAL OVERVIEW</div><div class="hgi-region-row"><span>NORTH AMERICA</span><span class="hgi-cyan">MONITOR</span></div><div class="hgi-region-row"><span>EUROPE</span><span class="hgi-orange">ELEVATED</span></div><div class="hgi-region-row"><span>MIDDLE EAST</span><span class="hgi-red">HIGH</span></div><div class="hgi-region-row"><span>ASIA PACIFIC</span><span class="hgi-orange">ELEVATED</span></div></div>
+        <div><div class="hgi-section-title">THREAT LEVEL</div><div class="hgi-threat-ring"><span>HIGH</span></div></div>
+        <div><div class="hgi-section-title">QUICK ACCESS</div><div class="hgi-quick"><button>CONFLICT</button><button>NUCLEAR</button><button>BASES</button><button>CYBER</button></div><button class="hgi-open-btn" onclick="window.open('https://worldmonitor.app','_blank')">WORLD MONITOR</button></div>
+      </div></section>
+    </div>
+  </div>
+</div>
+
+<script id="halo-global-intel-module-js">
+function openHaloGlobalIntel(){const o=document.getElementById("haloGlobalIntelOverlay");if(o)o.classList.add("active");if(window.setHaloOrbMode)window.setHaloOrbMode("thinking","GLOBAL INTEL")}
+function closeHaloGlobalIntel(){const o=document.getElementById("haloGlobalIntelOverlay");if(o)o.classList.remove("active");if(window.setHaloOrbMode)window.setHaloOrbMode("standby","STANDBY")}
+function haloGlobalIntelEvent(t,c,l){if(typeof showIntel==="function"){showIntel(t+" // "+l,"<h3>Regional Situation</h3><p>"+c+"</p><h3>HALO Assessment</h3><ul><li>Monitor updates and adjacent regions.</li><li>Review economic, travel, and communication impact.</li><li>Open World Monitor for live external details.</li></ul>")}else{alert(t+"\\n"+c)}if(window.setHaloOrbMode)window.setHaloOrbMode(l==="HIGH"?"alert":"thinking",l)}
+function haloGlobalIntelBrief(){if(typeof showIntel==="function"){showIntel("GLOBAL INTELLIGENCE SUMMARY","<h3>Current Overview</h3><p>Global tensions remain elevated across several regions. HALO recommends monitoring conflict zones, cyber infrastructure alerts, maritime routes, and energy corridors.</p><h3>Priority Actions</h3><ul><li>Review Eastern Europe and Middle East updates.</li><li>Monitor cyber/infrastructure activity.</li><li>Use World Monitor for live third-party data.</li></ul>")}if(window.setHaloOrbMode)window.setHaloOrbMode("success","BRIEF READY")}
+(function(){function u(){const e=document.getElementById("hgiClock");if(e)e.textContent=new Date().toISOString().slice(11,19)+" UTC"}u();setInterval(u,1000);document.addEventListener("keydown",e=>{if(e.key==="Escape")closeHaloGlobalIntel()})})();
+</script>
+
 </body>
 </html>
