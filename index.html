@@ -3480,5 +3480,437 @@ function toggleAmbientNoise(){
 })();
 </script>
 
+
+<!-- HALO PREMIUM INTELLIGENCE PANEL UPGRADE -->
+<style id="halo-intelligence-panel-upgrade">
+/* ═══════════════════════════════════════════════
+   HALO Premium Intelligence Brief Panel
+═══════════════════════════════════════════════ */
+
+/* Main overlay positioning */
+#intelOverlay{
+  top:110px !important;
+  left:18px !important;
+  bottom:90px !important;
+  width:min(520px, 34vw) !important;
+  z-index:4500 !important;
+  animation:haloIntelSlideIn .42s cubic-bezier(.2,.9,.2,1) both !important;
+}
+
+/* Main glass body */
+.intel-inner{
+  position:relative !important;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.055), rgba(0,234,255,.025) 32%, rgba(0,0,0,.16)),
+    rgba(1,9,24,.82) !important;
+  border:1px solid rgba(0,234,255,.26) !important;
+  border-radius:22px !important;
+  box-shadow:
+    0 28px 120px rgba(0,0,0,.65),
+    0 0 70px rgba(0,234,255,.18),
+    inset 0 0 0 1px rgba(255,255,255,.035),
+    inset 0 0 50px rgba(0,234,255,.035) !important;
+  backdrop-filter:blur(42px) saturate(160%) !important;
+  -webkit-backdrop-filter:blur(42px) saturate(160%) !important;
+  overflow:hidden !important;
+}
+
+/* Animated holographic top line */
+.intel-inner::before{
+  content:'' !important;
+  position:absolute !important;
+  top:0 !important;
+  left:0 !important;
+  right:0 !important;
+  height:1px !important;
+  background:linear-gradient(
+    90deg,
+    transparent,
+    rgba(0,234,255,.35),
+    rgba(255,255,255,.9),
+    rgba(0,234,255,.75),
+    transparent
+  ) !important;
+  animation:haloIntelLinePulse 2.6s ease-in-out infinite !important;
+}
+
+/* Moving scan beam inside panel */
+.intel-inner::after{
+  content:'' !important;
+  position:absolute !important;
+  left:-35% !important;
+  top:0 !important;
+  width:28% !important;
+  height:100% !important;
+  pointer-events:none !important;
+  background:linear-gradient(
+    90deg,
+    transparent,
+    rgba(0,234,255,.035),
+    rgba(255,255,255,.04),
+    transparent
+  ) !important;
+  transform:skewX(-18deg) !important;
+  animation:haloIntelSweep 6.5s ease-in-out infinite !important;
+}
+
+/* Header */
+.intel-hdr{
+  min-height:56px !important;
+  padding:14px 16px 12px !important;
+  background:
+    linear-gradient(90deg, rgba(0,234,255,.06), transparent 75%),
+    rgba(0,10,28,.34) !important;
+  border-bottom:1px solid rgba(0,234,255,.12) !important;
+  position:relative !important;
+}
+
+.intel-hdr::after{
+  content:'CLASSIFIED // LIVE BRIEF' !important;
+  position:absolute !important;
+  right:74px !important;
+  top:18px !important;
+  font-family:'JetBrains Mono', monospace !important;
+  font-size:6px !important;
+  letter-spacing:2px !important;
+  color:rgba(0,234,255,.26) !important;
+}
+
+.intel-title{
+  font-size:11px !important;
+  font-weight:800 !important;
+  letter-spacing:5px !important;
+  color:#dffcff !important;
+  text-shadow:
+    0 0 12px rgba(255,255,255,.38),
+    0 0 32px rgba(0,234,255,.62) !important;
+}
+
+/* Close button */
+.intel-close{
+  border-radius:999px !important;
+  padding:6px 11px !important;
+  background:rgba(0,234,255,.055) !important;
+  border:1px solid rgba(0,234,255,.18) !important;
+  color:rgba(170,245,255,.55) !important;
+  letter-spacing:1.5px !important;
+  transition:all .22s ease !important;
+}
+
+.intel-close:hover{
+  color:#00eaff !important;
+  background:rgba(0,234,255,.13) !important;
+  border-color:rgba(0,234,255,.45) !important;
+  box-shadow:0 0 22px rgba(0,234,255,.18) !important;
+}
+
+/* Body */
+.intel-body{
+  position:relative !important;
+  padding:18px 18px 20px !important;
+  font-size:13px !important;
+  line-height:1.85 !important;
+  color:rgba(218,239,255,.76) !important;
+  background:
+    radial-gradient(circle at 12% 8%, rgba(0,234,255,.075), transparent 22%),
+    radial-gradient(circle at 95% 70%, rgba(20,123,255,.05), transparent 30%) !important;
+  scrollbar-width:thin !important;
+  scrollbar-color:rgba(0,234,255,.45) rgba(0,234,255,.06) !important;
+}
+
+/* Text typography */
+.intel-body p{
+  margin-bottom:12px !important;
+  color:rgba(218,239,255,.76) !important;
+}
+
+.intel-body strong{
+  color:#f4fdff !important;
+  font-weight:700 !important;
+  text-shadow:0 0 12px rgba(0,234,255,.18) !important;
+}
+
+.intel-body h1,
+.intel-body h2,
+.intel-body h3{
+  position:relative !important;
+  margin:22px 0 10px !important;
+  padding-left:14px !important;
+  font-family:'JetBrains Mono', monospace !important;
+  font-size:11px !important;
+  letter-spacing:4px !important;
+  text-transform:uppercase !important;
+  color:#00eaff !important;
+  text-shadow:0 0 18px rgba(0,234,255,.52) !important;
+}
+
+.intel-body h1::before,
+.intel-body h2::before,
+.intel-body h3::before{
+  content:'' !important;
+  position:absolute !important;
+  left:0 !important;
+  top:50% !important;
+  width:5px !important;
+  height:5px !important;
+  border-radius:50% !important;
+  background:#00eaff !important;
+  transform:translateY(-50%) !important;
+  box-shadow:0 0 12px rgba(0,234,255,.9) !important;
+}
+
+/* Bullets become tactical rows */
+.intel-body ul{
+  padding-left:0 !important;
+  margin:12px 0 16px !important;
+  list-style:none !important;
+}
+
+.intel-body li{
+  position:relative !important;
+  margin-bottom:9px !important;
+  padding:10px 12px 10px 28px !important;
+  border-radius:12px !important;
+  background:rgba(0,234,255,.035) !important;
+  border:1px solid rgba(0,234,255,.08) !important;
+  color:rgba(222,242,255,.78) !important;
+  box-shadow:inset 0 0 18px rgba(0,234,255,.018) !important;
+}
+
+.intel-body li::before{
+  content:'' !important;
+  position:absolute !important;
+  left:12px !important;
+  top:18px !important;
+  width:6px !important;
+  height:6px !important;
+  border-radius:50% !important;
+  background:#00eaff !important;
+  box-shadow:0 0 10px rgba(0,234,255,.8) !important;
+}
+
+/* Add subtle code/tag style for inline quotes */
+.intel-body code{
+  font-family:'JetBrains Mono', monospace !important;
+  color:#00ff9d !important;
+  background:rgba(0,255,157,.06) !important;
+  border:1px solid rgba(0,255,157,.14) !important;
+  border-radius:6px !important;
+  padding:2px 6px !important;
+}
+
+/* Scrollbar WebKit */
+.intel-body::-webkit-scrollbar{
+  width:6px !important;
+}
+
+.intel-body::-webkit-scrollbar-track{
+  background:rgba(0,234,255,.04) !important;
+  border-radius:999px !important;
+}
+
+.intel-body::-webkit-scrollbar-thumb{
+  background:linear-gradient(180deg, rgba(0,234,255,.65), rgba(20,123,255,.35)) !important;
+  border-radius:999px !important;
+  box-shadow:0 0 12px rgba(0,234,255,.38) !important;
+}
+
+/* Footer */
+.intel-footer{
+  padding:11px 16px !important;
+  background:rgba(0,10,28,.35) !important;
+  border-top:1px solid rgba(0,234,255,.10) !important;
+}
+
+.intel-footer-dot{
+  width:6px !important;
+  height:6px !important;
+  background:#00ff9d !important;
+  box-shadow:0 0 14px rgba(0,255,157,.8) !important;
+}
+
+.intel-footer-txt{
+  color:rgba(0,234,255,.35) !important;
+  letter-spacing:3px !important;
+}
+
+/* Loading state */
+.intel-loading{
+  min-height:160px !important;
+  align-items:center !important;
+  justify-content:center !important;
+  font-size:10px !important;
+  letter-spacing:3px !important;
+}
+
+.intel-spin{
+  width:24px !important;
+  height:24px !important;
+  border-color:rgba(0,234,255,.12) !important;
+  border-top-color:#00eaff !important;
+  box-shadow:0 0 18px rgba(0,234,255,.28) !important;
+}
+
+/* Optional visual data chips injected by JS */
+.halo-intel-chip-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin:0 0 14px;
+}
+
+.halo-intel-chip{
+  font-family:'JetBrains Mono', monospace;
+  font-size:7px;
+  letter-spacing:2px;
+  color:rgba(190,250,255,.68);
+  padding:6px 9px;
+  border-radius:999px;
+  background:rgba(0,234,255,.055);
+  border:1px solid rgba(0,234,255,.13);
+  box-shadow:0 0 14px rgba(0,234,255,.055);
+}
+
+.halo-intel-meter{
+  margin:12px 0 16px;
+  padding:11px 12px;
+  border-radius:14px;
+  background:rgba(0,234,255,.035);
+  border:1px solid rgba(0,234,255,.10);
+}
+
+.halo-intel-meter-top{
+  display:flex;
+  justify-content:space-between;
+  margin-bottom:8px;
+  font-family:'JetBrains Mono', monospace;
+  font-size:7px;
+  letter-spacing:2px;
+  color:rgba(0,234,255,.45);
+}
+
+.halo-intel-meter-bar{
+  height:4px;
+  border-radius:999px;
+  overflow:hidden;
+  background:rgba(0,234,255,.08);
+}
+
+.halo-intel-meter-fill{
+  height:100%;
+  width:87%;
+  border-radius:999px;
+  background:linear-gradient(90deg, #00eaff, #00ff9d);
+  box-shadow:0 0 16px rgba(0,234,255,.38);
+}
+
+/* Mobile / smaller screen safety */
+@media(max-width:1100px){
+  #intelOverlay{
+    width:min(460px, 46vw) !important;
+  }
+}
+
+@media(max-width:768px){
+  #intelOverlay{
+    top:74px !important;
+    left:8px !important;
+    right:8px !important;
+    bottom:66px !important;
+    width:auto !important;
+  }
+  .intel-hdr::after{
+    display:none !important;
+  }
+  .intel-body{
+    font-size:12px !important;
+    padding:15px !important;
+  }
+}
+
+/* Animations */
+@keyframes haloIntelSlideIn{
+  from{
+    opacity:0;
+    transform:translateX(-24px) scale(.985);
+    filter:blur(8px);
+  }
+  to{
+    opacity:1;
+    transform:translateX(0) scale(1);
+    filter:blur(0);
+  }
+}
+
+@keyframes haloIntelSweep{
+  0%,55%{left:-42%; opacity:0;}
+  60%{opacity:.85;}
+  100%{left:128%; opacity:0;}
+}
+
+@keyframes haloIntelLinePulse{
+  0%,100%{opacity:.42;}
+  50%{opacity:1;}
+}
+</style>
+
+<script id="halo-intelligence-panel-upgrade-js">
+(function(){
+  function ready(fn){
+    if(document.readyState !== "loading") fn();
+    else document.addEventListener("DOMContentLoaded", fn);
+  }
+
+  ready(function(){
+    const body = document.getElementById("intelBody");
+    if(!body) return;
+
+    function addIntelEnhancements(){
+      if(!body || body.dataset.haloIntelEnhanced === "true") return;
+      const text = (body.textContent || "").trim();
+      if(!text || text.toLowerCase().includes("loading")) return;
+
+      body.dataset.haloIntelEnhanced = "true";
+
+      const chipRow = document.createElement("div");
+      chipRow.className = "halo-intel-chip-row";
+      chipRow.innerHTML = `
+        <span class="halo-intel-chip">LIVE ANALYSIS</span>
+        <span class="halo-intel-chip">HALO INTEL</span>
+        <span class="halo-intel-chip">CONFIDENCE HIGH</span>
+      `;
+
+      const meter = document.createElement("div");
+      meter.className = "halo-intel-meter";
+      meter.innerHTML = `
+        <div class="halo-intel-meter-top">
+          <span>BRIEFING CONFIDENCE</span>
+          <span>87%</span>
+        </div>
+        <div class="halo-intel-meter-bar">
+          <div class="halo-intel-meter-fill"></div>
+        </div>
+      `;
+
+      body.prepend(meter);
+      body.prepend(chipRow);
+
+      if(window.setHaloOrbMode){
+        window.setHaloOrbMode("success","BRIEF READY");
+        setTimeout(()=>window.setHaloOrbMode("standby","STANDBY"), 1800);
+      }
+    }
+
+    const obs = new MutationObserver(() => {
+      body.dataset.haloIntelEnhanced = "false";
+      setTimeout(addIntelEnhancements, 80);
+    });
+
+    obs.observe(body, {childList:true, subtree:true, characterData:true});
+    setTimeout(addIntelEnhancements, 250);
+  });
+})();
+</script>
+
 </body>
 </html>
