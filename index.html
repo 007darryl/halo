@@ -3854,60 +3854,84 @@ function toggleAmbientNoise(){
 }
 </style>
 
-<script id="halo-intelligence-panel-upgrade-js">
-(function(){
-  function ready(fn){
-    if(document.readyState !== "loading") fn();
-    else document.addEventListener("DOMContentLoaded", fn);
-  }
 
-  ready(function(){
+
+
+<!-- HALO INTELLIGENCE PANEL LAG FIX -->
+<style id="halo-intelligence-panel-lag-fix">
+/* Remove the duplicated injected chip/meter blocks that caused lag/glitching */
+.halo-intel-chip-row,
+.halo-intel-meter{
+  display:none !important;
+}
+
+/* Make the panel smoother and less GPU-heavy */
+#intelOverlay{
+  transform:none !important;
+  animation:haloIntelSimpleIn .22s ease-out both !important;
+  will-change:auto !important;
+}
+
+.intel-inner{
+  backdrop-filter:blur(24px) saturate(135%) !important;
+  -webkit-backdrop-filter:blur(24px) saturate(135%) !important;
+  box-shadow:
+    0 20px 70px rgba(0,0,0,.55),
+    0 0 38px rgba(0,234,255,.12),
+    inset 0 0 0 1px rgba(255,255,255,.03) !important;
+}
+
+/* Disable the moving scan beam that was adding extra rendering load */
+.intel-inner::after{
+  display:none !important;
+  animation:none !important;
+}
+
+/* Keep the title premium but lighter */
+.intel-title{
+  font-size:11px !important;
+  letter-spacing:4px !important;
+}
+
+/* Cleaner text panel */
+.intel-body{
+  padding:16px !important;
+  line-height:1.75 !important;
+}
+
+/* Make bullets clean without heavy duplicated blocks */
+.intel-body li{
+  background:rgba(0,234,255,.025) !important;
+  box-shadow:none !important;
+}
+
+@keyframes haloIntelSimpleIn{
+  from{opacity:0; transform:translateX(-12px);}
+  to{opacity:1; transform:translateX(0);}
+}
+</style>
+
+<script id="halo-intelligence-panel-lag-fix-js">
+(function(){
+  function cleanupIntelPanel(){
     const body = document.getElementById("intelBody");
     if(!body) return;
 
-    function addIntelEnhancements(){
-      if(!body || body.dataset.haloIntelEnhanced === "true") return;
-      const text = (body.textContent || "").trim();
-      if(!text || text.toLowerCase().includes("loading")) return;
+    // Remove any duplicated injected blocks from the previous version.
+    body.querySelectorAll(".halo-intel-chip-row, .halo-intel-meter").forEach(el => el.remove());
+  }
 
-      body.dataset.haloIntelEnhanced = "true";
+  document.addEventListener("DOMContentLoaded", cleanupIntelPanel);
 
-      const chipRow = document.createElement("div");
-      chipRow.className = "halo-intel-chip-row";
-      chipRow.innerHTML = `
-        <span class="halo-intel-chip">LIVE ANALYSIS</span>
-        <span class="halo-intel-chip">HALO INTEL</span>
-        <span class="halo-intel-chip">CONFIDENCE HIGH</span>
-      `;
+  const observer = new MutationObserver(function(){
+    cleanupIntelPanel();
+  });
 
-      const meter = document.createElement("div");
-      meter.className = "halo-intel-meter";
-      meter.innerHTML = `
-        <div class="halo-intel-meter-top">
-          <span>BRIEFING CONFIDENCE</span>
-          <span>87%</span>
-        </div>
-        <div class="halo-intel-meter-bar">
-          <div class="halo-intel-meter-fill"></div>
-        </div>
-      `;
-
-      body.prepend(meter);
-      body.prepend(chipRow);
-
-      if(window.setHaloOrbMode){
-        window.setHaloOrbMode("success","BRIEF READY");
-        setTimeout(()=>window.setHaloOrbMode("standby","STANDBY"), 1800);
-      }
+  document.addEventListener("DOMContentLoaded", function(){
+    const body = document.getElementById("intelBody");
+    if(body){
+      observer.observe(body, { childList:true, subtree:false });
     }
-
-    const obs = new MutationObserver(() => {
-      body.dataset.haloIntelEnhanced = "false";
-      setTimeout(addIntelEnhancements, 80);
-    });
-
-    obs.observe(body, {childList:true, subtree:true, characterData:true});
-    setTimeout(addIntelEnhancements, 250);
   });
 })();
 </script>
