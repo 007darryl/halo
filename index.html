@@ -5102,5 +5102,353 @@ function haloAdvancedBrief(){
 })();
 </script>
 
+
+<!-- HALO ROUTE INTEL FRONTEND COMMAND PATCH -->
+<style id="halo-route-intel-command-patch">
+/* Route Intel panel/card styling */
+.halo-route-card{
+  margin:12px 0;
+  padding:16px;
+  border-radius:18px;
+  border:1px solid rgba(0,234,255,.22);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.055), rgba(0,234,255,.035), rgba(0,0,0,.16)),
+    rgba(0,13,31,.72);
+  box-shadow:
+    0 18px 55px rgba(0,0,0,.36),
+    0 0 36px rgba(0,234,255,.12),
+    inset 0 0 0 1px rgba(255,255,255,.025);
+}
+
+.halo-route-title{
+  font-family:'JetBrains Mono', monospace;
+  font-size:11px;
+  letter-spacing:4px;
+  color:#00eaff;
+  text-shadow:0 0 18px rgba(0,234,255,.52);
+  margin-bottom:12px;
+}
+
+.halo-route-grid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:10px;
+  margin:12px 0;
+}
+
+.halo-route-stat{
+  padding:12px;
+  border-radius:14px;
+  background:rgba(0,234,255,.045);
+  border:1px solid rgba(0,234,255,.12);
+}
+
+.halo-route-label{
+  font-family:'JetBrains Mono', monospace;
+  font-size:7px;
+  letter-spacing:2px;
+  color:rgba(0,234,255,.48);
+  margin-bottom:6px;
+}
+
+.halo-route-value{
+  font-family:'JetBrains Mono', monospace;
+  font-size:17px;
+  letter-spacing:1px;
+  color:#eaffff;
+}
+
+.halo-route-heavy{color:#ff4545 !important;text-shadow:0 0 16px rgba(255,69,69,.45);}
+.halo-route-moderate{color:#ff9d2e !important;text-shadow:0 0 16px rgba(255,157,46,.38);}
+.halo-route-light{color:#ffe83f !important;text-shadow:0 0 16px rgba(255,232,63,.32);}
+.halo-route-clear{color:#00ff9d !important;text-shadow:0 0 16px rgba(0,255,157,.38);}
+
+.halo-route-copy{
+  font-size:13px;
+  color:rgba(218,239,255,.72);
+  line-height:1.6;
+}
+
+.halo-route-mini{
+  margin-top:10px;
+  font-family:'JetBrains Mono', monospace;
+  font-size:8px;
+  letter-spacing:1.5px;
+  color:rgba(0,234,255,.42);
+}
+
+@media(max-width:768px){
+  .halo-route-grid{
+    grid-template-columns:1fr;
+  }
+}
+</style>
+
+<script id="halo-route-intel-command-patch-js">
+(function(){
+  const HALO_ROUTE_API = 'https://halo-server-d3h3.onrender.com/route-intel';
+
+  function escapeHTML(str){
+    return String(str ?? '').replace(/[&<>"']/g, function(m){
+      return ({
+        '&':'&amp;',
+        '<':'&lt;',
+        '>':'&gt;',
+        '"':'&quot;',
+        "'":'&#039;'
+      })[m];
+    });
+  }
+
+  function getRouteTrafficClass(level){
+    const l = String(level || '').toLowerCase();
+    if(l.includes('heavy')) return 'halo-route-heavy';
+    if(l.includes('moderate')) return 'halo-route-moderate';
+    if(l.includes('light')) return 'halo-route-light';
+    return 'halo-route-clear';
+  }
+
+  function routeIntelHTML(data){
+    const trafficClass = getRouteTrafficClass(data.traffic_level);
+    const delay = Number(data.delay_minutes || 0);
+
+    return `
+      <div class="halo-route-card">
+        <div class="halo-route-title">ROUTE INTEL // LIVE TRAFFIC</div>
+        <div class="halo-route-copy">
+          <strong>${escapeHTML(data.origin || 'Current Origin')}</strong>
+          → 
+          <strong>${escapeHTML(data.destination || 'Destination')}</strong>
+        </div>
+
+        <div class="halo-route-grid">
+          <div class="halo-route-stat">
+            <div class="halo-route-label">ETA</div>
+            <div class="halo-route-value">${escapeHTML(data.eta_minutes)} MIN</div>
+          </div>
+          <div class="halo-route-stat">
+            <div class="halo-route-label">NORMAL TIME</div>
+            <div class="halo-route-value">${escapeHTML(data.normal_minutes)} MIN</div>
+          </div>
+          <div class="halo-route-stat">
+            <div class="halo-route-label">TRAFFIC DELAY</div>
+            <div class="halo-route-value ${delay > 0 ? trafficClass : 'halo-route-clear'}">+${escapeHTML(delay)} MIN</div>
+          </div>
+          <div class="halo-route-stat">
+            <div class="halo-route-label">DISTANCE</div>
+            <div class="halo-route-value">${escapeHTML(data.distance_miles)} MI</div>
+          </div>
+        </div>
+
+        <div class="halo-route-copy">
+          Traffic level: <strong class="${trafficClass}">${escapeHTML(data.traffic_level || 'Unknown')}</strong>
+        </div>
+        <div class="halo-route-mini">
+          GOOGLE ROUTES API // TRAFFIC_AWARE_OPTIMAL
+        </div>
+      </div>
+    `;
+  }
+
+  function speakRouteSummary(data){
+    const delay = Number(data.delay_minutes || 0);
+    const traffic = data.traffic_level || 'unknown';
+    return `Route intel ready. ${data.destination} is approximately ${data.eta_minutes} minutes away. Traffic is ${traffic}${delay > 0 ? ` with a ${delay} minute delay.` : '.'}`;
+  }
+
+  function addHaloMessage(role, text){
+    const chatFeed = document.getElementById('chatFeed');
+    if(!chatFeed) return;
+
+    const msg = document.createElement('div');
+    msg.className = role === 'user' ? 'msg user-msg' : 'msg halo-msg';
+    msg.innerHTML = escapeHTML(text);
+    chatFeed.appendChild(msg);
+    chatFeed.scrollTop = chatFeed.scrollHeight;
+  }
+
+  function addHaloHTML(role, html){
+    const chatFeed = document.getElementById('chatFeed');
+    if(!chatFeed) return;
+
+    const msg = document.createElement('div');
+    msg.className = role === 'user' ? 'msg user-msg' : 'msg halo-msg';
+    msg.innerHTML = html;
+    chatFeed.appendChild(msg);
+    chatFeed.scrollTop = chatFeed.scrollHeight;
+  }
+
+  function parseRouteCommand(input){
+    const text = String(input || '').trim();
+    const patterns = [
+      /^(?:halo\s+)?(?:route|routes|navigate|directions)\s+(?:to|towards?)\s+(.+)$/i,
+      /^(?:halo\s+)?(?:traffic|traffic\s+check)\s+(?:to|towards?|for)\s+(.+)$/i,
+      /^(?:halo\s+)?(?:how\s+long|eta)\s+(?:to|towards?|for)\s+(.+)$/i,
+      /^(?:halo\s+)?(?:check\s+traffic)\s+(?:to|towards?|for)\s+(.+)$/i,
+      /^(?:halo\s+)?(?:drive\s+to)\s+(.+)$/i
+    ];
+
+    for(const pattern of patterns){
+      const match = text.match(pattern);
+      if(match && match[1]) return match[1].trim();
+    }
+
+    return null;
+  }
+
+  async function handleRouteIntel(destination){
+    if(!destination) return false;
+
+    const normalizedDest = destination.toLowerCase() === 'lax'
+      ? 'Los Angeles International Airport'
+      : destination;
+
+    try{
+      if(window.setHaloOrbMode) window.setHaloOrbMode('thinking', 'ROUTE SCAN');
+
+      addHaloMessage('halo', `Scanning live traffic route to ${normalizedDest}...`);
+
+      const response = await fetch(HALO_ROUTE_API, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          origin:'Sylmar, CA',
+          destination:normalizedDest
+        })
+      });
+
+      const data = await response.json();
+
+      if(!response.ok || data.error){
+        if(window.setHaloOrbMode) window.setHaloOrbMode('alert', 'ROUTE ERROR');
+
+        const errorText = data.error || 'Unable to retrieve route intel.';
+        addHaloMessage('halo', `Route Intel error: ${errorText}`);
+
+        if(typeof showIntel === 'function'){
+          showIntel(
+            'ROUTE INTEL ERROR',
+            `<h3>Route Failed</h3><p>${escapeHTML(errorText)}</p><h3>Try Again</h3><ul><li>Use a full place name.</li><li>Example: Los Angeles International Airport instead of LAX.</li><li>Example: Santa Monica Pier.</li></ul>`
+          );
+        }
+
+        return true;
+      }
+
+      if(window.setHaloOrbMode){
+        const level = String(data.traffic_level || '').toLowerCase();
+        if(level.includes('heavy')) window.setHaloOrbMode('alert', 'HEAVY TRAFFIC');
+        else if(level.includes('moderate')) window.setHaloOrbMode('thinking', 'TRAFFIC MODERATE');
+        else window.setHaloOrbMode('success', 'ROUTE READY');
+      }
+
+      const html = routeIntelHTML(data);
+      addHaloHTML('halo', html);
+
+      if(typeof showIntel === 'function'){
+        showIntel(
+          'ROUTE INTEL // ' + escapeHTML(data.destination),
+          html
+        );
+      }
+
+      if(typeof speakText === 'function'){
+        speakText(speakRouteSummary(data));
+      }else if(typeof speak === 'function'){
+        speak(speakRouteSummary(data));
+      }
+
+      return true;
+
+    }catch(error){
+      if(window.setHaloOrbMode) window.setHaloOrbMode('alert', 'ROUTE ERROR');
+      addHaloMessage('halo', `Route Intel failed: ${error.message}`);
+      return true;
+    }
+  }
+
+  function patchSendFunction(){
+    const input = document.getElementById('textInp');
+    const sendBtn = document.querySelector('.send-btn');
+
+    if(!input || !sendBtn || sendBtn.dataset.routeIntelPatched === 'true') return;
+
+    sendBtn.dataset.routeIntelPatched = 'true';
+
+    sendBtn.addEventListener('click', async function(e){
+      const value = input.value || '';
+      const destination = parseRouteCommand(value);
+
+      if(destination){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        addHaloMessage('user', value);
+        input.value = '';
+
+        await handleRouteIntel(destination);
+      }
+    }, true);
+
+    input.addEventListener('keydown', async function(e){
+      if(e.key !== 'Enter') return;
+
+      const value = input.value || '';
+      const destination = parseRouteCommand(value);
+
+      if(destination){
+        e.preventDefault();
+        e.stopImmediatePropagation();
+
+        addHaloMessage('user', value);
+        input.value = '';
+
+        await handleRouteIntel(destination);
+      }
+    }, true);
+  }
+
+  function patchVoiceCommandHooks(){
+    const originalProcess = window.processCommand || window.handleCommand || window.sendCommand;
+
+    if(typeof originalProcess === 'function' && !window.__haloRouteIntelCommandPatched){
+      window.__haloRouteIntelCommandPatched = true;
+
+      const patched = async function(command){
+        const destination = parseRouteCommand(command);
+        if(destination){
+          addHaloMessage('user', command);
+          await handleRouteIntel(destination);
+          return;
+        }
+        return originalProcess.apply(this, arguments);
+      };
+
+      if(window.processCommand) window.processCommand = patched;
+      if(window.handleCommand) window.handleCommand = patched;
+      if(window.sendCommand) window.sendCommand = patched;
+    }
+  }
+
+  function boot(){
+    patchSendFunction();
+    patchVoiceCommandHooks();
+
+    setInterval(function(){
+      patchSendFunction();
+      patchVoiceCommandHooks();
+    }, 1500);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', boot);
+  }else{
+    boot();
+  }
+
+  window.haloRouteIntel = handleRouteIntel;
+})();
+</script>
+
 </body>
 </html>
