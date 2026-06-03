@@ -6155,5 +6155,462 @@ function haloAdvancedBrief(){
 })();
 </script>
 
+
+<!-- HALO FORCE NAVIGATION MAP ROUTE DRAW FIX -->
+<style id="halo-force-navigation-route-draw-fix">
+#haloNavForceStatus{
+  position:fixed;
+  right:92px;
+  bottom:92px;
+  z-index:6500;
+  display:none;
+  padding:10px 13px;
+  border-radius:999px;
+  border:1px solid rgba(0,234,255,.24);
+  background:rgba(0,10,26,.78);
+  color:#00eaff;
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  letter-spacing:1.6px;
+  box-shadow:0 0 30px rgba(0,234,255,.14);
+  backdrop-filter:blur(18px);
+}
+#haloNavForceStatus.active{display:block;}
+</style>
+
+<div id="haloNavForceStatus">NAV ROUTE SCAN</div>
+
+<script id="halo-force-navigation-route-draw-fix-js">
+(function(){
+  const ROUTE_PLUS_API = 'https://halo-server-d3h3.onrender.com/route-plus';
+  let forceRouteLayers = [];
+  let forceMarkerLayers = [];
+  let lastRoutePayload = null;
+
+  function log(){ try{ console.log('[HALO NAV FIX]', ...arguments); }catch(e){} }
+
+  function escapeHTML(str){
+    return String(str ?? '').replace(/[&<>"']/g, m => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'
+    })[m]);
+  }
+
+  function showNavStatus(text){
+    const el = document.getElementById('haloNavForceStatus');
+    if(!el) return;
+    el.textContent = text || 'NAV ROUTE SCAN';
+    el.classList.add('active');
+    clearTimeout(el._t);
+    el._t = setTimeout(()=>el.classList.remove('active'), 3500);
+  }
+
+  function parseCommand(text){
+    text = String(text || '').trim();
+    const patterns = [
+      /^(?:halo\s+)?(?:route|routes|navigate|directions|drive)\s+(?:to|towards?)\s+(.+)$/i,
+      /^(?:halo\s+)?(?:traffic|traffic\s+check|check\s+traffic)\s+(?:to|towards?|for)\s+(.+)$/i,
+      /^(?:halo\s+)?(?:how\s+long|eta)\s+(?:to|towards?|for)\s+(.+)$/i,
+      /^(?:halo\s+)?(?:gas|gas\s+stations)\s+(?:near|by|around|to)\s+(.+)$/i,
+      /^(?:halo\s+)?(?:parking)\s+(?:near|by|around|at|to)\s+(.+)$/i
+    ];
+    for(const p of patterns){
+      const m = text.match(p);
+      if(m && m[1]) return m[1].trim();
+    }
+    return null;
+  }
+
+  function decodePolyline(encoded){
+    if(!encoded) return [];
+    let points = [];
+    let index = 0, lat = 0, lng = 0;
+
+    while(index < encoded.length){
+      let b, shift = 0, result = 0;
+      do{
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      }while(b >= 0x20);
+      lat += ((result & 1) ? ~(result >> 1) : (result >> 1));
+
+      shift = 0;
+      result = 0;
+      do{
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      }while(b >= 0x20);
+      lng += ((result & 1) ? ~(result >> 1) : (result >> 1));
+
+      points.push([lat / 1e5, lng / 1e5]);
+    }
+    return points;
+  }
+
+  function routeColor(level){
+    const l = String(level || '').toLowerCase();
+    if(l.includes('heavy')) return '#ff4545';
+    if(l.includes('moderate')) return '#ff9d2e';
+    if(l.includes('light')) return '#ffe83f';
+    return '#00ff9d';
+  }
+
+  function trafficClass(level){
+    const l = String(level || '').toLowerCase();
+    if(l.includes('heavy')) return 'halo-nav-heavy';
+    if(l.includes('moderate')) return 'halo-nav-moderate';
+    if(l.includes('light')) return 'halo-nav-light';
+    return 'halo-nav-clear';
+  }
+
+  function getMap(){
+    try{
+      if(window.haloRealMap) return window.haloRealMap;
+      if(typeof haloRealMap !== 'undefined' && haloRealMap) return haloRealMap;
+    }catch(e){}
+    return null;
+  }
+
+  async function openMapAndGet(){
+    if(typeof openHaloAdvancedMap === 'function'){
+      openHaloAdvancedMap();
+    }else{
+      const overlay = document.getElementById('haloAdvancedMapOverlay');
+      if(overlay) overlay.classList.add('active');
+    }
+
+    await new Promise(r => setTimeout(r, 700));
+
+    try{
+      if(typeof initHaloRealMap === 'function') initHaloRealMap();
+    }catch(e){}
+
+    await new Promise(r => setTimeout(r, 300));
+
+    const map = getMap();
+    if(map && typeof map.invalidateSize === 'function'){
+      map.invalidateSize();
+    }
+    return map;
+  }
+
+  function clearMapDrawings(){
+    const map = getMap();
+    if(!map || typeof L === 'undefined') return;
+    [...forceRouteLayers, ...forceMarkerLayers].forEach(layer => {
+      try{ map.removeLayer(layer); }catch(e){}
+    });
+    forceRouteLayers = [];
+    forceMarkerLayers = [];
+  }
+
+  function icon(type, label){
+    return L.divIcon({
+      className:'',
+      html:`<div class="halo-nav-marker ${type}">${label}</div>`,
+      iconSize:[28,28],
+      iconAnchor:[14,14],
+      popupAnchor:[0,-16]
+    });
+  }
+
+  function addMarker(map, loc, type, label, popup){
+    if(!loc) return;
+    const lat = loc.latitude ?? loc.lat;
+    const lng = loc.longitude ?? loc.lng;
+    if(typeof lat !== 'number' || typeof lng !== 'number') return;
+
+    const marker = L.marker([lat,lng], {icon:icon(type,label)}).addTo(map);
+    if(popup) marker.bindPopup(popup, {className:'ham-popup'});
+    forceMarkerLayers.push(marker);
+  }
+
+  function ensureHUD(){
+    const overlay = document.getElementById('haloAdvancedMapOverlay');
+    if(!overlay) return null;
+
+    let hud = document.getElementById('haloNavMapHUD');
+    if(hud) return hud;
+
+    hud = document.createElement('div');
+    hud.id = 'haloNavMapHUD';
+    hud.innerHTML = `
+      <div class="halo-nav-hud-header">
+        <div class="halo-nav-hud-title">NAVIGATION INTEL</div>
+        <div class="halo-nav-hud-status halo-nav-clear">READY</div>
+      </div>
+      <div class="halo-nav-hud-body" id="haloNavHUDBody">
+        <div class="halo-nav-destination">Route system standing by.</div>
+      </div>
+    `;
+
+    const mapPanel = overlay.querySelector('.ham-map-panel') || overlay;
+    mapPanel.appendChild(hud);
+    return hud;
+  }
+
+  function updateHUD(payload, selectedIndex){
+    ensureHUD();
+    const body = document.getElementById('haloNavHUDBody');
+    const status = document.querySelector('#haloNavMapHUD .halo-nav-hud-status');
+    if(!body) return;
+
+    const routeData = payload.route || {};
+    const routes = routeData.routes || [routeData];
+    const selected = routes[selectedIndex] || routes[0] || routeData;
+    const gas = payload.gas || [];
+    const parking = payload.parking || [];
+    const cls = trafficClass(selected.traffic_level);
+
+    if(status){
+      status.className = 'halo-nav-hud-status ' + cls;
+      status.textContent = selected.traffic_level || 'LIVE';
+    }
+
+    const routeOptions = routes.slice(0,3).map((r, idx) => `
+      <div class="halo-route-option-row ${idx === selectedIndex ? 'active' : ''}" onclick="haloForceDrawRouteOption(${idx})">
+        <div>
+          <strong>${escapeHTML(r.label || 'Option ' + (idx+1))}</strong><br>
+          <small>${escapeHTML(r.description || 'Route option')}</small>
+        </div>
+        <small>${escapeHTML(r.eta_minutes)} MIN</small>
+      </div>
+    `).join('');
+
+    const gasList = gas.slice(0,3).map(p => `
+      <div class="halo-nav-place">
+        <span>⛽ ${escapeHTML(p.name)}</span>
+        <span>${p.rating ? escapeHTML(p.rating) + '★' : 'GAS'}</span>
+      </div>
+    `).join('') || '<div class="halo-nav-place"><span>No gas results.</span><span>—</span></div>';
+
+    const parkingList = parking.slice(0,3).map(p => `
+      <div class="halo-nav-place">
+        <span>🅿️ ${escapeHTML(p.name)}</span>
+        <span>${p.rating ? escapeHTML(p.rating) + '★' : 'PARK'}</span>
+      </div>
+    `).join('') || '<div class="halo-nav-place"><span>No parking results.</span><span>—</span></div>';
+
+    body.innerHTML = `
+      <div class="halo-nav-destination">
+        <strong>${escapeHTML(routeData.origin || 'Origin')}</strong> → <strong>${escapeHTML(routeData.destination || 'Destination')}</strong>
+      </div>
+      <div class="halo-nav-stats">
+        <div class="halo-nav-stat"><div class="halo-nav-label">ETA</div><div class="halo-nav-value">${escapeHTML(selected.eta_minutes)}M</div></div>
+        <div class="halo-nav-stat"><div class="halo-nav-label">NORMAL</div><div class="halo-nav-value">${escapeHTML(selected.normal_minutes)}M</div></div>
+        <div class="halo-nav-stat"><div class="halo-nav-label">DELAY</div><div class="halo-nav-value ${cls}">+${escapeHTML(selected.delay_minutes || 0)}M</div></div>
+        <div class="halo-nav-stat"><div class="halo-nav-label">DISTANCE</div><div class="halo-nav-value">${escapeHTML(selected.distance_miles)}MI</div></div>
+      </div>
+      <div class="halo-nav-section">
+        <div class="halo-nav-section-title">ROUTE OPTIONS</div>
+        <div class="halo-nav-list">${routeOptions}</div>
+      </div>
+      <div class="halo-nav-section">
+        <div class="halo-nav-section-title">GAS NEAR DESTINATION</div>
+        <div class="halo-nav-list">${gasList}</div>
+      </div>
+      <div class="halo-nav-section">
+        <div class="halo-nav-section-title">PARKING NEAR DESTINATION</div>
+        <div class="halo-nav-list">${parkingList}</div>
+      </div>
+    `;
+  }
+
+  function drawPayload(payload, selectedIndex = 0){
+    lastRoutePayload = payload;
+
+    const map = getMap();
+    if(!map || typeof L === 'undefined'){
+      log('No map available to draw route');
+      return;
+    }
+
+    clearMapDrawings();
+
+    const routeData = payload.route || {};
+    const routes = routeData.routes || [routeData];
+    const selected = routes[selectedIndex] || routes[0] || routeData;
+
+    let selectedPoints = [];
+
+    routes.forEach((r, idx) => {
+      const points = decodePolyline(r.polyline);
+      if(!points.length) return;
+
+      const isSelected = idx === selectedIndex;
+      const color = routeColor(r.traffic_level);
+
+      if(isSelected){
+        const glow = L.polyline(points, {
+          color,
+          weight:18,
+          opacity:.22,
+          lineCap:'round',
+          lineJoin:'round'
+        }).addTo(map);
+        forceRouteLayers.push(glow);
+        selectedPoints = points;
+      }
+
+      const line = L.polyline(points, {
+        color:isSelected ? color : '#00eaff',
+        weight:isSelected ? 7 : 3,
+        opacity:isSelected ? .95 : .22,
+        lineCap:'round',
+        lineJoin:'round'
+      }).addTo(map);
+
+      forceRouteLayers.push(line);
+    });
+
+    const start = selected.start_location || routeData.start_location;
+    const end = selected.end_location || routeData.end_location;
+
+    addMarker(map, start, 'start', '●', 'Route origin');
+    addMarker(map, end, 'destination', '◆', `<strong>${escapeHTML(routeData.destination || 'Destination')}</strong><br>${escapeHTML(selected.eta_minutes)} min`);
+
+    (payload.gas || []).slice(0,5).forEach(place => {
+      addMarker(map, place.location, 'gas', '⛽', `<strong>${escapeHTML(place.name)}</strong><br>${escapeHTML(place.address || '')}<br>${place.rating ? escapeHTML(place.rating) + '★' : ''}`);
+    });
+
+    (payload.parking || []).slice(0,5).forEach(place => {
+      addMarker(map, place.location, 'parking', 'P', `<strong>${escapeHTML(place.name)}</strong><br>${escapeHTML(place.address || '')}<br>${place.rating ? escapeHTML(place.rating) + '★' : ''}`);
+    });
+
+    if(selectedPoints.length){
+      map.fitBounds(selectedPoints, {padding:[70,70]});
+    }
+
+    updateHUD(payload, selectedIndex);
+    log('Route drawn', selectedPoints.length, 'points', 'gas', (payload.gas||[]).length, 'parking', (payload.parking||[]).length);
+  }
+
+  async function run(destination, origin='home'){
+    destination = String(destination || '').trim();
+    if(!destination) return true;
+
+    showNavStatus('NAV SCANNING');
+    if(window.setHaloOrbMode) window.setHaloOrbMode('thinking','NAV SCAN');
+
+    const map = await openMapAndGet();
+    ensureHUD();
+
+    try{
+      const res = await fetch(ROUTE_PLUS_API, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({origin, destination})
+      });
+
+      const data = await res.json();
+      if(!res.ok || !data.success){
+        const err = data.error || 'Route Plus failed';
+        showNavStatus('NAV ERROR');
+        if(typeof showIntel === 'function'){
+          showIntel('NAVIGATION ERROR', `<h3>Route Failed</h3><p>${escapeHTML(err)}</p>`);
+        }
+        return true;
+      }
+
+      drawPayload(data, 0);
+      showNavStatus('ROUTE DRAWN');
+
+      const route = data.route || {};
+      const level = String(route.traffic_level || '').toLowerCase();
+
+      if(window.setHaloOrbMode){
+        if(level.includes('heavy')) window.setHaloOrbMode('alert','HEAVY TRAFFIC');
+        else if(level.includes('moderate')) window.setHaloOrbMode('thinking','TRAFFIC MODERATE');
+        else window.setHaloOrbMode('success','ROUTE READY');
+      }
+
+      if(typeof showIntel === 'function'){
+        showIntel(
+          'NAVIGATION INTEL // ' + escapeHTML(route.destination || destination),
+          `<h3>Route Analysis Complete</h3>
+          <p><strong>ETA:</strong> ${escapeHTML(route.eta_minutes)} minutes<br>
+          <strong>Traffic:</strong> ${escapeHTML(route.traffic_level)}<br>
+          <strong>Delay:</strong> +${escapeHTML(route.delay_minutes)} minutes<br>
+          <strong>Distance:</strong> ${escapeHTML(route.distance_miles)} miles</p>
+          <h3>Map Overlay</h3>
+          <p>Glowing route line, gas markers, and parking markers are now active on the HALO map.</p>`
+        );
+      }
+
+      return true;
+
+    }catch(err){
+      showNavStatus('NAV ERROR');
+      if(window.setHaloOrbMode) window.setHaloOrbMode('alert','NAV ERROR');
+      if(typeof showIntel === 'function'){
+        showIntel('NAVIGATION ERROR', `<h3>System Error</h3><p>${escapeHTML(err.message)}</p>`);
+      }
+      return true;
+    }
+  }
+
+  window.haloForceRunRoute = run;
+  window.haloRoutePlusCommand = function(destination){ return run(destination, 'home'); };
+  window.haloForceDrawRouteOption = function(index){
+    if(lastRoutePayload) drawPayload(lastRoutePayload, index);
+  };
+
+  // Force intercept before older handlers attached to input/button
+  document.addEventListener('keydown', function(e){
+    if(e.key !== 'Enter') return;
+    const input = document.getElementById('textInp');
+    if(!input || document.activeElement !== input) return;
+    const value = input.value || '';
+    const dest = parseCommand(value);
+    if(!dest) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    const chatFeed = document.getElementById('chatFeed');
+    if(chatFeed){
+      const msg = document.createElement('div');
+      msg.className = 'msg user-msg';
+      msg.textContent = value;
+      chatFeed.appendChild(msg);
+      chatFeed.scrollTop = chatFeed.scrollHeight;
+    }
+
+    input.value = '';
+    run(dest, 'home');
+  }, true);
+
+  document.addEventListener('click', function(e){
+    const send = e.target.closest && e.target.closest('.send-btn');
+    if(!send) return;
+    const input = document.getElementById('textInp');
+    if(!input) return;
+    const value = input.value || '';
+    const dest = parseCommand(value);
+    if(!dest) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    const chatFeed = document.getElementById('chatFeed');
+    if(chatFeed){
+      const msg = document.createElement('div');
+      msg.className = 'msg user-msg';
+      msg.textContent = value;
+      chatFeed.appendChild(msg);
+      chatFeed.scrollTop = chatFeed.scrollHeight;
+    }
+
+    input.value = '';
+    run(dest, 'home');
+  }, true);
+
+  log('Force navigation route draw patch loaded');
+})();
+</script>
+
 </body>
 </html>
