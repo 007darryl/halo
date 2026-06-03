@@ -1393,7 +1393,6 @@ async function askHalo(text){
   addChat('user',text);
   history.push({role:'user',content:text});
   // ── DIRECT POST COMMAND INTERCEPTOR ──
-  // Catches "post X", "halo post X", "post the X from the Omkeer folder" etc.
   const lowerText = text.toLowerCase().trim();
   const postMatch = lowerText.match(/^(?:halo\s+)?post(?:\s+the)?\s+(.+?)(?:\s+(?:from|on|to)\s+.*)?$/);
   if(postMatch){
@@ -1404,11 +1403,15 @@ async function askHalo(text){
       .trim();
     console.log('Extracted filename:', filename);
     addChat('user', text);
-    const spoken = `Deploying ${filename} across all channels. Stand by.`;
-    addChat('halo', spoken);
-    speakText(spoken);
-    setOrbState('speaking');
-    console.log('Sending to Make.com');
+    history.push({role:'user',content:text});
+    
+    // Show searching status
+    const searchMsg = `Searching Dropbox for "${filename}"... stand by.`;
+    addChat('halo', searchMsg);
+    speakText(searchMsg);
+    setOrbState('thinking');
+    
+    // Single fetch to server — server handles Dropbox lookup and webhook
     fetch('https://halo-server-d3h3.onrender.com/post-content',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
@@ -1418,20 +1421,27 @@ async function askHalo(text){
         platforms: 'Instagram, TikTok, Pinterest'
       })
     }).then(r=>r.json()).then(d=>{
+      setOrbState('');
       if(d.success){
         playSuccessBeep();
-        const msg = d.filename ? `"${d.filename}" queued for deployment.` : 'Content queued for deployment.';
+        const found = d.filename || filename;
+        const hasUrl = d.url && d.url.length > 0;
+        const msg = hasUrl 
+          ? `"${found}" deployed across all channels.`
+          : `"${found}" queued — no image URL found. Check Dropbox permissions.`;
         addChat('halo', msg);
-        if(typeof showHoloNotif==='function') showHoloNotif('CONTENT QUEUED', d.filename||filename, 'success', 4000);
+        speakText(hasUrl ? `${found} deployed.` : `Queued without image.`);
+        if(typeof showHoloNotif==='function') showHoloNotif('CONTENT QUEUED', found, hasUrl?'success':'warning', 4000);
       } else {
         addChat('halo','Posting issue: '+(d.error||'Unknown error'));
       }
     }).catch(e=>{
+      setOrbState('');
       console.log('Post error:', e);
       addChat('halo','Could not reach posting service.');
     });
-    history.push({role:'user',content:text});
-    history.push({role:'assistant',content:spoken});
+    
+    history.push({role:'assistant',content:searchMsg});
     return;
   }
 
