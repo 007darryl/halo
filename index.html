@@ -10910,5 +10910,430 @@ path.halo-transit-route-glow{
 })();
 </script>
 
+
+<!-- HALO V19 PANEL SPACING + EXACT GAS PARKING LIST FIX -->
+<style id="halo-v19-panel-spacing-exact-list-fix">
+/*
+  V19:
+  - gives the route panels more breathing room from Global Briefing / Active Feeds
+  - rebuilds gas + parking list rows with exact IDs so gas no longer routes to parking
+*/
+
+/* Move route panels slightly inward and slim them down */
+#haloNavHUD.halo-v17-docked,
+#haloNavHUD.halo-v18-docked,
+#haloNavHUD.halo-v19-docked{
+  left:270px !important;
+  width:188px !important;
+  max-width:188px !important;
+  top:78px !important;
+  bottom:18px !important;
+  right:auto !important;
+  height:auto !important;
+  max-height:none !important;
+}
+
+#haloDestinationBrief.halo-v17-docked,
+#haloDestinationIntelCard.halo-v17-docked,
+#haloDestinationBrief.halo-v18-docked,
+#haloDestinationIntelCard.halo-v18-docked,
+#haloDestinationBrief.halo-v19-docked,
+#haloDestinationIntelCard.halo-v19-docked{
+  right:270px !important;
+  width:188px !important;
+  max-width:188px !important;
+  top:78px !important;
+  bottom:18px !important;
+  left:auto !important;
+  height:auto !important;
+  max-height:none !important;
+}
+
+/* Keep map center between the narrower route panels */
+#haloAdvancedMapOverlay.active .ham-map-panel,
+#haloAdvancedMapOverlay.active .hgi-map-wrap{
+  margin-left:474px !important;
+  margin-right:474px !important;
+  width:auto !important;
+  transform:none !important;
+}
+
+/* Controls clear */
+#haloCleanMapToggles,
+#haloMapLayerControls{
+  right:474px !important;
+  top:18px !important;
+}
+
+/* Make nav rows compact for narrow column */
+#haloNavHUD.halo-v19-docked .halo-nav-row,
+#haloNavHUD.halo-v18-docked .halo-nav-row,
+#haloNavHUD.halo-v17-docked .halo-nav-row{
+  font-size:10px !important;
+  padding:8px 9px !important;
+}
+
+#haloNavHUD .halo-v19-exact-place-row{
+  cursor:pointer !important;
+  border:1px solid rgba(0,234,255,.12);
+  border-radius:12px;
+  padding:8px 9px;
+  margin-bottom:6px;
+  background:rgba(0,10,26,.34);
+  color:rgba(235,250,255,.82);
+  font-size:10px;
+  line-height:1.25;
+  transition:.15s ease;
+}
+
+#haloNavHUD .halo-v19-exact-place-row:hover{
+  border-color:rgba(0,234,255,.52);
+  background:rgba(0,234,255,.08);
+  transform:translateX(2px);
+}
+
+.halo-v19-place-name{
+  display:block;
+  color:#eaffff;
+  font-weight:700;
+  white-space:normal;
+}
+
+.halo-v19-place-meta{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  margin-top:3px;
+  font-family:'JetBrains Mono', monospace;
+  color:#00eaff;
+  font-size:8px;
+}
+
+/* Give side panels their lane */
+#haloCleanLeftPanel,
+#haloSystemBriefingPanel{
+  left:18px !important;
+  width:220px !important;
+}
+
+#haloCleanRightPanel,
+#haloActiveFeedsPanel{
+  right:18px !important;
+  width:220px !important;
+}
+
+/* Redock button smaller so it does not crowd */
+.halo-v18-redock-btn{
+  bottom:6px !important;
+  font-size:6px !important;
+  padding:5px 8px !important;
+}
+
+/* Responsive */
+@media(max-width:1450px){
+  #haloNavHUD.halo-v17-docked,
+  #haloNavHUD.halo-v18-docked,
+  #haloNavHUD.halo-v19-docked{
+    left:250px !important;
+    width:175px !important;
+    max-width:175px !important;
+  }
+
+  #haloDestinationBrief.halo-v17-docked,
+  #haloDestinationIntelCard.halo-v17-docked,
+  #haloDestinationBrief.halo-v18-docked,
+  #haloDestinationIntelCard.halo-v18-docked,
+  #haloDestinationBrief.halo-v19-docked,
+  #haloDestinationIntelCard.halo-v19-docked{
+    right:250px !important;
+    width:175px !important;
+    max-width:175px !important;
+  }
+
+  #haloAdvancedMapOverlay.active .ham-map-panel,
+  #haloAdvancedMapOverlay.active .hgi-map-wrap{
+    margin-left:438px !important;
+    margin-right:438px !important;
+  }
+
+  #haloCleanMapToggles,
+  #haloMapLayerControls{
+    right:438px !important;
+  }
+}
+</style>
+
+<script id="halo-v19-panel-spacing-exact-list-fix-js">
+(function(){
+  let latestRoutePayloadV19 = null;
+
+  function getMap(){
+    try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
+  }
+
+  function esc(str){
+    return String(str ?? '').replace(/[&<>"']/g, m => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;'
+    })[m]);
+  }
+
+  function invalidateMap(){
+    const map = getMap();
+    if(map){
+      setTimeout(() => {
+        try{ map.invalidateSize({animate:true}); }catch(e){}
+      }, 240);
+    }
+  }
+
+  function slug(str){
+    return String(str || 'place')
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g,'_')
+      .replace(/^_+|_+$/g,'')
+      .slice(0,36) || 'place';
+  }
+
+  function placeId(type, index, place){
+    return `${type}_${index}_${slug(place && place.name)}`;
+  }
+
+  function getPlaceLocation(place){
+    const loc = place?.location || {};
+    const lat = loc.latitude ?? loc.lat;
+    const lng = loc.longitude ?? loc.lng;
+    if(typeof lat !== 'number' || typeof lng !== 'number') return null;
+    return {lat,lng};
+  }
+
+  function registerPlaces(payload){
+    if(!payload) return;
+    window.haloPlaceMarkers = window.haloPlaceMarkers || {};
+
+    const groups = [
+      {type:'gas', items: payload.gas || []},
+      {type:'parking', items: payload.parking || []}
+    ];
+
+    groups.forEach(group => {
+      group.items.forEach((place, index) => {
+        const id = placeId(group.type, index, place);
+        place.__haloPlaceId = id;
+
+        const loc = getPlaceLocation(place);
+        const existing = Object.values(window.haloPlaceMarkers).find(entry => {
+          return entry &&
+            entry.type === group.type &&
+            String(entry.place?.name || '').toLowerCase() === String(place.name || '').toLowerCase();
+        });
+
+        if(existing){
+          existing.id = id;
+          existing.type = group.type;
+          existing.place = place;
+          if(loc){
+            existing.lat = loc.lat;
+            existing.lng = loc.lng;
+          }
+          window.haloPlaceMarkers[id] = existing;
+        }else if(loc){
+          window.haloPlaceMarkers[id] = {
+            id,
+            type: group.type,
+            place,
+            lat: loc.lat,
+            lng: loc.lng,
+            marker: null
+          };
+        }
+      });
+    });
+  }
+
+  function exactFocusPlace(id){
+    const entry = window.haloPlaceMarkers && window.haloPlaceMarkers[id];
+
+    if(!entry){
+      console.warn('[HALO V19] No place entry for', id);
+      return;
+    }
+
+    const map = getMap();
+    if(map && typeof entry.lat === 'number' && typeof entry.lng === 'number'){
+      try{
+        if(map.flyTo){
+          map.flyTo([entry.lat, entry.lng], 16, {animate:true, duration:1.1, easeLinearity:.18});
+        }else{
+          map.setView([entry.lat, entry.lng], 16, {animate:true});
+        }
+      }catch(e){}
+
+      setTimeout(() => {
+        try{
+          if(entry.marker && typeof entry.marker.openPopup === 'function'){
+            entry.marker.openPopup();
+          }
+        }catch(e){}
+      }, 450);
+    }
+  }
+
+  // Override focus only when the exact V19 row calls it.
+  window.haloV19FocusExactPlace = exactFocusPlace;
+
+  function buildExactPlaceRows(payload){
+    const nav = document.getElementById('haloNavHUD');
+    if(!nav || !payload) return;
+
+    registerPlaces(payload);
+
+    const gas = (payload.gas || []).slice(0, 4);
+    const parking = (payload.parking || []).slice(0, 4);
+
+    // Find or create a dedicated exact list area.
+    let exactArea = nav.querySelector('#haloV19ExactPlaces');
+    if(!exactArea){
+      exactArea = document.createElement('div');
+      exactArea.id = 'haloV19ExactPlaces';
+      exactArea.style.marginTop = '10px';
+
+      const body = nav.querySelector('.halo-nav-body') || nav;
+      body.appendChild(exactArea);
+    }
+
+    const gasHTML = gas.map((place, index) => {
+      const id = place.__haloPlaceId || placeId('gas', index, place);
+      return `
+        <div class="halo-v19-exact-place-row" data-v19-place-id="${id}" onclick="haloV19FocusExactPlace('${id}')">
+          <span class="halo-v19-place-name">⛽ ${esc(place.name || 'Gas Station')}</span>
+          <span class="halo-v19-place-meta"><span>GAS</span><span>${esc(place.rating || '')}${place.rating ? '★' : ''}</span></span>
+        </div>
+      `;
+    }).join('');
+
+    const parkingHTML = parking.map((place, index) => {
+      const id = place.__haloPlaceId || placeId('parking', index, place);
+      return `
+        <div class="halo-v19-exact-place-row" data-v19-place-id="${id}" onclick="haloV19FocusExactPlace('${id}')">
+          <span class="halo-v19-place-name">Ⓟ ${esc(place.name || 'Parking')}</span>
+          <span class="halo-v19-place-meta"><span>PARK</span><span>${esc(place.rating || '')}${place.rating ? '★' : ''}</span></span>
+        </div>
+      `;
+    }).join('');
+
+    exactArea.innerHTML = `
+      <div class="halo-nav-section-title">EXACT GAS</div>
+      ${gasHTML || '<div class="halo-v19-exact-place-row">No gas found.</div>'}
+      <div class="halo-nav-section-title" style="margin-top:10px;">EXACT PARKING</div>
+      ${parkingHTML || '<div class="halo-v19-exact-place-row">No parking found.</div>'}
+    `;
+
+    // Disable older ambiguous rows so they do not intercept clicks.
+    const oldRows = Array.from(nav.querySelectorAll('.halo-nav-row, .halo-place-clickable, .halo-v17-exact-place'));
+    oldRows.forEach(row => {
+      if(row.closest('#haloV19ExactPlaces')) return;
+      const txt = String(row.textContent || '').toLowerCase();
+      const looksLikePlace = gas.concat(parking).some(p => {
+        const name = String(p.name || '').toLowerCase();
+        return name && txt.includes(name);
+      });
+
+      if(looksLikePlace){
+        row.style.pointerEvents = 'none';
+        row.style.opacity = '.45';
+      }
+    });
+  }
+
+  function applySpacing(){
+    ['haloNavHUD','haloDestinationBrief','haloDestinationIntelCard'].forEach(id => {
+      const panel = document.getElementById(id);
+      if(!panel) return;
+      panel.classList.add('halo-v19-docked');
+      // Only redock if not manually moved by V17 drag.
+      if(!panel.classList.contains('halo-v17-user-moved')){
+        panel.style.left = '';
+        panel.style.right = '';
+        panel.style.top = '';
+        panel.style.bottom = '';
+        panel.style.width = '';
+        panel.style.height = '';
+        panel.style.maxWidth = '';
+        panel.style.maxHeight = '';
+      }
+    });
+
+    if(latestRoutePayloadV19){
+      buildExactPlaceRows(latestRoutePayloadV19);
+    }
+
+    invalidateMap();
+  }
+
+  // Keep Set Destination exact too: when popup buttons use old IDs, V19 IDs are preserved in registry.
+  const oldSetDestination = window.haloSetPlaceDestination;
+  window.haloSetPlaceDestination = function(id){
+    const entry = window.haloPlaceMarkers && window.haloPlaceMarkers[id];
+
+    if(entry && oldSetDestination){
+      return oldSetDestination(id);
+    }
+
+    console.warn('[HALO V19] Set destination missing exact ID', id);
+    if(oldSetDestination) return oldSetDestination(id);
+  };
+
+  const originalFetch = window.fetch;
+  if(originalFetch && !window.__haloV19FetchWrapped){
+    window.__haloV19FetchWrapped = true;
+
+    window.fetch = async function(){
+      const response = await originalFetch.apply(this, arguments);
+
+      try{
+        const url = String(arguments[0] || '');
+
+        if(url.includes('/route-plus')){
+          response.clone().json().then(data => {
+            if(data && data.success){
+              latestRoutePayloadV19 = data;
+              setTimeout(applySpacing, 900);
+              setTimeout(applySpacing, 1900);
+            }
+          }).catch(()=>{});
+        }
+
+        if(url.includes('/route-intel')){
+          setTimeout(applySpacing, 900);
+          setTimeout(applySpacing, 1900);
+        }
+      }catch(e){}
+
+      return response;
+    };
+  }
+
+  const oldOpenMap = window.openHaloAdvancedMap;
+  if(typeof oldOpenMap === 'function' && !window.__haloV19OpenWrapped){
+    window.__haloV19OpenWrapped = true;
+    window.openHaloAdvancedMap = function(){
+      const result = oldOpenMap.apply(this, arguments);
+      setTimeout(applySpacing, 900);
+      return result;
+    };
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => setTimeout(applySpacing, 1500));
+  }else{
+    setTimeout(applySpacing, 1500);
+  }
+
+  setInterval(applySpacing, 4500);
+
+  console.log('[HALO V19 PANEL SPACING + EXACT GAS/PARKING LIST FIX] loaded');
+})();
+</script>
+
 </body>
 </html>
