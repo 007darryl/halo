@@ -9732,5 +9732,255 @@ path.halo-transit-route-glow{
 })();
 </script>
 
+
+<!-- HALO SET DESTINATION ADDRESS-FIRST REROUTE FIX V11 -->
+<script id="halo-set-destination-address-first-reroute-v11">
+(function(){
+  const ROUTE_PLUS_URL = 'https://halo-server-d3h3.onrender.com/route-plus';
+
+  function getMap(){
+    try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
+  }
+
+  function status(text, good=true){
+    const overlay = document.getElementById('haloAdvancedMapOverlay');
+    if(!overlay) return;
+
+    let el = document.getElementById('haloV11Status');
+    if(!el){
+      el = document.createElement('div');
+      el.id = 'haloV11Status';
+      el.style.cssText = `
+        position:absolute;left:50%;top:18px;transform:translateX(-50%);
+        z-index:1800;display:none;padding:10px 15px;border-radius:999px;
+        border:1px solid ${good ? 'rgba(0,255,157,.26)' : 'rgba(255,69,69,.30)'};
+        background:rgba(0,10,26,.82);color:${good ? '#00ff9d' : '#ff4545'};
+        font-family:'JetBrains Mono',monospace;font-size:8px;letter-spacing:1.6px;
+        backdrop-filter:blur(18px);box-shadow:0 0 30px rgba(0,255,157,.14);
+      `;
+      overlay.appendChild(el);
+    }
+
+    el.textContent = text;
+    el.style.display = 'block';
+    clearTimeout(el._t);
+    el._t = setTimeout(()=>el.style.display='none', 3200);
+  }
+
+  function getPlaceLocation(place){
+    const loc = place?.location || {};
+    const lat = loc.latitude ?? loc.lat;
+    const lng = loc.longitude ?? loc.lng;
+    if(typeof lat !== 'number' || typeof lng !== 'number') return null;
+    return {lat,lng};
+  }
+
+  function bestDestinationForPlace(place){
+    const name = place?.name || '';
+    const address = place?.address || place?.formattedAddress || '';
+
+    // Best for Google Routes API: exact address first, then name + address, then name.
+    if(address && name) return `${name}, ${address}`;
+    if(address) return address;
+    if(name) return name;
+
+    const loc = getPlaceLocation(place);
+    if(loc) return `${loc.lat},${loc.lng}`;
+
+    return '';
+  }
+
+  function clearOnlyRouteLines(){
+    const map = getMap();
+    if(!map) return;
+
+    try{
+      map.eachLayer(layer => {
+        const cls = layer?.options?.className || '';
+        const shouldRemove =
+          cls.includes('halo-v10-route') ||
+          cls.includes('halo-perf-route') ||
+          cls.includes('halo-ultimate-route') ||
+          cls.includes('halo-route') ||
+          layer?.options?.haloV10RouteLayer ||
+          layer?.options?.haloRouteLayer ||
+          layer?.options?.haloStreetLayer ||
+          layer?.options?.haloVisibilityFixRoute;
+
+        if(shouldRemove){
+          try{map.removeLayer(layer)}catch(e){}
+        }
+      });
+    }catch(e){}
+  }
+
+  async function callRoutePlus(destination){
+    const res = await fetch(ROUTE_PLUS_URL, {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        origin:'home',
+        destination,
+        alternatives:true
+      })
+    });
+
+    const data = await res.json();
+    return {res,data};
+  }
+
+  async function rerouteAddressFirst(id){
+    const entry = window.haloPlaceMarkers && window.haloPlaceMarkers[id];
+    if(!entry){
+      status('PLACE NOT FOUND', false);
+      return;
+    }
+
+    const place = entry.place || {};
+    const loc = getPlaceLocation(place);
+    const destinationAddress = bestDestinationForPlace(place);
+    const destinationCoords = loc ? `${loc.lat},${loc.lng}` : '';
+
+    status(`REROUTING // ${String(place.name || entry.type || 'PLACE').toUpperCase()}`);
+
+    try{
+      const map = getMap();
+      if(map) map.closePopup();
+    }catch(e){}
+
+    let data = null;
+
+    try{
+      // 1) Try normal HALO pipeline first. This is most compatible with existing drawing logic.
+      if(typeof window.haloNavRun === 'function'){
+        await window.haloNavRun(destinationAddress || destinationCoords, 'home');
+
+        // Do NOT clear here. Existing HALO renderer should draw the colored route.
+        setTimeout(() => {
+          const map = getMap();
+          if(map && loc){
+            try{ map.flyTo([loc.lat, loc.lng], 15, {animate:true,duration:1.1,easeLinearity:.18}); }catch(e){}
+          }
+        }, 1300);
+
+        status('ROUTE REQUEST SENT');
+        return;
+      }
+    }catch(e){
+      console.warn('haloNavRun failed, falling back route-plus', e);
+    }
+
+    try{
+      // 2) Try route-plus with address/name.
+      let result = await callRoutePlus(destinationAddress || destinationCoords);
+
+      // 3) If address fails, try coordinates.
+      if((!result.res.ok || !result.data.success) && destinationCoords && destinationCoords !== destinationAddress){
+        console.warn('Address route failed, trying coords', result.data);
+        result = await callRoutePlus(destinationCoords);
+      }
+
+      if(!result.res.ok || !result.data.success){
+        console.error('Route-plus failed:', result.data);
+        status('REROUTE FAILED', false);
+        return;
+      }
+
+      data = result.data;
+      window.__haloPolishPayload = data;
+      window.__haloStreetRoutePayload = data;
+      window.__haloLastRoutePayloadVisibilityFix = data;
+
+      // If the previous v10 draw helper exists, use it by faking a /route-plus response is hard.
+      // Use native route renderer if available; otherwise call old command functions.
+      if(typeof window.haloDrawRoutePlus === 'function'){
+        clearOnlyRouteLines();
+        window.haloDrawRoutePlus(data);
+      }else if(typeof window.haloRenderRoutePlus === 'function'){
+        clearOnlyRouteLines();
+        window.haloRenderRoutePlus(data);
+      }else if(typeof window.haloRoutePlusCommand === 'function'){
+        await window.haloRoutePlusCommand(destinationAddress || destinationCoords);
+      }else{
+        // Last resort: draw simple line.
+        drawSimpleRoute(data);
+      }
+
+      status('ROUTE UPDATED');
+
+    }catch(error){
+      console.error('V11 reroute error:', error);
+      status('REROUTE ERROR', false);
+    }
+  }
+
+  function decodePolyline(encoded){
+    if(!encoded) return [];
+    const points = [];
+    let index = 0, lat = 0, lng = 0;
+    while(index < encoded.length){
+      let b, shift = 0, result = 0;
+      do{b = encoded.charCodeAt(index++) - 63; result |= (b & 31) << shift; shift += 5;}while(b >= 32);
+      lat += ((result & 1) ? ~(result >> 1) : (result >> 1));
+      shift = 0; result = 0;
+      do{b = encoded.charCodeAt(index++) - 63; result |= (b & 31) << shift; shift += 5;}while(b >= 32);
+      lng += ((result & 1) ? ~(result >> 1) : (result >> 1));
+      points.push([lat / 1e5, lng / 1e5]);
+    }
+    return points;
+  }
+
+  function drawSimpleRoute(payload){
+    const map = getMap();
+    if(!map || typeof L === 'undefined') return;
+
+    const routeData = payload.route || payload;
+    const route = routeData.routes?.[0] || routeData;
+    const pts = decodePolyline(route.polyline);
+    if(!pts.length) return;
+
+    clearOnlyRouteLines();
+
+    const color = String(route.traffic_level || '').toLowerCase().includes('heavy') ? '#ff4545'
+      : String(route.traffic_level || '').toLowerCase().includes('moderate') ? '#ff9d2e'
+      : String(route.traffic_level || '').toLowerCase().includes('light') ? '#ffe83f'
+      : '#00ff9d';
+
+    L.polyline(pts, {
+      color,
+      weight:20,
+      opacity:.20,
+      className:'halo-v11-route-glow',
+      interactive:false
+    }).addTo(map);
+
+    L.polyline(pts, {
+      color,
+      weight:7,
+      opacity:.96,
+      lineCap:'round',
+      lineJoin:'round',
+      className:'halo-v11-route-main',
+      interactive:false
+    }).addTo(map);
+
+    map.fitBounds(L.latLngBounds(pts), {
+      animate:true,
+      duration:1.05,
+      paddingTopLeft:[80,80],
+      paddingBottomRight:[80,80],
+      maxZoom:15
+    });
+  }
+
+  // Override all previous versions.
+  window.haloSetPlaceDestination = function(id){
+    rerouteAddressFirst(id);
+  };
+
+  console.log('[HALO V11 ADDRESS-FIRST REROUTE FIX] loaded');
+})();
+</script>
+
 </body>
 </html>
