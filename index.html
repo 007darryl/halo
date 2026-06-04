@@ -10979,60 +10979,44 @@ body #haloAdvancedMapOverlay #haloDestinationIntelCard.halo-v35-force-hidden{
 </script>
 
 
-
-
-
-
-
-
-
-
-
-<!-- HALO V45 LIGHTWEIGHT PANEL TABS + ROUTE CLEANUP FIX -->
-<style id="halo-v45-light-panel-tabs-route-cleanup">
+<!-- HALO V49 CLEAN STABLE PANELS + EXACT REROUTE FIX -->
+<style id="halo-v49-clean-stable-panels">
 /*
-  V45 lightweight:
+  V49 clean stable:
+  - Built from cleaner HALO_fixed base, not stacked patches.
   - No MutationObserver.
   - No setInterval.
-  - No constant repositioning.
-  - Simple fixed left/right tabs.
-  - Keeps route support cleanup before new /route-plus requests.
+  - No repeated fetch wrapping loops.
+  - Left/right panels use simple body classes.
+  - Gas/parking set destination uses exact lat,lng.
 */
 
-body.halo-left-collapsed #haloNavHUD,
-body.halo-left-collapsed #haloNavigationIntelPanel,
-body.halo-left-collapsed #haloNavIntelPanel{
-  transform: translateX(calc(-100% - 36px)) !important;
+body.halo-left-collapsed #haloNavHUD{
+  transform: translateX(calc(-100% - 38px)) !important;
   opacity: 0 !important;
   pointer-events: none !important;
-  filter: blur(2px) !important;
-  transition: transform .25s ease, opacity .2s ease, filter .25s ease !important;
 }
 
 body.halo-right-collapsed #haloDestinationBrief,
 body.halo-right-collapsed #haloDestinationIntelCard{
-  transform: translateX(calc(100% + 36px)) !important;
+  transform: translateX(calc(100% + 38px)) !important;
   opacity: 0 !important;
   pointer-events: none !important;
-  filter: blur(2px) !important;
-  transition: transform .25s ease, opacity .2s ease, filter .25s ease !important;
 }
 
 #haloNavHUD,
-#haloNavigationIntelPanel,
-#haloNavIntelPanel,
 #haloDestinationBrief,
 #haloDestinationIntelCard{
-  transition: transform .25s ease, opacity .2s ease, filter .25s ease !important;
+  transition: transform .22s ease, opacity .18s ease !important;
 }
 
-.halo-v45-panel-tab{
+.halo-v49-tab{
   position: fixed !important;
   top: 50% !important;
   transform: translateY(-50%) !important;
-  z-index: 1000000 !important;
-  width: 44px !important;
-  height: 92px !important;
+  z-index: 999999 !important;
+  width: 42px !important;
+  height: 88px !important;
   border: 1px solid rgba(0,234,255,.36) !important;
   background: rgba(0,18,40,.9) !important;
   color: #00eaff !important;
@@ -11042,45 +11026,33 @@ body.halo-right-collapsed #haloDestinationIntelCard{
   align-items: center !important;
   justify-content: center !important;
   cursor: pointer !important;
-  box-shadow: 0 0 24px rgba(0,234,255,.2) !important;
+  box-shadow: 0 0 22px rgba(0,234,255,.18) !important;
   backdrop-filter: blur(10px) !important;
 }
 
-#haloV45LeftTab{
-  left: 12px !important;
+#haloV49LeftTab{
+  left: 8px !important;
   border-left: none !important;
-  border-radius: 0 20px 20px 0 !important;
+  border-radius: 0 18px 18px 0 !important;
 }
 
-#haloV45RightTab{
-  right: 12px !important;
+#haloV49RightTab{
+  right: 8px !important;
   border-right: none !important;
-  border-radius: 20px 0 0 20px !important;
+  border-radius: 18px 0 0 18px !important;
 }
 
-.halo-v45-panel-tab:hover{
-  background: rgba(0,38,72,.96) !important;
-  box-shadow: 0 0 28px rgba(0,234,255,.32) !important;
-}
-
-body:not(.halo-left-collapsed) #haloV45LeftTab{
-  opacity: .82;
-}
-
-body:not(.halo-right-collapsed) #haloV45RightTab{
-  opacity: .82;
-}
-
-/* Put tabs above map only while HALO map overlay is open */
-body:not(.halo-v45-map-active) .halo-v45-panel-tab{
+body:not(.halo-map-open) .halo-v49-tab{
   display:none !important;
 }
 </style>
 
-<script id="halo-v45-light-panel-tabs-route-cleanup-js">
+<script id="halo-v49-clean-stable-panels-js">
 (function(){
-  if(window.__haloV45LightPanelTabsLoaded) return;
-  window.__haloV45LightPanelTabsLoaded = true;
+  if(window.__haloV49CleanStableLoaded) return;
+  window.__haloV49CleanStableLoaded = true;
+
+  let activeRouteToken = 0;
 
   function getMap(){
     try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
@@ -11089,125 +11061,60 @@ body:not(.halo-v45-map-active) .halo-v45-panel-tab{
   function invalidateMap(){
     const map = getMap();
     if(!map) return;
-    setTimeout(() => { try{ map.invalidateSize({animate:true}); }catch(e){} }, 100);
-    setTimeout(() => { try{ map.invalidateSize({animate:true}); }catch(e){} }, 320);
+    setTimeout(() => { try{ map.invalidateSize({animate:true}); }catch(e){} }, 120);
   }
 
-  function mapIsOpen(){
+  function updateTabs(){
     const overlay = document.getElementById('haloAdvancedMapOverlay');
-    if(!overlay) return true;
-    return overlay.classList.contains('active') || getComputedStyle(overlay).display !== 'none';
-  }
+    const open = !overlay || overlay.classList.contains('active') || getComputedStyle(overlay).display !== 'none';
+    document.body.classList.toggle('halo-map-open', open);
 
-  function updateMapActiveFlag(){
-    document.body.classList.toggle('halo-v45-map-active', mapIsOpen());
+    const left = document.getElementById('haloV49LeftTab');
+    const right = document.getElementById('haloV49RightTab');
+
+    if(left) left.textContent = document.body.classList.contains('halo-left-collapsed') ? '›' : '‹';
+    if(right) right.textContent = document.body.classList.contains('halo-right-collapsed') ? '‹' : '›';
   }
 
   function ensureTabs(){
-    if(!document.getElementById('haloV45LeftTab')){
+    if(!document.getElementById('haloV49LeftTab')){
       const left = document.createElement('button');
-      left.id = 'haloV45LeftTab';
-      left.className = 'halo-v45-panel-tab';
+      left.id = 'haloV49LeftTab';
+      left.className = 'halo-v49-tab';
       left.type = 'button';
-      left.title = 'Hide / show navigation intel';
-      left.textContent = document.body.classList.contains('halo-left-collapsed') ? '›' : '‹';
-      left.addEventListener('click', e => {
+      left.title = 'Hide / show Navigation Intel';
+      left.textContent = '‹';
+      left.onclick = function(e){
         e.preventDefault();
         e.stopPropagation();
         document.body.classList.toggle('halo-left-collapsed');
-        left.textContent = document.body.classList.contains('halo-left-collapsed') ? '›' : '‹';
+        updateTabs();
         invalidateMap();
-      }, true);
+      };
       document.body.appendChild(left);
     }
 
-    if(!document.getElementById('haloV45RightTab')){
+    if(!document.getElementById('haloV49RightTab')){
       const right = document.createElement('button');
-      right.id = 'haloV45RightTab';
-      right.className = 'halo-v45-panel-tab';
+      right.id = 'haloV49RightTab';
+      right.className = 'halo-v49-tab';
       right.type = 'button';
-      right.title = 'Hide / show destination brief';
-      right.textContent = document.body.classList.contains('halo-right-collapsed') ? '‹' : '›';
-      right.addEventListener('click', e => {
+      right.title = 'Hide / show Destination Brief';
+      right.textContent = '›';
+      right.onclick = function(e){
         e.preventDefault();
         e.stopPropagation();
         document.body.classList.toggle('halo-right-collapsed');
-        right.textContent = document.body.classList.contains('halo-right-collapsed') ? '‹' : '›';
+        updateTabs();
         invalidateMap();
-      }, true);
+      };
       document.body.appendChild(right);
     }
 
-    updateMapActiveFlag();
+    updateTabs();
   }
 
-  function removeTrackedLayers(value){
-    const map = getMap();
-    if(!value || !map) return;
-
-    try{
-      if(Array.isArray(value)){
-        value.forEach(item => removeTrackedLayers(item));
-        value.length = 0;
-        return;
-      }
-
-      if(value instanceof Map){
-        value.forEach(item => removeTrackedLayers(item));
-        value.clear();
-        return;
-      }
-
-      if(typeof value === 'object' && !value._leaflet_id && !value.removeFrom && !value.getLatLng){
-        Object.values(value).forEach(item => removeTrackedLayers(item && (item.marker || item.layer || item)));
-        return;
-      }
-
-      try{ map.removeLayer(value); }catch(e){}
-      try{ value.removeFrom(map); }catch(e){}
-      try{ value.remove(); }catch(e){}
-    }catch(e){}
-  }
-
-  function removeSupportLayersFromMap(){
-    const map = getMap();
-    if(!map || !map.eachLayer) return;
-
-    const remove = [];
-    map.eachLayer(layer => {
-      try{
-        const iconHTML = String(layer._icon?.innerHTML || '');
-        const iconClass = String(layer._icon?.className || '');
-        const pathClass = String(layer._path?.className?.baseVal || layer._path?.className || '');
-        const popup = layer.getPopup ? String(layer.getPopup()?.getContent?.() || '') : '';
-        const tooltip = layer.getTooltip ? String(layer.getTooltip()?.getContent?.() || '') : '';
-        const options = layer.options || {};
-        const optionText = String(options.className || '') + ' ' + String(options.title || '') + ' ' + String(options.alt || '');
-        const text = (iconHTML + ' ' + iconClass + ' ' + pathClass + ' ' + popup + ' ' + tooltip + ' ' + optionText).toLowerCase();
-
-        const looksLikeSupport =
-          text.includes('halo-v32') ||
-          text.includes('halo-place') ||
-          text.includes('gas') ||
-          text.includes('parking') ||
-          text.includes('arco') ||
-          text.includes('shell') ||
-          text.includes('chevron') ||
-          text.includes('mobil') ||
-          text.includes('76') ||
-          text.includes('7-eleven') ||
-          text.includes('park');
-
-        if(looksLikeSupport) remove.push(layer);
-      }catch(e){}
-    });
-
-    remove.forEach(layer => {
-      try{ map.removeLayer(layer); }catch(e){}
-    });
-  }
-
-  function clearSupportLists(){
+  function removeSupportLists(){
     [
       'haloV20ExactPlaces',
       'haloV22ExactPlaces',
@@ -11220,95 +11127,156 @@ body:not(.halo-v45-map-active) .halo-v45-panel-tab{
     });
   }
 
-  window.haloV45ClearRouteSupport = function(){
-    [
-      'haloGasMarkers',
-      'haloParkingMarkers',
-      'haloPlaceMarkers',
-      'haloSupportMarkers',
-      'gasMarkers',
-      'parkingMarkers',
-      'placeMarkers',
-      'supportMarkers',
-      'haloV32Markers'
-    ].forEach(key => {
+  function clearSupportOnly(){
+    removeSupportLists();
+
+    try{
+      const map = getMap();
+      if(map && map.eachLayer){
+        const remove = [];
+        map.eachLayer(layer => {
+          try{
+            const t = [
+              layer._icon?.innerHTML,
+              layer._icon?.className,
+              layer.getPopup ? layer.getPopup()?.getContent?.() : '',
+              layer.options?.className,
+              layer.options?.title
+            ].join(' ').toLowerCase();
+
+            if(
+              t.includes('halo-v32') ||
+              t.includes('halo-place') ||
+              t.includes('gas') ||
+              t.includes('parking') ||
+              t.includes('shell') ||
+              t.includes('chevron') ||
+              t.includes('arco') ||
+              t.includes('mobil') ||
+              t.includes('7-eleven')
+            ){
+              remove.push(layer);
+            }
+          }catch(e){}
+        });
+        remove.forEach(layer => { try{ map.removeLayer(layer); }catch(e){} });
+      }
+    }catch(e){}
+  }
+
+  async function getGPSOrigin(){
+    return new Promise(resolve => {
+      if(!navigator.geolocation) return resolve('__AUTO_GPS__');
+      navigator.geolocation.getCurrentPosition(
+        pos => resolve({lat:pos.coords.latitude, lng:pos.coords.longitude}),
+        () => resolve('__AUTO_GPS__'),
+        {enableHighAccuracy:true, timeout:6500, maximumAge:60000}
+      );
+    });
+  }
+
+  async function exactReroute(lat,lng,name){
+    lat = Number(lat);
+    lng = Number(lng);
+
+    if(!Number.isFinite(lat) || !Number.isFinite(lng)){
+      console.warn('[HALO V49] bad exact reroute coords', {lat,lng,name});
+      return false;
+    }
+
+    // Token prevents double-click/race glitches.
+    const token = ++activeRouteToken;
+    const destination = `${lat},${lng}`;
+
+    clearSupportOnly();
+
+    setTimeout(async () => {
+      if(token !== activeRouteToken) return;
+
       try{
-        removeTrackedLayers(window[key]);
-        if(Array.isArray(window[key])) window[key] = [];
-        else if(window[key] && typeof window[key] === 'object') window[key] = {};
-        else window[key] = null;
-      }catch(e){}
-    });
+        console.log('[HALO V49] exact reroute:', {name, destination});
+        if(typeof window.haloNavRun === 'function'){
+          const origin = await getGPSOrigin();
+          if(token !== activeRouteToken) return;
+          window.haloNavRun(destination, origin);
+        }else if(typeof window.haloRoutePlusCommand === 'function'){
+          window.haloRoutePlusCommand(destination);
+        }
+      }catch(e){
+        console.error('[HALO V49] exact reroute failed', e);
+      }
+    }, 80);
 
-    [
-      '__haloV32Payload',
-      '__haloV31Payload',
-      '__haloV25Payload',
-      '__haloV23Payload',
-      '__haloPolishPayload',
-      '__haloStreetRoutePayload',
-      '__haloLastRoutePayloadVisibilityFix'
-    ].forEach(key => {
-      try{ window[key] = null; }catch(e){}
-    });
+    return true;
+  }
 
-    try{ if(getMap()) getMap().closePopup(); }catch(e){}
-    removeSupportLayersFromMap();
-    clearSupportLists();
-
-    console.log('[HALO V45] Cleared old gas/parking before new route');
+  // Override the old function at the root. This fixes the "click twice" / random global routing issue.
+  window.haloRerouteTo = function(lat,lng,name){
+    return exactReroute(lat,lng,name);
   };
 
-  // Only one lightweight fetch wrapper: clear old gas/parking before new route requests.
-  const prevFetch = window.fetch;
-  if(prevFetch && !prevFetch.__haloV45LightWrapped){
-    const wrapped = async function(input, init){
+  // Also override destination setters used by popup buttons.
+  window.haloV32SetDestination = function(id){
+    const pools = [window.haloV32Markers, window.haloPlaceMarkers, window.haloSupportMarkers];
+    let item = null;
+    for(const pool of pools){
+      try{
+        if(pool instanceof Map && pool.has(id)) item = pool.get(id);
+        else if(pool && pool[id]) item = pool[id];
+      }catch(e){}
+      if(item) break;
+    }
+
+    const p = item?.place || item;
+    const lat = item?.lat ?? p?.lat ?? p?.latitude ?? p?.location?.lat;
+    const lng = item?.lng ?? p?.lng ?? p?.longitude ?? p?.location?.lng;
+
+    return exactReroute(lat,lng,p?.name || item?.name || 'Selected place');
+  };
+
+  window.haloSetPlaceDestination = window.haloV32SetDestination;
+
+  // One fetch wrapper only: clears old support when a true new route starts.
+  const originalFetch = window.fetch;
+  if(originalFetch && !originalFetch.__haloV49Wrapped){
+    window.fetch = async function(input, init){
+      try{
+        const url = typeof input === 'string' ? input : String(input?.url || '');
+        if(url.includes('/route-plus')) clearSupportOnly();
+      }catch(e){}
+
+      const res = await originalFetch.apply(this, arguments);
+
       try{
         const url = typeof input === 'string' ? input : String(input?.url || '');
         if(url.includes('/route-plus')){
-          window.haloV45ClearRouteSupport();
+          setTimeout(updateTabs, 350);
+          setTimeout(invalidateMap, 500);
         }
       }catch(e){}
 
-      const response = await prevFetch.apply(this, arguments);
-
-      try{
-        const url = typeof input === 'string' ? input : String(input?.url || '');
-        if(url.includes('/route-plus') || url.includes('/route-intel')){
-          setTimeout(() => {
-            updateMapActiveFlag();
-            invalidateMap();
-          }, 700);
-        }
-      }catch(e){}
-
-      return response;
+      return res;
     };
-
-    wrapped.__haloV45LightWrapped = true;
-    window.fetch = wrapped;
+    window.fetch.__haloV49Wrapped = true;
   }
 
-  // Hook map open/close once, no observers.
   const oldOpen = window.openHaloAdvancedMap;
-  if(typeof oldOpen === 'function' && !oldOpen.__haloV45Wrapped){
+  if(typeof oldOpen === 'function'){
     window.openHaloAdvancedMap = function(){
       const out = oldOpen.apply(this, arguments);
       ensureTabs();
-      setTimeout(updateMapActiveFlag, 200);
+      setTimeout(updateTabs, 150);
       return out;
     };
-    window.openHaloAdvancedMap.__haloV45Wrapped = true;
   }
 
   const oldClose = window.closeHaloAdvancedMap;
-  if(typeof oldClose === 'function' && !oldClose.__haloV45Wrapped){
+  if(typeof oldClose === 'function'){
     window.closeHaloAdvancedMap = function(){
       const out = oldClose.apply(this, arguments);
-      setTimeout(updateMapActiveFlag, 200);
+      setTimeout(updateTabs, 150);
       return out;
     };
-    window.closeHaloAdvancedMap.__haloV45Wrapped = true;
   }
 
   if(document.readyState === 'loading'){
@@ -11317,99 +11285,16 @@ body:not(.halo-v45-map-active) .halo-v45-panel-tab{
     ensureTabs();
   }
 
-  console.log('[HALO V45 LIGHTWEIGHT PANEL TABS + ROUTE CLEANUP FIX] loaded');
-})();
-</script>
-
-
-<!-- HALO V48 ROOT REROUTE DESTINATION FIX -->
-<script id="halo-v48-root-reroute-destination-fix-js">
-(function(){
-  if(window.__haloV48RootRerouteFixLoaded) return;
-  window.__haloV48RootRerouteFixLoaded = true;
-
-  function isCoordString(s){
-    return /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/.test(String(s || '').trim());
-  }
-
-  function getRouteApiUrl(){
-    try{
-      const scripts = Array.from(document.scripts).map(s => s.textContent || '').join('\n');
-      const m = scripts.match(/const\s+API\s*=\s*['"]([^'"]*\/route-plus)['"]/);
-      return m ? m[1] : null;
-    }catch(e){ return null; }
-  }
-
-  // Main protection: if any old code still calls haloRerouteTo(lat,lng,name),
-  // force the destination to exact "lat,lng" instead of the place name.
-  function install(){
-    if(typeof window.haloRerouteTo !== 'function' || window.haloRerouteTo.__haloV48Fixed) return;
-
-    const old = window.haloRerouteTo;
-    const fixed = function(lat, lng, name){
-      lat = Number(lat);
-      lng = Number(lng);
-
-      if(!Number.isFinite(lat) || !Number.isFinite(lng)){
-        console.warn('[HALO V48] Blocked reroute: bad coordinates', {lat, lng, name});
-        return false;
-      }
-
-      const destination = `${lat},${lng}`;
-      console.log('[HALO V48] Exact reroute locked:', {name, destination});
-
-      // Prefer haloNavRun because it already handles browser GPS correctly.
-      try{
-        if(typeof window.haloNavRun === 'function'){
-          return window.haloNavRun(destination, '__AUTO_GPS__');
-        }
-      }catch(e){
-        console.warn('[HALO V48] haloNavRun exact reroute failed, falling back.', e);
-      }
-
-      // Last resort: call old function. The source has also been patched so old function uses coords.
-      return old.call(this, lat, lng, name);
-    };
-
-    fixed.__haloV48Fixed = true;
-    window.haloRerouteTo = fixed;
-  }
-
-  install();
-  setTimeout(install, 500);
-  setTimeout(install, 1500);
-
-  // Hard intercept any outgoing /route-plus request caused by "Parking 3" style names.
-  // If window.__haloV48PendingExactDestination exists, overwrite destination to coords.
-  const prevFetch = window.fetch;
-  if(prevFetch && !prevFetch.__haloV48FetchFixed){
-    const wrapped = async function(input, init){
-      try{
-        const url = typeof input === 'string' ? input : String(input?.url || '');
-        if(url.includes('/route-plus') && init && init.body){
-          const body = JSON.parse(init.body);
-          if(body && body.destination && !isCoordString(body.destination)){
-            console.warn('[HALO V48 DIAGNOSTIC] Non-coordinate /route-plus destination detected:', body.destination);
-          }
-        }
-      }catch(e){}
-      return prevFetch.apply(this, arguments);
-    };
-    wrapped.__haloV48FetchFixed = true;
-    window.fetch = wrapped;
-  }
-
-  window.haloV48Diagnostic = function(){
-    console.log('HALO V48 diagnostic:', {
-      rerouteFixed: !!(window.haloRerouteTo && window.haloRerouteTo.__haloV48Fixed),
-      routeApi: getRouteApiUrl(),
-      userLat: window.haloUserLat,
-      userLng: window.haloUserLng,
-      note: 'When clicking gas/parking, route-plus destination should be "lat,lng", not "Parking 1" or place name.'
+  window.haloV49Diagnostic = function(){
+    console.log('[HALO V49 DIAGNOSTIC]', {
+      activeRouteToken,
+      haloRerouteTo: String(window.haloRerouteTo).slice(0,120),
+      leftCollapsed: document.body.classList.contains('halo-left-collapsed'),
+      rightCollapsed: document.body.classList.contains('halo-right-collapsed')
     });
   };
 
-  console.log('[HALO V48 ROOT REROUTE DESTINATION FIX] loaded. Patched source occurrences:', 1);
+  console.log('[HALO V49 CLEAN STABLE PANELS + EXACT REROUTE FIX] loaded');
 })();
 </script>
 
