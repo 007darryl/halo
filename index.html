@@ -1470,20 +1470,38 @@ async function askHalo(text){
     console.log('Routing to:', destination);
     addChat('user', text);
     history.push({role:'user', content:text});
-    const msg = `Calculating route to ${destination}. Opening navigation...`;
+    const msg = `Calculating route to ${destination}. Getting your location...`;
     addChat('halo', msg);
     speakText(`Routing to ${destination}.`);
-    // Open map and run route
-    if(typeof openHaloAdvancedMap === 'function') openHaloAdvancedMap();
-    setTimeout(()=>{
-      if(typeof window.haloNavRun === 'function'){
-        console.log('Calling haloNavRun for:', destination);
-        window.haloNavRun(destination, 'home');
-      } else {
-        addChat('halo', 'Navigation system not ready. Please open the map first.');
-        console.log('haloNavRun not available');
-      }
-    }, 1500);
+
+    // Get real GPS location first
+    function startRoute(originStr){
+      if(typeof openHaloAdvancedMap === 'function') openHaloAdvancedMap();
+      setTimeout(()=>{
+        if(typeof window.haloNavRun === 'function'){
+          console.log('Calling haloNavRun:', originStr, '->', destination);
+          window.haloNavRun(destination, originStr);
+        } else {
+          addChat('halo', 'Navigation system not ready. Please open the map first.');
+        }
+      }, 1500);
+    }
+
+    if(navigator.geolocation){
+      navigator.geolocation.getCurrentPosition(pos=>{
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        console.log('GPS location:', lat, lng);
+        window.haloUserLat = lat;
+        window.haloUserLng = lng;
+        startRoute(`${lat},${lng}`);
+      }, err=>{
+        console.log('GPS error:', err.message, '— using home');
+        startRoute('home');
+      }, { timeout: 5000, maximumAge: 60000 });
+    } else {
+      startRoute('home');
+    }
     history.push({role:'assistant', content:msg});
     return;
   }
