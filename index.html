@@ -10630,5 +10630,285 @@ path.halo-transit-route-glow{
 })();
 </script>
 
+
+<!-- HALO V18 SIDE GAP PANEL POSITION FIX -->
+<style id="halo-v18-side-gap-panel-position-fix">
+/*
+  V18: keep V17 behavior, only fix panel placement.
+  Panels sit in the gutters BESIDE side panels, not over them.
+*/
+
+/* Left side panel stays visible */
+#haloCleanLeftPanel,
+#haloSystemBriefingPanel{
+  left:18px !important;
+  width:214px !important;
+  right:auto !important;
+}
+
+/* Right side panel stays visible */
+#haloCleanRightPanel,
+#haloActiveFeedsPanel{
+  right:18px !important;
+  width:214px !important;
+  left:auto !important;
+}
+
+/* Navigation Intel: after Global Briefing, before map */
+#haloNavHUD.halo-v17-docked,
+#haloNavHUD.halo-v18-docked{
+  left:248px !important;       /* 18 + 214 + 16 */
+  width:210px !important;
+  max-width:210px !important;
+  top:78px !important;
+  bottom:18px !important;
+  right:auto !important;
+  height:auto !important;
+  max-height:none !important;
+}
+
+/* Destination Brief: before Active Feeds, after map */
+#haloDestinationBrief.halo-v17-docked,
+#haloDestinationIntelCard.halo-v17-docked,
+#haloDestinationBrief.halo-v18-docked,
+#haloDestinationIntelCard.halo-v18-docked{
+  right:248px !important;      /* 18 + 214 + 16 */
+  width:210px !important;
+  max-width:210px !important;
+  top:78px !important;
+  bottom:18px !important;
+  left:auto !important;
+  height:auto !important;
+  max-height:none !important;
+}
+
+/* Map gets the clean center channel between the route panels */
+#haloAdvancedMapOverlay.active .ham-map-panel,
+#haloAdvancedMapOverlay.active .hgi-map-wrap{
+  margin-left:474px !important;   /* left side + nav intel */
+  margin-right:474px !important;  /* active feeds + destination brief */
+  width:auto !important;
+  transform:none !important;
+}
+
+/* Keep map controls away from the destination column */
+#haloCleanMapToggles,
+#haloMapLayerControls{
+  right:474px !important;
+  top:18px !important;
+}
+
+/* Make content tighter so columns don't feel cramped */
+#haloNavHUD.halo-v17-docked .halo-nav-body,
+#haloNavHUD.halo-v18-docked .halo-nav-body,
+#haloDestinationBrief.halo-v17-docked .halo-dest-body,
+#haloDestinationIntelCard.halo-v17-docked .halo-dintel-body,
+#haloDestinationBrief.halo-v18-docked .halo-dest-body,
+#haloDestinationIntelCard.halo-v18-docked .halo-dintel-body{
+  padding-left:10px !important;
+  padding-right:10px !important;
+}
+
+#haloNavHUD.halo-v17-docked .halo-nav-title,
+#haloNavHUD.halo-v18-docked .halo-nav-title,
+#haloDestinationBrief.halo-v17-docked .halo-dest-title,
+#haloDestinationIntelCard.halo-v17-docked .halo-dintel-title,
+#haloDestinationBrief.halo-v18-docked .halo-dest-title,
+#haloDestinationIntelCard.halo-v18-docked .halo-dintel-title{
+  font-size:11px !important;
+  line-height:1.25 !important;
+}
+
+/* Compact stat cards */
+#haloNavHUD.halo-v17-docked .halo-nav-grid,
+#haloNavHUD.halo-v18-docked .halo-nav-grid,
+#haloDestinationBrief.halo-v17-docked .halo-dest-grid,
+#haloDestinationIntelCard.halo-v17-docked .halo-dintel-grid,
+#haloDestinationBrief.halo-v18-docked .halo-dest-grid,
+#haloDestinationIntelCard.halo-v18-docked .halo-dintel-grid{
+  grid-template-columns:1fr 1fr !important;
+  gap:6px !important;
+}
+
+/* If user drags, V17 inline position wins; reset button will redock */
+.halo-v18-redock-btn{
+  position:absolute;
+  left:50%;
+  bottom:8px;
+  transform:translateX(-50%);
+  z-index:90;
+  border:1px solid rgba(0,234,255,.18);
+  background:rgba(0,234,255,.055);
+  color:#00eaff;
+  border-radius:999px;
+  padding:6px 9px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:7px;
+  letter-spacing:1px;
+  cursor:pointer;
+}
+
+/* Responsive fallback */
+@media(max-width:1450px){
+  #haloNavHUD.halo-v17-docked,
+  #haloNavHUD.halo-v18-docked{
+    width:190px !important;
+    max-width:190px !important;
+  }
+
+  #haloDestinationBrief.halo-v17-docked,
+  #haloDestinationIntelCard.halo-v17-docked,
+  #haloDestinationBrief.halo-v18-docked,
+  #haloDestinationIntelCard.halo-v18-docked{
+    width:190px !important;
+    max-width:190px !important;
+  }
+
+  #haloAdvancedMapOverlay.active .ham-map-panel,
+  #haloAdvancedMapOverlay.active .hgi-map-wrap{
+    margin-left:454px !important;
+    margin-right:454px !important;
+  }
+
+  #haloCleanMapToggles,
+  #haloMapLayerControls{
+    right:454px !important;
+  }
+}
+
+@media(max-width:1250px){
+  #haloNavHUD.halo-v17-docked,
+  #haloNavHUD.halo-v18-docked,
+  #haloDestinationBrief.halo-v17-docked,
+  #haloDestinationIntelCard.halo-v17-docked,
+  #haloDestinationBrief.halo-v18-docked,
+  #haloDestinationIntelCard.halo-v18-docked{
+    display:none !important;
+  }
+
+  #haloAdvancedMapOverlay.active .ham-map-panel,
+  #haloAdvancedMapOverlay.active .hgi-map-wrap{
+    margin-left:250px !important;
+    margin-right:250px !important;
+  }
+
+  #haloCleanMapToggles,
+  #haloMapLayerControls{
+    right:250px !important;
+  }
+}
+</style>
+
+<script id="halo-v18-side-gap-panel-position-fix-js">
+(function(){
+  function getMap(){
+    try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
+  }
+
+  function invalidateMap(){
+    const map = getMap();
+    if(map){
+      setTimeout(() => {
+        try{ map.invalidateSize({animate:true}); }catch(e){}
+      }, 240);
+    }
+  }
+
+  function redockPanel(panel){
+    if(!panel) return;
+
+    panel.classList.add('halo-v18-docked');
+    panel.classList.remove('halo-v17-user-moved');
+
+    // Clear inline draggable position so CSS dock works.
+    panel.style.left = '';
+    panel.style.right = '';
+    panel.style.top = '';
+    panel.style.bottom = '';
+    panel.style.width = '';
+    panel.style.height = '';
+    panel.style.maxWidth = '';
+    panel.style.maxHeight = '';
+    panel.style.position = '';
+    panel.style.zIndex = '';
+    panel.style.transform = '';
+    panel.style.margin = '';
+  }
+
+  function addRedockButton(panel){
+    if(!panel || panel.dataset.v18RedockReady === 'true') return;
+    panel.dataset.v18RedockReady = 'true';
+
+    const btn = document.createElement('button');
+    btn.className = 'halo-v18-redock-btn';
+    btn.textContent = 'REDOCK';
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      redockPanel(panel);
+      invalidateMap();
+    }, true);
+
+    panel.appendChild(btn);
+  }
+
+  function applyV18(){
+    ['haloNavHUD','haloDestinationBrief','haloDestinationIntelCard'].forEach(id => {
+      const panel = document.getElementById(id);
+      if(!panel) return;
+
+      panel.classList.add('halo-v18-docked');
+      addRedockButton(panel);
+
+      // If not manually moved by drag, force clean dock.
+      if(!panel.classList.contains('halo-v17-user-moved')){
+        redockPanel(panel);
+      }
+    });
+
+    invalidateMap();
+  }
+
+  const originalFetch = window.fetch;
+  if(originalFetch && !window.__haloV18FetchWrapped){
+    window.__haloV18FetchWrapped = true;
+
+    window.fetch = async function(){
+      const response = await originalFetch.apply(this, arguments);
+
+      try{
+        const url = String(arguments[0] || '');
+        if(url.includes('/route-plus') || url.includes('/route-intel')){
+          setTimeout(applyV18, 850);
+          setTimeout(applyV18, 1800);
+        }
+      }catch(e){}
+
+      return response;
+    };
+  }
+
+  const oldOpenMap = window.openHaloAdvancedMap;
+  if(typeof oldOpenMap === 'function' && !window.__haloV18OpenWrapped){
+    window.__haloV18OpenWrapped = true;
+    window.openHaloAdvancedMap = function(){
+      const result = oldOpenMap.apply(this, arguments);
+      setTimeout(applyV18, 900);
+      return result;
+    };
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => setTimeout(applyV18, 1500));
+  }else{
+    setTimeout(applyV18, 1500);
+  }
+
+  setInterval(applyV18, 4000);
+
+  console.log('[HALO V18 SIDE GAP PANEL POSITION FIX] loaded');
+})();
+</script>
+
 </body>
 </html>
