@@ -10915,5 +10915,384 @@ body #haloAdvancedMapOverlay #haloDestinationIntelCard.halo-v35-force-hidden{
 })();
 </script>
 
+
+<!-- HALO V37 HARD ROUTE ERASE FIX -->
+<style id="halo-v37-hard-route-erase-fix">
+/*
+  V37:
+  HARD clear for glowing teal route paths.
+  The route is being drawn as SVG/canvas/Leaflet layers, so we erase all active vector route elements
+  and block immediate redraw for a short moment after CLEAR.
+*/
+
+.halo-v37-clearing #haloAdvancedMapOverlay .leaflet-overlay-pane svg path,
+.halo-v37-clearing #haloAdvancedMapOverlay .leaflet-overlay-pane path,
+.halo-v37-clearing #haloAdvancedMapOverlay svg path[data-halo-route],
+.halo-v37-clearing #haloAdvancedMapOverlay canvas.halo-route-canvas,
+.halo-v37-clearing #haloAdvancedMapOverlay .halo-route-layer,
+.halo-v37-clearing #haloAdvancedMapOverlay [class*="route-line"],
+.halo-v37-clearing #haloAdvancedMapOverlay [class*="routeLine"],
+.halo-v37-clearing #haloAdvancedMapOverlay [class*="polyline"]{
+  display:none !important;
+  opacity:0 !important;
+  visibility:hidden !important;
+  stroke-opacity:0 !important;
+  fill-opacity:0 !important;
+  pointer-events:none !important;
+}
+</style>
+
+<script id="halo-v37-hard-route-erase-fix-js">
+(function(){
+  let clearingUntil = 0;
+
+  function getMap(){
+    try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
+  }
+
+  function isRouteLikeLayer(layer){
+    if(!layer || typeof L === 'undefined') return false;
+
+    try{
+      if(layer instanceof L.TileLayer) return false;
+
+      if(layer instanceof L.Polyline){
+        // In this HALO tactical map, all polylines are navigation/route overlays.
+        return true;
+      }
+
+      if(layer instanceof L.Marker){
+        const el = layer.getElement && layer.getElement();
+        const html = el ? String(el.innerHTML || '').toLowerCase() : '';
+        const cls = el ? String(el.className || '').toLowerCase() : '';
+        const title = String(layer.options?.title || '').toLowerCase();
+
+        return (
+          html.includes('halo') ||
+          html.includes('route') ||
+          html.includes('gas') ||
+          html.includes('parking') ||
+          html.includes('origin') ||
+          html.includes('destination') ||
+          cls.includes('halo') ||
+          cls.includes('route') ||
+          cls.includes('gas') ||
+          cls.includes('parking') ||
+          title.includes('arco') ||
+          title.includes('shell') ||
+          title.includes('costco') ||
+          title.includes('gas') ||
+          title.includes('parking')
+        );
+      }
+    }catch(e){}
+
+    return false;
+  }
+
+  function removeLayer(map, layer){
+    try{
+      if(!map || !layer) return;
+      if(map.hasLayer && map.hasLayer(layer)) map.removeLayer(layer);
+      else map.removeLayer(layer);
+    }catch(e){}
+  }
+
+  function hardRemoveLeafletLayers(){
+    const map = getMap();
+    if(!map || typeof L === 'undefined') return;
+
+    try{
+      const layers = [];
+      map.eachLayer(layer => {
+        if(isRouteLikeLayer(layer)) layers.push(layer);
+      });
+      layers.forEach(layer => removeLayer(map, layer));
+    }catch(e){}
+
+    // Also inspect internal layer registry because some layers fail instanceof checks.
+    try{
+      const raw = map._layers || {};
+      Object.keys(raw).forEach(k => {
+        const layer = raw[k];
+        if(!layer) return;
+
+        const hasLatLngs = typeof layer.getLatLngs === 'function' || layer._latlngs;
+        const hasPath = layer._path || layer._renderer;
+        const isMarkerish = layer._icon;
+
+        if(hasLatLngs || hasPath || isMarkerish){
+          if(!(layer instanceof L.TileLayer)){
+            removeLayer(map, layer);
+          }
+        }
+      });
+    }catch(e){}
+  }
+
+  function hardRemoveSvgPaths(){
+    const overlay = document.getElementById('haloAdvancedMapOverlay') || document;
+
+    overlay.querySelectorAll('svg path, .leaflet-overlay-pane path, .leaflet-interactive').forEach(el => {
+      try{
+        const tag = String(el.tagName || '').toLowerCase();
+        const stroke = String(el.getAttribute('stroke') || el.style.stroke || '').toLowerCase();
+        const fill = String(el.getAttribute('fill') || el.style.fill || '').toLowerCase();
+        const cls = String(el.getAttribute('class') || el.className || '').toLowerCase();
+        const sw = parseFloat(el.getAttribute('stroke-width') || el.style.strokeWidth || '0');
+
+        const routeLike =
+          tag === 'path' &&
+          (
+            cls.includes('leaflet-interactive') ||
+            cls.includes('route') ||
+            cls.includes('halo') ||
+            sw >= 2 ||
+            stroke.includes('#') ||
+            stroke.includes('rgb') ||
+            stroke.includes('cyan') ||
+            stroke.includes('teal') ||
+            stroke.includes('green') ||
+            stroke.includes('purple') ||
+            fill.includes('none')
+          );
+
+        if(routeLike) el.remove();
+      }catch(e){}
+    });
+  }
+
+  function hardRemoveCanvasRoute(){
+    const overlay = document.getElementById('haloAdvancedMapOverlay') || document;
+
+    overlay.querySelectorAll('canvas').forEach(canvas => {
+      try{
+        const cls = String(canvas.className || '').toLowerCase();
+        const parentCls = String(canvas.parentElement?.className || '').toLowerCase();
+
+        // Leaflet overlay canvas, not map tiles.
+        if(cls.includes('leaflet-zoom-animated') || parentCls.includes('overlay') || parentCls.includes('leaflet-overlay-pane')){
+          const ctx = canvas.getContext && canvas.getContext('2d');
+          if(ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+          canvas.style.opacity = '0';
+          canvas.style.pointerEvents = 'none';
+        }
+      }catch(e){}
+    });
+  }
+
+  function clearLayerGroupsAndRefs(){
+    const map = getMap();
+    const keys = [
+      'haloRouteLine','haloRoutePolyline','haloActiveRouteLine','haloActiveRoute',
+      'haloRouteLayer','currentRouteLine','currentRoutePolyline','routePolyline',
+      'activeRoutePolyline','activeRouteLayer','haloTrafficRouteLine','haloTransitRouteLine',
+      'haloRouteGlow','haloRouteGlowLine','haloRouteShadowLine','haloRouteOutline',
+      'haloAltRouteLine','haloAltRouteLines','haloAlternativeRoutes','haloRouteOptions',
+      'haloCurrentRouteLayers','haloNavigationLayers','routeLayers','routeLines',
+      'polyline','routeLine','trafficLine','transitLine',
+      'haloDirectionsLayer','haloDirectionsLayers','haloRouteGroup','haloRouteLayerGroup',
+      'routeLayerGroup','activeRouteGroup','haloRouteRenderer','haloRouteRenderers',
+      'haloRouteDecorators','haloRouteDecorator','haloAnimatedRoute','haloRouteAnimation',
+      'haloRouteParticles','haloRouteDots','haloRouteSegments'
+    ];
+
+    keys.forEach(k => {
+      try{
+        const val = window[k];
+        if(!val) return;
+
+        if(Array.isArray(val)){
+          val.forEach(item => {
+            if(!item) return;
+            removeLayer(map, item.layer || item.polyline || item.line || item.marker || item);
+          });
+          window[k] = [];
+        }else if(typeof val === 'object'){
+          if(val.clearLayers) {
+            try{ val.clearLayers(); }catch(e){}
+          }
+          if(val.remove) {
+            try{ val.remove(); }catch(e){}
+          }
+          Object.values(val).forEach(item => {
+            if(!item) return;
+            removeLayer(map, item.layer || item.polyline || item.line || item.marker || item);
+          });
+          window[k] = null;
+        }else{
+          removeLayer(map, val);
+          window[k] = null;
+        }
+      }catch(e){}
+    });
+  }
+
+  function resetState(){
+    [
+      'currentRoute','activeDestination','routePlusData','haloRoutePlusData',
+      '__haloV32Payload','__haloV31Payload','__haloPolishPayload',
+      '__haloStreetRoutePayload','__haloLastRoutePayloadVisibilityFix',
+      'haloCurrentDestination','haloActiveDestination','haloRouteDestination',
+      'currentDestination','activeRoute','activeRouteData',
+      'haloLastRoute','lastRoute','routeData','directionsData'
+    ].forEach(k => {
+      try{ window[k] = null; }catch(e){}
+    });
+  }
+
+  function hidePanels(){
+    try{
+      if(typeof window.haloV35HidePanels === 'function') window.haloV35HidePanels();
+    }catch(e){}
+
+    ['haloNavHUD','haloDestinationBrief','haloDestinationIntelCard'].forEach(id => {
+      const panel = document.getElementById(id);
+      if(!panel) return;
+      panel.classList.add('halo-v35-force-hidden');
+      panel.classList.add('closed');
+      panel.classList.remove('active');
+      panel.style.setProperty('display','none','important');
+      panel.style.setProperty('visibility','hidden','important');
+      panel.style.setProperty('opacity','0','important');
+      panel.style.setProperty('pointer-events','none','important');
+    });
+  }
+
+  function closePopups(){
+    const map = getMap();
+    try{ if(map) map.closePopup(); }catch(e){}
+    document.querySelectorAll('.leaflet-popup-close-button').forEach(btn => {
+      try{ btn.click(); }catch(e){}
+    });
+  }
+
+  function onePass(){
+    closePopups();
+    clearLayerGroupsAndRefs();
+    hardRemoveLeafletLayers();
+    hardRemoveSvgPaths();
+    hardRemoveCanvasRoute();
+    resetState();
+
+    const map = getMap();
+    if(map){
+      try{ map.invalidateSize({animate:false}); }catch(e){}
+    }
+  }
+
+  function hardClear(){
+    clearingUntil = Date.now() + 2200;
+    document.documentElement.classList.add('halo-v37-clearing');
+
+    hidePanels();
+
+    onePass();
+    setTimeout(onePass, 80);
+    setTimeout(onePass, 180);
+    setTimeout(onePass, 350);
+    setTimeout(onePass, 700);
+    setTimeout(onePass, 1200);
+    setTimeout(onePass, 1900);
+
+    setTimeout(() => {
+      document.documentElement.classList.remove('halo-v37-clearing');
+      onePass();
+    }, 2300);
+
+    console.log('[HALO V37] hard route erase fired');
+  }
+
+  window.haloV37HardClearRoute = hardClear;
+
+  // Prevent immediate redraw during clearing window by wrapping common route drawing functions if they exist.
+  function wrapRouteFunctions(){
+    [
+      'drawRoute','renderRoute','haloDrawRoute','haloRenderRoute','drawHaloRoute',
+      'renderHaloRoute','haloDrawRouteLine','haloRenderRouteLine','showRoute',
+      'showRouteOnMap','plotRoute','plotHaloRoute','animateRoute','haloAnimateRoute'
+    ].forEach(fn => {
+      try{
+        if(typeof window[fn] === 'function' && !window[fn].__v37Wrapped){
+          const old = window[fn];
+          const wrapped = function(){
+            if(Date.now() < clearingUntil) return null;
+            return old.apply(this, arguments);
+          };
+          wrapped.__v37Wrapped = true;
+          window[fn] = wrapped;
+        }
+      }catch(e){}
+    });
+  }
+
+  function bindClear(){
+    const nodes = Array.from(document.querySelectorAll('button, .ham-map-control, .ham-control, [role="button"], .leaflet-control *'));
+    nodes.forEach(el => {
+      const text = String(el.textContent || el.innerText || '').trim().toLowerCase();
+      const id = String(el.id || '').toLowerCase();
+      const cls = String(el.className || '').toLowerCase();
+
+      const isClear = text === 'clear' || id.includes('clear') || cls.includes('clear');
+      if(!isClear || el.dataset.v37HardClearBound === 'true') return;
+
+      el.dataset.v37HardClearBound = 'true';
+      el.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        hardClear();
+      }, true);
+    });
+  }
+
+  ['haloV36ClearRouteLine','haloV35ClearAndHidePanels','haloClearAndHidePanelsV34','haloClearRouteStateV33','haloClearRoute','clearHaloRoute','clearRoute','clearRouteState','haloMapClear'].forEach(fn => {
+    try{
+      if(typeof window[fn] === 'function' && !window[fn].__v37Wrapped){
+        const old = window[fn];
+        const wrapped = function(){
+          let out;
+          try{ out = old.apply(this, arguments); }catch(e){}
+          hardClear();
+          return out;
+        };
+        wrapped.__v37Wrapped = true;
+        window[fn] = wrapped;
+      }
+    }catch(e){}
+  });
+
+  const obs = new MutationObserver(() => {
+    bindClear();
+    wrapRouteFunctions();
+
+    if(Date.now() < clearingUntil){
+      onePass();
+    }
+  });
+  obs.observe(document.documentElement, {childList:true, subtree:true, attributes:true});
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => {
+      bindClear();
+      wrapRouteFunctions();
+      setTimeout(bindClear, 1000);
+    });
+  }else{
+    bindClear();
+    wrapRouteFunctions();
+    setTimeout(bindClear, 1000);
+  }
+
+  setInterval(() => {
+    bindClear();
+    wrapRouteFunctions();
+    if(Date.now() < clearingUntil) onePass();
+  }, 300);
+
+  console.log('[HALO V37 HARD ROUTE ERASE FIX] loaded');
+})();
+</script>
+
 </body>
 </html>
