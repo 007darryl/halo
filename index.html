@@ -11522,5 +11522,161 @@ body:not(.halo-v45-map-active) .halo-v45-panel-tab{
 })();
 </script>
 
+
+<!-- HALO V47 SUPPORT ROUTE COORDINATE GUARD FIX -->
+<script id="halo-v47-support-route-coordinate-guard-js">
+(function(){
+  if(window.__haloV47SupportRouteGuardLoaded) return;
+  window.__haloV47SupportRouteGuardLoaded = true;
+
+  function getMap(){
+    try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
+  }
+
+  function validCoord(lat, lng){
+    lat = Number(lat);
+    lng = Number(lng);
+    return Number.isFinite(lat) && Number.isFinite(lng) &&
+           lat >= -90 && lat <= 90 &&
+           lng >= -180 && lng <= 180;
+  }
+
+  function looksLikeSupportName(name){
+    name = String(name || '').toLowerCase();
+    return (
+      name.includes('gas') ||
+      name.includes('parking') ||
+      name.includes('park ') ||
+      name.includes('park n') ||
+      name.includes('shell') ||
+      name.includes('chevron') ||
+      name.includes('arco') ||
+      name.includes('mobil') ||
+      name.includes('76') ||
+      name.includes('7-eleven') ||
+      name.includes('station')
+    );
+  }
+
+  function nearCurrentMapRoute(lat, lng){
+    const map = getMap();
+    if(!map || !validCoord(lat,lng)) return true;
+
+    try{
+      const center = map.getCenter();
+      if(!center) return true;
+
+      // If a selected gas/parking point is thousands of miles from current displayed route/map,
+      // block it. This prevents "Parking 3 in France" from being accepted while routing around LA.
+      const selected = L.latLng(Number(lat), Number(lng));
+      const current = L.latLng(center.lat, center.lng);
+      const miles = current.distanceTo(selected) / 1609.344;
+
+      return miles < 350;
+    }catch(e){
+      return true;
+    }
+  }
+
+  function blockBadSupportRoute(lat,lng,name){
+    if(!looksLikeSupportName(name)) return false;
+
+    if(!validCoord(lat,lng)){
+      console.warn('[HALO V47] Blocked support reroute: invalid coordinates', {lat,lng,name});
+      return true;
+    }
+
+    if(!nearCurrentMapRoute(lat,lng)){
+      console.warn('[HALO V47] Blocked support reroute: coordinates too far from current route/map', {lat,lng,name});
+      return true;
+    }
+
+    return false;
+  }
+
+  // Guard existing haloRerouteTo, because the left panel has inline onclick="haloRerouteTo(...)"
+  // that can fire before exact-place handlers.
+  const installGuard = () => {
+    if(typeof window.haloRerouteTo === 'function' && !window.haloRerouteTo.__haloV47Guarded){
+      const old = window.haloRerouteTo;
+      const guarded = function(lat,lng,name){
+        if(blockBadSupportRoute(lat,lng,name)){
+          try{
+            if(typeof addChat === 'function'){
+              addChat('halo','Blocked that support reroute because its coordinates looked wrong. Try the marker directly or rerun the route.');
+            }
+          }catch(e){}
+          return false;
+        }
+        return old.apply(this, arguments);
+      };
+      guarded.__haloV47Guarded = true;
+      window.haloRerouteTo = guarded;
+    }
+  };
+
+  installGuard();
+  setTimeout(installGuard, 800);
+  setTimeout(installGuard, 2000);
+
+  // Store the latest route-plus payload without clearing it before place clicks use it.
+  const prevFetch = window.fetch;
+  if(prevFetch && !prevFetch.__haloV47GuardWrapped){
+    const wrapped = async function(input, init){
+      const response = await prevFetch.apply(this, arguments);
+
+      try{
+        const url = typeof input === 'string' ? input : String(input?.url || '');
+        if(url.includes('/route-plus')){
+          response.clone().json().then(data => {
+            if(data && data.success){
+              window.__haloV47LatestRoutePlus = data;
+            }
+          }).catch(()=>{});
+        }
+      }catch(e){}
+
+      return response;
+    };
+    wrapped.__haloV47GuardWrapped = true;
+    window.fetch = wrapped;
+  }
+
+  // Force left-panel gas/parking rows to use ONLY their inline numeric coordinates if valid.
+  // If coords are missing or far away, cancel the click instead of letting text fallback route globally.
+  document.addEventListener('click', function(e){
+    const row = e.target && e.target.closest && e.target.closest('.halo-nav-row');
+    if(!row) return;
+
+    const txt = String(row.textContent || '');
+    if(!looksLikeSupportName(txt)) return;
+
+    const onclick = String(row.getAttribute('onclick') || '');
+    if(!onclick.includes('haloRerouteTo')) return;
+
+    const nums = onclick.match(/haloRerouteTo\(\s*([-0-9.]+)\s*,\s*([-0-9.]+)/);
+    if(!nums) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      console.warn('[HALO V47] Blocked support row because no numeric coords were present.', txt);
+      return;
+    }
+
+    const lat = Number(nums[1]);
+    const lng = Number(nums[2]);
+
+    if(blockBadSupportRoute(lat,lng,txt)){
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      return;
+    }
+  }, true);
+
+  console.log('[HALO V47 SUPPORT ROUTE COORDINATE GUARD FIX] loaded');
+})();
+</script>
+
 </body>
 </html>
