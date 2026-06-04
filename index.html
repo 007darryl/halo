@@ -10050,5 +10050,319 @@ path.halo-transit-route-glow{
 })();
 </script>
 
+
+<!-- HALO SAFE ROUTE PANEL POLISH V15 -->
+<style id="halo-safe-route-panel-polish-v15">
+/*
+  V15 is intentionally safe:
+  - does NOT resize the map
+  - does NOT force a grid
+  - only repositions route panels slightly cleaner
+  - adds close/collapse buttons
+*/
+
+/* Keep the stable map layout */
+#haloAdvancedMapOverlay.active .ham-map-panel,
+#haloAdvancedMapOverlay.active .hgi-map-wrap{
+  margin-left:312px !important;
+  margin-right:312px !important;
+  width:auto !important;
+  transform:none !important;
+}
+
+/* Navigation Intel: bottom-left inside the map area, less centered */
+#haloNavHUD{
+  position:absolute !important;
+  left:330px !important;
+  bottom:28px !important;
+  top:auto !important;
+  right:auto !important;
+  width:310px !important;
+  max-width:310px !important;
+  max-height:38vh !important;
+  z-index:1350 !important;
+  transform:none !important;
+  margin:0 !important;
+  overflow:hidden !important;
+}
+
+/* Destination Brief: upper-right inside the map area, not overlapping center */
+#haloDestinationBrief,
+#haloDestinationIntelCard{
+  position:absolute !important;
+  right:330px !important;
+  top:88px !important;
+  left:auto !important;
+  bottom:auto !important;
+  width:310px !important;
+  max-width:310px !important;
+  max-height:38vh !important;
+  z-index:1340 !important;
+  transform:none !important;
+  margin:0 !important;
+  overflow:hidden !important;
+}
+
+/* Compact body scroll */
+#haloNavHUD .halo-nav-body,
+#haloDestinationBrief .halo-dest-body,
+#haloDestinationIntelCard .halo-dintel-body,
+#haloNavHUD > div:not(.halo-v15-bar),
+#haloDestinationBrief > div:not(.halo-v15-bar),
+#haloDestinationIntelCard > div:not(.halo-v15-bar){
+  max-height:calc(38vh - 44px) !important;
+  overflow:auto !important;
+}
+
+/* V15 panel control bar */
+.halo-v15-bar{
+  height:38px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:0 10px;
+  border-bottom:1px solid rgba(0,234,255,.12);
+  background:rgba(0,10,26,.86);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  position:sticky;
+  top:0;
+  z-index:80;
+}
+
+.halo-v15-title{
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  letter-spacing:1.5px;
+  color:#00eaff;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.halo-v15-actions{
+  display:flex;
+  gap:6px;
+}
+
+.halo-v15-btn{
+  width:26px;
+  height:26px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  border:1px solid rgba(0,234,255,.22);
+  background:rgba(0,234,255,.055);
+  color:#00eaff;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  cursor:pointer;
+}
+
+.halo-v15-btn:hover{
+  border-color:rgba(0,234,255,.56);
+  box-shadow:0 0 16px rgba(0,234,255,.16);
+}
+
+/* Collapse/hidden */
+.halo-v15-collapsed{
+  height:42px !important;
+  max-height:42px !important;
+  overflow:hidden !important;
+}
+
+.halo-v15-collapsed > *:not(.halo-v15-bar){
+  display:none !important;
+}
+
+.halo-v15-hidden{
+  display:none !important;
+}
+
+/* Hide old control bars/buttons from previous experimental patches */
+#haloNavHUD > .halo-v13-panel-bar,
+#haloDestinationBrief > .halo-v13-panel-bar,
+#haloDestinationIntelCard > .halo-v13-panel-bar,
+#haloNavHUD > .halo-route-collapse-bar,
+#haloDestinationBrief > .halo-route-collapse-bar,
+#haloDestinationIntelCard > .halo-route-collapse-bar,
+#haloNavHUD > .halo-hotfix-bar,
+#haloDestinationBrief > .halo-hotfix-bar,
+#haloDestinationIntelCard > .halo-hotfix-bar,
+#haloNavHUD > .halo-panel-close-x,
+#haloDestinationBrief > .halo-panel-close-x,
+#haloDestinationIntelCard > .halo-panel-close-x{
+  display:none !important;
+}
+
+/* Keep top controls clear */
+#haloCleanMapToggles,
+#haloMapLayerControls{
+  right:330px !important;
+  top:18px !important;
+}
+
+/* Smooth map */
+.leaflet-map-pane{
+  transition:transform .35s cubic-bezier(.2,.85,.2,1) !important;
+}
+
+@media(max-width:1100px){
+  #haloAdvancedMapOverlay.active .ham-map-panel,
+  #haloAdvancedMapOverlay.active .hgi-map-wrap{
+    margin-left:14px !important;
+    margin-right:14px !important;
+  }
+
+  #haloCleanLeftPanel,
+  #haloSystemBriefingPanel,
+  #haloCleanRightPanel,
+  #haloActiveFeedsPanel{
+    display:none !important;
+  }
+
+  #haloNavHUD{
+    left:18px !important;
+    bottom:18px !important;
+  }
+
+  #haloDestinationBrief,
+  #haloDestinationIntelCard{
+    right:18px !important;
+    top:88px !important;
+  }
+
+  #haloCleanMapToggles,
+  #haloMapLayerControls{
+    right:18px !important;
+  }
+}
+</style>
+
+<script id="halo-safe-route-panel-polish-v15-js">
+(function(){
+  function getMap(){
+    try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
+  }
+
+  function invalidateMap(){
+    const map = getMap();
+    if(map){
+      setTimeout(() => {
+        try{ map.invalidateSize({animate:true}); }catch(e){}
+      }, 220);
+    }
+  }
+
+  function titleFor(panel){
+    if(!panel) return 'PANEL';
+    if(panel.id === 'haloNavHUD') return 'NAVIGATION INTEL';
+    return 'DESTINATION BRIEF';
+  }
+
+  function addBar(panel){
+    if(!panel || panel.dataset.v15Ready === 'true') return;
+    panel.dataset.v15Ready = 'true';
+
+    panel.querySelectorAll(':scope > .halo-v15-bar').forEach(el => el.remove());
+
+    const bar = document.createElement('div');
+    bar.className = 'halo-v15-bar';
+    bar.innerHTML = `
+      <div class="halo-v15-title">${titleFor(panel)}</div>
+      <div class="halo-v15-actions">
+        <button class="halo-v15-btn" data-v15="collapse" title="Collapse">−</button>
+        <button class="halo-v15-btn" data-v15="close" title="Close">×</button>
+      </div>
+    `;
+
+    panel.insertBefore(bar, panel.firstChild);
+
+    bar.querySelector('[data-v15="collapse"]').addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      panel.classList.toggle('halo-v15-collapsed');
+      e.currentTarget.textContent = panel.classList.contains('halo-v15-collapsed') ? '+' : '−';
+      invalidateMap();
+    }, true);
+
+    bar.querySelector('[data-v15="close"]').addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      panel.classList.add('halo-v15-hidden');
+      panel.classList.add('closed');
+      panel.classList.remove('active');
+      invalidateMap();
+    }, true);
+  }
+
+  function applyPolish(){
+    ['haloNavHUD','haloDestinationBrief','haloDestinationIntelCard'].forEach(id => {
+      const panel = document.getElementById(id);
+      if(!panel) return;
+
+      panel.classList.remove(
+        'halo-v13-hidden','halo-v13-collapsed',
+        'halo-route-hidden','halo-route-collapsed',
+        'halo-hotfix-hidden','halo-hotfix-collapsed',
+        'halo-panel-closed'
+      );
+
+      addBar(panel);
+    });
+
+    invalidateMap();
+  }
+
+  const originalFetch = window.fetch;
+  if(originalFetch && !window.__haloV15FetchWrapped){
+    window.__haloV15FetchWrapped = true;
+
+    window.fetch = async function(){
+      const response = await originalFetch.apply(this, arguments);
+
+      try{
+        const url = String(arguments[0] || '');
+        if(url.includes('/route-plus') || url.includes('/route-intel')){
+          setTimeout(() => {
+            ['haloNavHUD','haloDestinationBrief','haloDestinationIntelCard'].forEach(id => {
+              const p = document.getElementById(id);
+              if(p) p.classList.remove('halo-v15-hidden','halo-v15-collapsed');
+            });
+            applyPolish();
+          }, 700);
+          setTimeout(applyPolish, 1600);
+        }
+      }catch(e){}
+
+      return response;
+    };
+  }
+
+  const oldOpenMap = window.openHaloAdvancedMap;
+  if(typeof oldOpenMap === 'function' && !window.__haloV15OpenWrapped){
+    window.__haloV15OpenWrapped = true;
+    window.openHaloAdvancedMap = function(){
+      const result = oldOpenMap.apply(this, arguments);
+      setTimeout(applyPolish, 750);
+      return result;
+    };
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => setTimeout(applyPolish, 1400));
+  }else{
+    setTimeout(applyPolish, 1400);
+  }
+
+  setInterval(applyPolish, 3000);
+
+  console.log('[HALO V15 SAFE ROUTE PANEL POLISH] loaded');
+})();
+</script>
+
 </body>
 </html>
