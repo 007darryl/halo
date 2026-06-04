@@ -8931,17 +8931,21 @@ path.halo-transit-route-glow{
 </script>
 
 
-<!-- HALO V30 TRUE MAP RESTORE - NO MAP WIDTH OVERRIDES -->
-<style id="halo-v30-true-map-restore">
+
+
+
+<!-- HALO V31 REAL MAP WIDTH FIX - PATCHED FROM UPLOADED FILE -->
+<style id="halo-v31-real-map-width-fix">
 /*
-  V30:
-  - No map width/height overrides.
-  - No .ham-map-panel/.hgi-map-wrap positioning.
-  - No Leaflet sizing hacks.
-  - Only hides old side panels and floats Navigation/Destination HUDs.
+  V31 fixes the actual issue shown in the uploaded file:
+  the Leaflet map was trapped in a tiny center column.
+  This patch uses a full-screen map stage and floats the info cards over it.
 */
 
-/* Hide unwanted panels without affecting map layout */
+/* Kill old briefing/feed panels */
+#haloAdvancedMapOverlay .ham-left,
+#haloAdvancedMapOverlay .ham-right,
+#haloAdvancedMapOverlay .ham-bottom,
 #haloCleanLeftPanel,
 #haloSystemBriefingPanel,
 #haloCleanRightPanel,
@@ -8950,34 +8954,97 @@ path.halo-transit-route-glow{
 #haloBriefingPanel,
 #haloFeedsPanel,
 #haloLeftBriefingPanel,
-#haloRightFeedsPanel,
-.global-briefing,
-.active-feeds,
-.system-overview,
-.live-channels,
-[class*="global-briefing"],
-[class*="active-feeds"],
-[class*="system-overview"],
-[class*="live-channels"]{
+#haloRightFeedsPanel{
   display:none !important;
   visibility:hidden !important;
   opacity:0 !important;
   pointer-events:none !important;
 }
 
-/* Navigation Intel: simple left overlay */
+/* The main body becomes one huge map canvas */
+#haloAdvancedMapOverlay .ham-body{
+  display:block !important;
+  position:absolute !important;
+  inset:76px 14px 14px 14px !important;
+  padding:0 !important;
+  margin:0 !important;
+  overflow:hidden !important;
+}
+
+/* The map panel becomes full width/height */
+#haloAdvancedMapOverlay .ham-map-panel{
+  display:block !important;
+  position:absolute !important;
+  inset:0 !important;
+  width:auto !important;
+  height:auto !important;
+  min-width:0 !important;
+  max-width:none !important;
+  min-height:0 !important;
+  max-height:none !important;
+  padding:0 !important;
+  margin:0 !important;
+  grid-column:auto !important;
+  grid-row:auto !important;
+  flex:1 1 auto !important;
+  transform:none !important;
+  overflow:hidden !important;
+  z-index:20 !important;
+}
+
+/* Real Leaflet map fills the full map panel */
+#haloRealWorldMap,
+#haloRealMap,
+#haloMap,
+#haloLeafletMap,
+#haloAdvancedMapOverlay .leaflet-container,
+#haloAdvancedMapOverlay .ham-map-panel > .leaflet-container{
+  display:block !important;
+  position:absolute !important;
+  inset:0 !important;
+  width:100% !important;
+  height:100% !important;
+  min-width:100% !important;
+  max-width:none !important;
+  min-height:100% !important;
+  max-height:none !important;
+  margin:0 !important;
+  transform:none !important;
+  z-index:1 !important;
+}
+
+/* Leaflet internal panes */
+#haloAdvancedMapOverlay .leaflet-pane,
+#haloAdvancedMapOverlay .leaflet-map-pane,
+#haloAdvancedMapOverlay .leaflet-tile-pane,
+#haloAdvancedMapOverlay .leaflet-overlay-pane,
+#haloAdvancedMapOverlay .leaflet-marker-pane,
+#haloAdvancedMapOverlay .leaflet-popup-pane{
+  max-width:none !important;
+}
+
+/* Keep layer controls on top of the map */
+#haloAdvancedMapOverlay .ham-layer-controls{
+  position:absolute !important;
+  top:18px !important;
+  left:18px !important;
+  right:auto !important;
+  bottom:auto !important;
+  z-index:1400 !important;
+}
+
+/* Navigation Intel floats over left side but does not squeeze the map */
 #haloNavHUD{
   position:absolute !important;
   left:24px !important;
-  top:92px !important;
-  bottom:18px !important;
-  right:auto !important;
-  width:320px !important;
-  max-width:320px !important;
-  min-width:320px !important;
+  top:96px !important;
+  bottom:24px !important;
+  width:340px !important;
+  min-width:340px !important;
+  max-width:340px !important;
   height:auto !important;
   max-height:none !important;
-  z-index:1800 !important;
+  z-index:1500 !important;
   transform:none !important;
   margin:0 !important;
   display:block !important;
@@ -8986,20 +9053,20 @@ path.halo-transit-route-glow{
   overflow:hidden !important;
 }
 
-/* Destination Brief: simple right overlay */
+/* Destination Brief floats over right side but does not squeeze the map */
 #haloDestinationBrief,
 #haloDestinationIntelCard{
   position:absolute !important;
   right:24px !important;
-  top:92px !important;
-  bottom:18px !important;
+  top:96px !important;
+  bottom:24px !important;
   left:auto !important;
-  width:320px !important;
-  max-width:320px !important;
-  min-width:320px !important;
+  width:340px !important;
+  min-width:340px !important;
+  max-width:340px !important;
   height:auto !important;
   max-height:none !important;
-  z-index:1790 !important;
+  z-index:1500 !important;
   transform:none !important;
   margin:0 !important;
   display:block !important;
@@ -9008,7 +9075,7 @@ path.halo-transit-route-glow{
   overflow:hidden !important;
 }
 
-/* Scrolling inside panels only */
+/* Panel body scrolling */
 #haloNavHUD .halo-nav-body,
 #haloDestinationBrief .halo-dest-body,
 #haloDestinationIntelCard .halo-dintel-body{
@@ -9016,18 +9083,18 @@ path.halo-transit-route-glow{
   overflow:auto !important;
 }
 
-/* Hide duplicate patch bars/buttons */
-#haloNavHUD > [class*="halo-v"],
-#haloDestinationBrief > [class*="halo-v"],
-#haloDestinationIntelCard > [class*="halo-v"],
+/* Remove duplicate old bars/buttons but keep our V31 controls */
+#haloNavHUD > [class*="halo-v"]:not(.halo-v31-bar),
+#haloDestinationBrief > [class*="halo-v"]:not(.halo-v31-bar),
+#haloDestinationIntelCard > [class*="halo-v"]:not(.halo-v31-bar),
 #haloNavHUD > .halo-panel-close-x,
 #haloDestinationBrief > .halo-panel-close-x,
 #haloDestinationIntelCard > .halo-panel-close-x{
   display:none !important;
 }
 
-/* V30 clean top bar */
-.halo-v30-bar{
+/* V31 clean controls */
+.halo-v31-bar{
   height:38px;
   min-height:38px;
   display:flex;
@@ -9035,7 +9102,7 @@ path.halo-transit-route-glow{
   justify-content:space-between;
   gap:8px;
   padding:0 10px;
-  border-bottom:1px solid rgba(0,234,255,.12);
+  border-bottom:1px solid rgba(0,234,255,.14);
   background:rgba(0,10,26,.88);
   backdrop-filter:blur(14px);
   -webkit-backdrop-filter:blur(14px);
@@ -9044,234 +9111,266 @@ path.halo-transit-route-glow{
   z-index:100;
 }
 
-.halo-v30-title{
+.halo-v31-title{
   font-family:'JetBrains Mono',monospace;
   font-size:8px;
-  letter-spacing:1.5px;
+  letter-spacing:1.7px;
   color:#00eaff;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
 }
 
-.halo-v30-actions{
+.halo-v31-actions{
   display:flex;
   gap:6px;
   flex-shrink:0;
 }
 
-.halo-v30-btn{
+.halo-v31-btn{
   width:25px;
   height:25px;
   display:grid;
   place-items:center;
   border-radius:50%;
-  border:1px solid rgba(0,234,255,.24);
-  background:rgba(0,234,255,.06);
+  border:1px solid rgba(0,234,255,.28);
+  background:rgba(0,234,255,.07);
   color:#00eaff;
   font-family:'JetBrains Mono',monospace;
   font-size:10px;
   cursor:pointer;
 }
 
-.halo-v30-collapsed{
+.halo-v31-collapsed{
   height:42px !important;
-  max-height:42px !important;
   min-height:42px !important;
+  max-height:42px !important;
   overflow:hidden !important;
 }
 
-.halo-v30-collapsed > *:not(.halo-v30-bar){
+.halo-v31-collapsed > *:not(.halo-v31-bar){
   display:none !important;
 }
 
-.halo-v30-hidden{
+.halo-v31-hidden{
   display:none !important;
 }
 
-/* Remove failed exact-list attempts only */
-#haloV20ExactPlaces,
-#haloV22ExactPlaces,
-#haloV25ExactPlaces{
-  display:none !important;
+/* Make HALO chat button stay bottom center of map */
+#haloMapChatBtn,
+.halo-map-chat-btn{
+  position:absolute !important;
+  left:50% !important;
+  bottom:16px !important;
+  transform:translateX(-50%) !important;
+  z-index:1600 !important;
 }
 
-@media(max-width:980px){
+/* On smaller screens, hide info panels and give map full space */
+@media(max-width:1100px){
   #haloNavHUD,
   #haloDestinationBrief,
   #haloDestinationIntelCard{
     display:none !important;
   }
+
+  #haloAdvancedMapOverlay .ham-body{
+    inset:72px 10px 10px 10px !important;
+  }
 }
 </style>
 
-<script id="halo-v30-true-map-restore-js">
+<script id="halo-v31-real-map-width-fix-js">
 (function(){
-  function getMap(){
-    try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
+  function map(){
+    try { return window.haloRealMap || haloRealMap; } catch(e) { return null; }
   }
 
-  function getOverlay(){
+  function overlay(){
     return document.getElementById('haloAdvancedMapOverlay') || document.body;
   }
 
-  function invalidateMap(){
-    const map = getMap();
-    if(map){
-      setTimeout(() => {
-        try{ map.invalidateSize({animate:true}); }catch(e){}
-      }, 300);
-    }
+  function invalidate(){
+    const m = map();
+    if(!m) return;
+    setTimeout(() => {
+      try {
+        m.invalidateSize({animate:false});
+        if(m.getCenter && m.setView){
+          const c = m.getCenter();
+          m.setView(c, m.getZoom(), {animate:false});
+        }
+      } catch(e){}
+    }, 80);
+    setTimeout(() => {
+      try { m.invalidateSize({animate:true}); } catch(e){}
+    }, 500);
   }
 
-  function titleFor(panel){
-    if(!panel) return 'PANEL';
-    if(panel.id === 'haloNavHUD') return 'NAVIGATION INTEL';
-    return 'DESTINATION BRIEF';
+  function title(panel){
+    return panel && panel.id === 'haloNavHUD' ? 'NAVIGATION INTEL' : 'DESTINATION BRIEF';
   }
 
   function addBar(panel){
-    if(!panel || panel.dataset.v30BarReady === 'true') return;
-    panel.dataset.v30BarReady = 'true';
+    if(!panel || panel.dataset.v31Ready === 'true') return;
+    panel.dataset.v31Ready = 'true';
 
-    panel.querySelectorAll(':scope > .halo-v30-bar').forEach(el => el.remove());
+    panel.querySelectorAll(':scope > .halo-v31-bar').forEach(x => x.remove());
 
     const bar = document.createElement('div');
-    bar.className = 'halo-v30-bar';
+    bar.className = 'halo-v31-bar';
     bar.innerHTML = `
-      <div class="halo-v30-title">${titleFor(panel)}</div>
-      <div class="halo-v30-actions">
-        <button class="halo-v30-btn" data-v30="collapse" title="Collapse">−</button>
-        <button class="halo-v30-btn" data-v30="close" title="Close">×</button>
+      <div class="halo-v31-title">${title(panel)}</div>
+      <div class="halo-v31-actions">
+        <button class="halo-v31-btn" data-v31="collapse" title="Collapse">−</button>
+        <button class="halo-v31-btn" data-v31="close" title="Close">×</button>
       </div>
     `;
 
     panel.insertBefore(bar, panel.firstChild);
 
-    bar.querySelector('[data-v30="collapse"]').addEventListener('click', e => {
+    bar.querySelector('[data-v31="collapse"]').addEventListener('click', e => {
       e.preventDefault();
       e.stopPropagation();
-      panel.classList.toggle('halo-v30-collapsed');
-      e.currentTarget.textContent = panel.classList.contains('halo-v30-collapsed') ? '+' : '−';
-      invalidateMap();
+      panel.classList.toggle('halo-v31-collapsed');
+      e.currentTarget.textContent = panel.classList.contains('halo-v31-collapsed') ? '+' : '−';
+      invalidate();
     }, true);
 
-    bar.querySelector('[data-v30="close"]').addEventListener('click', e => {
+    bar.querySelector('[data-v31="close"]').addEventListener('click', e => {
       e.preventDefault();
       e.stopPropagation();
-      panel.classList.add('halo-v30-hidden');
-      panel.classList.add('closed');
-      panel.classList.remove('active');
-      invalidateMap();
+      panel.classList.add('halo-v31-hidden');
+      invalidate();
     }, true);
   }
 
-  function hideOldSidePanels(){
+  function restorePanel(panel){
+    if(!panel) return;
+    if(panel.parentElement !== overlay()){
+      overlay().appendChild(panel);
+    }
+
+    panel.classList.remove(
+      'halo-v13-hidden','halo-v13-collapsed',
+      'halo-route-hidden','halo-route-collapsed',
+      'halo-hotfix-hidden','halo-hotfix-collapsed',
+      'halo-v15-hidden','halo-v15-collapsed',
+      'halo-v16-hidden','halo-v16-collapsed',
+      'halo-v17-hidden','halo-v17-collapsed',
+      'halo-v18-hidden','halo-v18-collapsed',
+      'halo-v19-hidden','halo-v19-collapsed',
+      'halo-v20-hidden','halo-v20-collapsed',
+      'halo-v21-hidden','halo-v21-collapsed',
+      'halo-v22-hidden','halo-v22-collapsed',
+      'halo-v23-hidden','halo-v23-collapsed',
+      'halo-v24-hidden','halo-v24-collapsed',
+      'halo-v25-hidden','halo-v25-collapsed',
+      'halo-v26-hidden','halo-v26-collapsed',
+      'halo-v27-hidden','halo-v27-collapsed',
+      'halo-v28-hidden','halo-v28-collapsed',
+      'halo-v29-hidden','halo-v29-collapsed',
+      'halo-v30-hidden','halo-v30-collapsed',
+      'halo-panel-closed'
+    );
+
+    [
+      'left','right','top','bottom','width','height','minWidth','maxWidth',
+      'maxHeight','position','zIndex','transform','margin','display',
+      'visibility','opacity'
+    ].forEach(prop => panel.style[prop] = '');
+
+    addBar(panel);
+  }
+
+  function fix(){
+    // Hide old side columns.
     [
       'haloCleanLeftPanel','haloSystemBriefingPanel','haloCleanRightPanel','haloActiveFeedsPanel',
       'haloGlobalBriefingPanel','haloBriefingPanel','haloFeedsPanel',
       'haloLeftBriefingPanel','haloRightFeedsPanel'
     ].forEach(id => {
       const el = document.getElementById(id);
-      if(!el) return;
-      el.style.display = 'none';
-      el.style.visibility = 'hidden';
-      el.style.opacity = '0';
-      el.style.pointerEvents = 'none';
-    });
-  }
-
-  function cleanOnlyPanels(){
-    const overlay = getOverlay();
-    hideOldSidePanels();
-
-    ['haloNavHUD','haloDestinationBrief','haloDestinationIntelCard'].forEach(id => {
-      const panel = document.getElementById(id);
-      if(!panel) return;
-
-      if(panel.parentElement !== overlay){
-        overlay.appendChild(panel);
+      if(el){
+        el.style.display = 'none';
+        el.style.visibility = 'hidden';
+        el.style.opacity = '0';
+        el.style.pointerEvents = 'none';
       }
-
-      panel.classList.remove(
-        'halo-v13-hidden','halo-v13-collapsed',
-        'halo-route-hidden','halo-route-collapsed',
-        'halo-hotfix-hidden','halo-hotfix-collapsed',
-        'halo-v15-hidden','halo-v15-collapsed',
-        'halo-v16-hidden','halo-v16-collapsed',
-        'halo-v17-hidden','halo-v17-collapsed',
-        'halo-v18-hidden','halo-v18-collapsed',
-        'halo-v19-hidden','halo-v19-collapsed',
-        'halo-v20-hidden','halo-v20-collapsed',
-        'halo-v21-hidden','halo-v21-collapsed',
-        'halo-v22-hidden','halo-v22-collapsed',
-        'halo-v23-hidden','halo-v23-collapsed',
-        'halo-v24-hidden','halo-v24-collapsed',
-        'halo-v25-hidden','halo-v25-collapsed',
-        'halo-v26-hidden','halo-v26-collapsed',
-        'halo-v27-hidden','halo-v27-collapsed',
-        'halo-v28-hidden','halo-v28-collapsed',
-        'halo-v29-hidden','halo-v29-collapsed',
-        'halo-panel-closed'
-      );
-
-      // Clear panel-only inline styles; never touch map styles.
-      [
-        'left','right','top','bottom','width','height','minWidth','maxWidth',
-        'maxHeight','position','zIndex','transform','margin','display',
-        'visibility','opacity'
-      ].forEach(prop => panel.style[prop] = '');
-
-      addBar(panel);
     });
 
+    // Restore only the two useful HUDs.
+    restorePanel(document.getElementById('haloNavHUD'));
+    restorePanel(document.getElementById('haloDestinationBrief') || document.getElementById('haloDestinationIntelCard'));
+
+    // Remove failed exact-place panel attempts.
     ['haloV20ExactPlaces','haloV22ExactPlaces','haloV25ExactPlaces'].forEach(id => {
       const el = document.getElementById(id);
       if(el) el.remove();
     });
 
-    invalidateMap();
+    // Hard clear accidental skinny inline widths on map elements.
+    [
+      '#haloAdvancedMapOverlay .ham-map-panel',
+      '#haloRealWorldMap',
+      '#haloRealMap',
+      '#haloMap',
+      '#haloLeafletMap',
+      '#haloAdvancedMapOverlay .leaflet-container'
+    ].forEach(sel => {
+      document.querySelectorAll(sel).forEach(el => {
+        el.style.width = '';
+        el.style.maxWidth = '';
+        el.style.minWidth = '';
+        el.style.flex = '';
+        el.style.flexBasis = '';
+        el.style.transform = '';
+      });
+    });
+
+    invalidate();
   }
 
-  const originalFetch = window.fetch;
-  if(originalFetch && !window.__haloV30FetchWrapped){
-    window.__haloV30FetchWrapped = true;
+  const oldOpen = window.openHaloAdvancedMap;
+  if(typeof oldOpen === 'function' && !window.__haloV31OpenWrapped){
+    window.__haloV31OpenWrapped = true;
+    window.openHaloAdvancedMap = function(){
+      const out = oldOpen.apply(this, arguments);
+      setTimeout(fix, 100);
+      setTimeout(fix, 650);
+      setTimeout(fix, 1500);
+      return out;
+    };
+  }
 
+  const oldFetch = window.fetch;
+  if(oldFetch && !window.__haloV31FetchWrapped){
+    window.__haloV31FetchWrapped = true;
     window.fetch = async function(){
-      const response = await originalFetch.apply(this, arguments);
-
+      const response = await oldFetch.apply(this, arguments);
       try{
-        const url = String(arguments[0] || '');
-        if(url.includes('/route-plus') || url.includes('/route-intel') || url.includes('/transit-intel')){
-          setTimeout(cleanOnlyPanels, 450);
-          setTimeout(cleanOnlyPanels, 1200);
-          setTimeout(cleanOnlyPanels, 2500);
+        const u = String(arguments[0] || '');
+        if(u.includes('/route-plus') || u.includes('/route-intel') || u.includes('/transit-intel')){
+          setTimeout(fix, 200);
+          setTimeout(fix, 800);
+          setTimeout(fix, 1700);
         }
       }catch(e){}
-
       return response;
     };
   }
 
-  const oldOpenMap = window.openHaloAdvancedMap;
-  if(typeof oldOpenMap === 'function' && !window.__haloV30OpenWrapped){
-    window.__haloV30OpenWrapped = true;
-    window.openHaloAdvancedMap = function(){
-      const result = oldOpenMap.apply(this, arguments);
-      setTimeout(cleanOnlyPanels, 700);
-      return result;
-    };
-  }
+  window.addEventListener('resize', () => setTimeout(fix, 120));
 
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', () => setTimeout(cleanOnlyPanels, 1000));
+    document.addEventListener('DOMContentLoaded', () => setTimeout(fix, 500));
   }else{
-    setTimeout(cleanOnlyPanels, 1000);
+    setTimeout(fix, 500);
   }
 
-  setInterval(cleanOnlyPanels, 5000);
+  setInterval(fix, 4000);
 
-  console.log('[HALO V30 TRUE MAP RESTORE] loaded');
+  console.log('[HALO V31 REAL MAP WIDTH FIX] loaded');
 })();
 </script>
 
