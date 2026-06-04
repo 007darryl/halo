@@ -6519,5 +6519,193 @@ path.halo-perf-route-glow{
 })();
 </script>
 
+
+<!-- HALO MINI CHAT DIRECT ROUTE FIX V1 -->
+<script id="halo-mini-chat-direct-route-fix-v1">
+(function(){
+  function addMiniMessage(text, role){
+    const log = document.getElementById('haloCleanChatLog') || document.getElementById('haloMiniChatLog');
+    if(!log) return;
+    const msg = document.createElement('div');
+    msg.className = (log.id === 'haloCleanChatLog' ? 'halo-clean-msg ' : 'halo-mini-msg ') + (role || 'halo');
+    msg.textContent = text;
+    log.appendChild(msg);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function parseRouteDestination(text){
+    text = String(text || '').trim();
+
+    const patterns = [
+      /^(?:halo\s+)?(?:route|routes|navigate|directions|drive)\s+(?:to|towards?)\s+(.+)$/i,
+      /^(?:halo\s+)?(?:traffic|traffic\s+check|check\s+traffic)\s+(?:to|towards?|for)\s+(.+)$/i,
+      /^(?:halo\s+)?(?:how\s+long|eta)\s+(?:to|towards?|for)\s+(.+)$/i,
+      /^(?:halo\s+)?(?:gas|gas\s+stations)\s+(?:near|by|around|to)\s+(.+)$/i,
+      /^(?:halo\s+)?(?:parking)\s+(?:near|by|around|at|to)\s+(.+)$/i,
+      /^(?:halo\s+)?(?:take\s+me)\s+(?:to|towards?)\s+(.+)$/i
+    ];
+
+    for(const pattern of patterns){
+      const match = text.match(pattern);
+      if(match && match[1]) return match[1].trim();
+    }
+
+    return null;
+  }
+
+  function parseLayerCommand(text){
+    text = String(text || '').trim().toLowerCase();
+
+    if(/^(show|enable|turn on)\s+weather/.test(text)) return {layer:'weather', state:'on'};
+    if(/^(hide|disable|turn off)\s+weather/.test(text)) return {layer:'weather', state:'off'};
+    if(/^weather$/.test(text)) return {layer:'weather', state:'toggle'};
+
+    if(/^(show|enable|turn on)\s+traffic/.test(text)) return {layer:'traffic', state:'on'};
+    if(/^(hide|disable|turn off)\s+traffic/.test(text)) return {layer:'traffic', state:'off'};
+    if(/^traffic$/.test(text)) return {layer:'traffic', state:'toggle'};
+
+    if(/^(globe|globe mode|global mode)$/.test(text)) return {layer:'globe', state:'toggle'};
+    if(/^(show|enable|turn on)\s+(globe|global)/.test(text)) return {layer:'globe', state:'on'};
+    if(/^(hide|disable|turn off)\s+(globe|global)/.test(text)) return {layer:'globe', state:'off'};
+
+    return null;
+  }
+
+  function clearCurrentRouteVisuals(){
+    try{
+      if(typeof window.haloNavClear === 'function'){
+        window.haloNavClear();
+      }
+    }catch(e){}
+
+    // Remove old weather markers if present; route function will redraw.
+    try{
+      const map = window.haloRealMap || haloRealMap;
+      if(map){
+        map.eachLayer(layer => {
+          if(layer && layer.options && (layer.options.haloStreetLayer || layer.options.haloVisibilityFixRoute)){
+            try{ map.removeLayer(layer); }catch(e){}
+          }
+        });
+      }
+    }catch(e){}
+  }
+
+  async function runMiniCommand(text){
+    const routeDestination = parseRouteDestination(text);
+    const layerCommand = parseLayerCommand(text);
+
+    addMiniMessage(text, 'user');
+
+    if(routeDestination){
+      addMiniMessage('Updating route to ' + routeDestination + '...', 'halo');
+
+      clearCurrentRouteVisuals();
+
+      if(typeof window.haloNavRun === 'function'){
+        await window.haloNavRun(routeDestination, 'home');
+        addMiniMessage('Route updated.', 'halo');
+        return;
+      }
+
+      if(typeof window.haloRoutePlusCommand === 'function'){
+        await window.haloRoutePlusCommand(routeDestination);
+        addMiniMessage('Route updated.', 'halo');
+        return;
+      }
+
+      addMiniMessage('Navigation system is not ready yet. Try again in a moment.', 'halo');
+      return;
+    }
+
+    if(layerCommand){
+      if(typeof window.haloToggleLayer === 'function'){
+        const toggle = document.getElementById('clean' + layerCommand.layer.charAt(0).toUpperCase() + layerCommand.layer.slice(1) + 'Toggle');
+        const isActive = toggle && toggle.classList.contains('active');
+
+        if(layerCommand.state === 'toggle'){
+          window.haloToggleLayer(layerCommand.layer);
+        }else if(layerCommand.state === 'on' && !isActive){
+          window.haloToggleLayer(layerCommand.layer);
+        }else if(layerCommand.state === 'off' && isActive){
+          window.haloToggleLayer(layerCommand.layer);
+        }else{
+          addMiniMessage(layerCommand.layer.toUpperCase() + ' layer already ' + layerCommand.state + '.', 'halo');
+        }
+        return;
+      }
+
+      if(typeof window.haloUltimateLayer === 'function'){
+        window.haloUltimateLayer(layerCommand.layer);
+        return;
+      }
+    }
+
+    // Fallback to main chat system for non-route commands.
+    const input = document.getElementById('textInp');
+    if(input){
+      input.focus();
+      input.value = text;
+      const evt = new KeyboardEvent('keydown', {key:'Enter', bubbles:true, cancelable:true});
+      input.dispatchEvent(evt);
+      addMiniMessage('Sent to HALO.', 'halo');
+    }else{
+      addMiniMessage('Command received, but main input was not found.', 'halo');
+    }
+  }
+
+  function bindMiniChatDirect(){
+    const input = document.getElementById('haloCleanChatInput') || document.getElementById('haloMiniChatInput');
+    const btn = document.getElementById('haloCleanChatSend') || document.getElementById('haloMiniChatSend');
+
+    if(!input || !btn) return;
+
+    // Replace old button to remove previous listeners.
+    if(btn.dataset.directRouteFixed !== 'true'){
+      const newBtn = btn.cloneNode(true);
+      btn.parentNode.replaceChild(newBtn, btn);
+      newBtn.dataset.directRouteFixed = 'true';
+
+      newBtn.addEventListener('click', async () => {
+        const text = input.value.trim();
+        if(!text) return;
+        input.value = '';
+        await runMiniCommand(text);
+      });
+    }
+
+    if(input.dataset.directRouteFixed !== 'true'){
+      input.dataset.directRouteFixed = 'true';
+      input.addEventListener('keydown', async e => {
+        if(e.key !== 'Enter') return;
+        const text = input.value.trim();
+        if(!text) return;
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        input.value = '';
+        await runMiniCommand(text);
+      }, true);
+    }
+  }
+
+  const oldOpenCleanChat = window.haloOpenCleanChat;
+  window.haloOpenCleanChat = function(){
+    if(typeof oldOpenCleanChat === 'function') oldOpenCleanChat();
+    setTimeout(bindMiniChatDirect, 100);
+  };
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => setTimeout(bindMiniChatDirect, 1200));
+  }else{
+    setTimeout(bindMiniChatDirect, 1200);
+  }
+
+  setInterval(bindMiniChatDirect, 2000);
+
+  console.log('[HALO MINI CHAT DIRECT ROUTE FIX] loaded');
+})();
+</script>
+
 </body>
 </html>
