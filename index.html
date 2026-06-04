@@ -7555,115 +7555,123 @@ path.halo-transit-route-glow{
 </script>
 
 
-<!-- HALO TRANSIT STEP MARKERS + ANIMATED VEHICLE UPGRADE V1 -->
-<style id="halo-transit-step-markers-animated-vehicle-v1">
-/* Mode specific transit segment styling */
-path.halo-transit-walk-segment{
+<!-- HALO SAFE TRANSIT STEP MARKERS V3 -->
+<style id="halo-safe-transit-step-markers-v3">
+/* Lightweight non-crashing transit markers */
+.halo-safe-transit-marker{
+  min-width:34px;
+  height:24px;
+  padding:0 8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+  border:1px solid currentColor;
+  background:rgba(0,10,26,.92);
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  font-weight:700;
+  letter-spacing:1px;
+  box-shadow:0 0 18px currentColor,0 0 38px rgba(0,0,0,.45);
+  position:relative;
+}
+
+.halo-safe-transit-marker::after{
+  content:attr(data-step);
+  position:absolute;
+  right:-7px;
+  top:-8px;
+  width:15px;
+  height:15px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.55);
+  background:rgba(0,10,26,.96);
+  color:#eaffff;
+  font-family:'JetBrains Mono',monospace;
+  font-size:7px;
+  letter-spacing:0;
+}
+
+.halo-safe-transit-marker.walk{
+  color:#00eaff;
+  min-width:24px;
+  width:24px;
+  padding:0;
+  font-size:0;
+  border-radius:50%;
+  background:
+    radial-gradient(circle, #00eaff 0 4px, rgba(0,234,255,.16) 5px 10px, rgba(0,10,26,.94) 11px);
+}
+
+.halo-safe-transit-marker.bus{
+  color:#bd70ff;
+}
+
+.halo-safe-transit-marker.train{
+  color:#ff9d2e;
+}
+
+.halo-safe-transit-marker.transfer{
+  color:#ffffff;
+  min-width:24px;
+  width:24px;
+  padding:0;
+  font-size:0;
+  border-radius:50%;
+  background:
+    radial-gradient(circle, transparent 0 5px, rgba(255,255,255,.88) 6px 7px, rgba(36,12,62,.94) 8px);
+}
+
+.halo-safe-transit-marker.destination{
+  color:#00ff9d;
+  min-width:28px;
+  width:28px;
+  height:28px;
+  padding:0;
+  font-size:0;
+  border-radius:50%;
+  background:
+    radial-gradient(circle, #00ff9d 0 3px, transparent 4px 8px, rgba(0,255,157,.20) 9px 12px, rgba(0,10,26,.94) 13px);
+}
+
+.halo-safe-transit-segment-walk{
   stroke:#00eaff !important;
   stroke-dasharray:6 12 !important;
   stroke-linecap:round !important;
   stroke-linejoin:round !important;
-  filter:drop-shadow(0 0 7px #00eaff) drop-shadow(0 0 16px #00eaff) !important;
+  filter:drop-shadow(0 0 6px #00eaff) !important;
 }
 
-path.halo-transit-bus-segment{
+.halo-safe-transit-segment-bus{
   stroke:#bd70ff !important;
   stroke-linecap:round !important;
   stroke-linejoin:round !important;
-  filter:drop-shadow(0 0 9px #bd70ff) drop-shadow(0 0 22px #bd70ff) !important;
+  filter:drop-shadow(0 0 8px #bd70ff) drop-shadow(0 0 18px #bd70ff) !important;
 }
 
-path.halo-transit-train-segment{
+.halo-safe-transit-segment-train{
   stroke:#ff9d2e !important;
   stroke-linecap:round !important;
   stroke-linejoin:round !important;
-  filter:drop-shadow(0 0 9px #ff9d2e) drop-shadow(0 0 22px #ff9d2e) !important;
+  filter:drop-shadow(0 0 8px #ff9d2e) drop-shadow(0 0 18px #ff9d2e) !important;
 }
 
-/* Step icon markers */
-.halo-transit-step-icon{
-  width:34px;
-  height:34px;
+/* Reliable close state */
+#haloTransitIntelPanel.closed{
+  display:none !important;
+}
+
+#haloTransitIntelPanel .halo-transit-close{
+  pointer-events:auto !important;
+  z-index:10 !important;
+}
+
+/* Simple compact timeline badges */
+.halo-safe-timeline-row{
   display:grid;
-  place-items:center;
-  border-radius:50%;
-  border:1px solid rgba(255,255,255,.75);
-  background:rgba(0,10,26,.90);
-  font-size:16px;
-  box-shadow:0 0 26px currentColor,0 0 50px rgba(0,234,255,.13);
-}
-
-.halo-transit-step-icon.walk{
-  color:#00eaff;
-}
-
-.halo-transit-step-icon.bus{
-  color:#bd70ff;
-}
-
-.halo-transit-step-icon.train{
-  color:#ff9d2e;
-}
-
-.halo-transit-step-icon.transfer{
-  color:#ffffff;
-  background:rgba(80,20,120,.90);
-}
-
-.halo-transit-step-icon.destination{
-  color:#00ff9d;
-}
-
-/* Small numbered route order badge */
-.halo-transit-step-icon::after{
-  content:attr(data-step);
-  position:absolute;
-  right:-5px;
-  top:-5px;
-  width:16px;
-  height:16px;
-  display:grid;
-  place-items:center;
-  border-radius:50%;
-  border:1px solid rgba(255,255,255,.65);
-  background:rgba(0,10,26,.95);
-  color:#eaffff;
-  font-family:'JetBrains Mono',monospace;
-  font-size:8px;
-}
-
-/* Animated vehicle */
-#haloTransitVehicle{
-  position:absolute;
-  z-index:1450;
-  width:36px;
-  height:36px;
-  display:none;
-  place-items:center;
-  border-radius:50%;
-  transform:translate(-50%,-50%);
-  border:1px solid rgba(255,255,255,.75);
-  background:rgba(30,10,52,.92);
-  color:#d9b4ff;
-  font-size:18px;
-  pointer-events:none;
-  box-shadow:0 0 26px #bd70ff,0 0 56px rgba(189,112,255,.32);
-}
-
-#haloTransitVehicle.active{
-  display:grid;
-}
-
-/* Enhanced timeline */
-.halo-transit-timeline{
-  display:grid;
-  gap:8px;
-  margin-top:10px;
-}
-
-.halo-transit-timeline-row{
-  display:grid;
-  grid-template-columns:36px 1fr auto;
+  grid-template-columns:42px 1fr auto;
   gap:9px;
   align-items:start;
   padding:9px 10px;
@@ -7671,24 +7679,36 @@ path.halo-transit-train-segment{
   border:1px solid rgba(189,112,255,.10);
   background:rgba(0,8,22,.34);
   color:rgba(245,237,255,.80);
+  margin-bottom:7px;
 }
 
-.halo-transit-timeline-icon{
-  width:28px;
-  height:28px;
-  display:grid;
-  place-items:center;
-  border-radius:50%;
-  border:1px solid rgba(255,255,255,.45);
-  background:rgba(16,8,32,.78);
+.halo-safe-timeline-badge{
+  height:22px;
+  min-width:34px;
+  padding:0 7px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+  border:1px solid currentColor;
+  background:rgba(0,10,26,.74);
+  color:#bd70ff;
+  font-family:'JetBrains Mono',monospace;
+  font-size:7px;
+  letter-spacing:.8px;
+  box-shadow:0 0 12px currentColor;
 }
 
-.halo-transit-timeline-main strong{
+.halo-safe-timeline-badge.walk{color:#00eaff}
+.halo-safe-timeline-badge.train{color:#ff9d2e}
+.halo-safe-timeline-badge.transfer{color:#ffffff}
+
+.halo-safe-timeline-main strong{
   color:#f5edff;
   font-size:12px;
 }
 
-.halo-transit-timeline-main span{
+.halo-safe-timeline-main span{
   display:block;
   font-size:11px;
   color:rgba(245,237,255,.65);
@@ -7696,7 +7716,7 @@ path.halo-transit-train-segment{
   margin-top:3px;
 }
 
-.halo-transit-timeline-time{
+.halo-safe-timeline-time{
   font-family:'JetBrains Mono',monospace;
   font-size:8px;
   letter-spacing:1px;
@@ -7704,15 +7724,14 @@ path.halo-transit-train-segment{
   white-space:nowrap;
 }
 
-/* Legend */
-.halo-transit-legend{
+.halo-safe-legend{
   display:flex;
   gap:7px;
   flex-wrap:wrap;
   margin:10px 0;
 }
 
-.halo-transit-legend-chip{
+.halo-safe-legend-chip{
   padding:6px 8px;
   border-radius:999px;
   border:1px solid rgba(189,112,255,.14);
@@ -7724,14 +7743,10 @@ path.halo-transit-train-segment{
 }
 </style>
 
-<script id="halo-transit-step-markers-animated-vehicle-v1-js">
+<script id="halo-safe-transit-step-markers-v3-js">
 (function(){
-  let detailedTransitLayers = [];
-  let vehicleTimer = null;
-  let vehiclePath = [];
-  let lastDetailedTransitPayload = null;
-
-  function log(){ try{ console.log('[HALO TRANSIT DETAIL]', ...arguments); }catch(e){} }
+  let safeTransitLayers = [];
+  let safePanelClosed = false;
 
   function getMap(){
     try{
@@ -7753,7 +7768,7 @@ path.halo-transit-train-segment{
 
   function decodePolyline(encoded){
     if(!encoded) return [];
-    let points = [];
+    const points = [];
     let index = 0, lat = 0, lng = 0;
 
     while(index < encoded.length){
@@ -7780,6 +7795,16 @@ path.halo-transit-train-segment{
     return points;
   }
 
+  function clearSafeTransitLayers(){
+    const map = getMap();
+    if(map){
+      safeTransitLayers.forEach(layer => {
+        try{ map.removeLayer(layer); }catch(e){}
+      });
+    }
+    safeTransitLayers = [];
+  }
+
   function stepKind(step){
     const mode = String(step.travel_mode || '').toUpperCase();
     const vehicle = String(step.transit?.vehicle_type || step.transit?.vehicle_name || '').toUpperCase();
@@ -7790,15 +7815,15 @@ path.halo-transit-train-segment{
     return 'bus';
   }
 
-  function stepEmoji(kind){
-    if(kind === 'walk') return '🚶';
-    if(kind === 'train') return '🚆';
-    if(kind === 'transfer') return '🔄';
-    if(kind === 'destination') return '🏁';
-    return '🚌';
+  function stepLabel(kind){
+    if(kind === 'walk') return '';
+    if(kind === 'train') return 'TRN';
+    if(kind === 'transfer') return '';
+    if(kind === 'destination') return '';
+    return 'BUS';
   }
 
-  function stepTitle(step, index){
+  function stepTitle(step){
     const kind = stepKind(step);
     if(kind === 'walk') return 'Walk';
     if(kind === 'train') return step.transit?.line_short_name || step.transit?.line_name || 'Train';
@@ -7816,207 +7841,36 @@ path.halo-transit-train-segment{
     return `${from} → ${to}${headsign}`;
   }
 
-  function clearDetailedTransit(){
-    const map = getMap();
-    if(map){
-      detailedTransitLayers.forEach(layer => {
-        try{ map.removeLayer(layer); }catch(e){}
-      });
-    }
-    detailedTransitLayers = [];
-    stopTransitVehicle();
-  }
-
-  function ensureVehicle(){
-    const overlay = document.getElementById('haloAdvancedMapOverlay');
-    if(!overlay) return null;
-    const panel = overlay.querySelector('.ham-map-panel') || overlay;
-
-    let vehicle = document.getElementById('haloTransitVehicle');
-    if(vehicle) return vehicle;
-
-    vehicle = document.createElement('div');
-    vehicle.id = 'haloTransitVehicle';
-    vehicle.textContent = '🚌';
-    panel.appendChild(vehicle);
-    return vehicle;
-  }
-
-  function stopTransitVehicle(){
-    if(vehicleTimer){
-      clearInterval(vehicleTimer);
-      vehicleTimer = null;
-    }
-    const vehicle = document.getElementById('haloTransitVehicle');
-    if(vehicle) vehicle.classList.remove('active');
-  }
-
-  function startTransitVehicle(points, emoji='🚌'){
-    stopTransitVehicle();
-
-    const map = getMap();
-    const vehicle = ensureVehicle();
-    if(!map || !vehicle || !points.length) return;
-
-    vehiclePath = points;
-    vehicle.textContent = emoji;
-    vehicle.classList.add('active');
-
-    let tick = 0;
-    vehicleTimer = setInterval(() => {
-      const mapNow = getMap();
-      if(!mapNow || !vehiclePath.length) return;
-
-      const phase = (tick % 100) / 100;
-      const index = Math.min(vehiclePath.length - 1, Math.floor(phase * (vehiclePath.length - 1)));
-      const latlng = vehiclePath[index];
-      const pt = mapNow.latLngToContainerPoint(latlng);
-
-      vehicle.style.left = `${pt.x}px`;
-      vehicle.style.top = `${pt.y}px`;
-
-      tick += 1.35;
-    }, 75);
-  }
-
-  function iconFor(kind, stepNumber){
-    const emoji = stepEmoji(kind);
+  function markerIcon(kind, stepNumber){
     return L.divIcon({
       className:'',
-      html:`<div class="halo-transit-step-icon ${kind}" data-step="${stepNumber}">${emoji}</div>`,
-      iconSize:[34,34],
-      iconAnchor:[17,17],
-      popupAnchor:[0,-18]
+      html:`<div class="halo-safe-transit-marker ${kind}" data-step="${stepNumber}">${stepLabel(kind)}</div>`,
+      iconSize:null,
+      iconAnchor:[16,12],
+      popupAnchor:[0,-14]
     });
   }
 
-  function addStepMarker(map, point, kind, stepNumber, popup){
+  function addMarker(map, point, kind, stepNumber, popup){
     if(!point || !point.length) return;
+
     const marker = L.marker(point, {
-      icon: iconFor(kind, stepNumber)
+      icon: markerIcon(kind, stepNumber)
     }).addTo(map);
 
     if(popup) marker.bindPopup(popup, {className:'ham-popup'});
-    detailedTransitLayers.push(marker);
+    safeTransitLayers.push(marker);
   }
 
-  function drawDetailedTransit(payload, routeIndex=0){
-    const map = getMap();
-    if(!map || typeof L === 'undefined' || !payload) return;
-
-    clearDetailedTransit();
-    lastDetailedTransitPayload = payload;
-
-    const routes = payload.routes || [payload];
-    const route = routes[routeIndex] || routes[0] || payload;
-    const steps = route.steps || [];
-
-    let allPoints = [];
-    let transitVehiclePoints = [];
-    let previousWasTransit = false;
-    let transitCount = 0;
-
-    steps.forEach((step, idx) => {
-      const pts = decodePolyline(step.polyline);
-      if(!pts.length) return;
-
-      const kind = stepKind(step);
-      const isTransit = kind === 'bus' || kind === 'train';
-
-      allPoints = allPoints.concat(pts);
-      if(isTransit) transitVehiclePoints = transitVehiclePoints.concat(pts);
-
-      const segment = L.polyline(pts, {
-        color: kind === 'walk' ? '#00eaff' : kind === 'train' ? '#ff9d2e' : '#bd70ff',
-        weight: kind === 'walk' ? 5 : 8,
-        opacity: kind === 'walk' ? .82 : .95,
-        dashArray: kind === 'walk' ? '7 12' : null,
-        lineCap:'round',
-        lineJoin:'round',
-        interactive:false,
-        className: kind === 'walk'
-          ? 'halo-transit-walk-segment'
-          : kind === 'train'
-            ? 'halo-transit-train-segment'
-            : 'halo-transit-bus-segment'
-      }).addTo(map);
-      detailedTransitLayers.push(segment);
-
-      const stepNumber = idx + 1;
-      const first = pts[0];
-      const last = pts[pts.length - 1];
-
-      // Walking marker at the beginning of walking portions.
-      if(kind === 'walk'){
-        addStepMarker(
-          map,
-          first,
-          'walk',
-          stepNumber,
-          `<strong>🚶 Walk</strong><br>${esc(step.instruction || 'Walking step')}<br>${esc(step.duration_minutes)} min · ${esc(step.distance_miles)} mi`
-        );
-      }
-
-      // Bus/train marker at each transit boarding point.
-      if(isTransit){
-        transitCount += 1;
-
-        if(previousWasTransit || transitCount > 1){
-          addStepMarker(
-            map,
-            first,
-            'transfer',
-            stepNumber,
-            `<strong>🔄 Transfer</strong><br>Switch to ${esc(stepTitle(step, idx))}<br>${esc(step.transit?.departure_stop || 'Transit stop')}`
-          );
-        }
-
-        addStepMarker(
-          map,
-          first,
-          kind,
-          stepNumber,
-          `<strong>${stepEmoji(kind)} ${esc(stepTitle(step, idx))}</strong><br>
-          Board: ${esc(step.transit?.departure_stop || 'Stop')}<br>
-          Exit: ${esc(step.transit?.arrival_stop || 'Stop')}<br>
-          ${step.transit?.departure_time ? 'Depart: ' + esc(step.transit.departure_time) + '<br>' : ''}
-          ${step.transit?.arrival_time ? 'Arrive: ' + esc(step.transit.arrival_time) + '<br>' : ''}
-          ${step.transit?.num_stops ? esc(step.transit.num_stops) + ' stops' : ''}`
-        );
-      }
-
-      previousWasTransit = isTransit;
-    });
-
-    // Destination marker
-    if(allPoints.length){
-      addStepMarker(
-        map,
-        allPoints[allPoints.length - 1],
-        'destination',
-        steps.length + 1,
-        `<strong>🏁 Arrive</strong><br>${esc(payload.destination || route.end_address || 'Destination')}`
-      );
-
-      map.fitBounds(L.latLngBounds(allPoints), {
-        paddingTopLeft:[90,90],
-        paddingBottomRight:[90,90],
-        maxZoom:13
-      });
-    }
-
-    startTransitVehicle(transitVehiclePoints.length ? transitVehiclePoints : allPoints, transitVehiclePoints.length ? '🚌' : '🚶');
-    updateDetailedTransitTimeline(payload, routeIndex);
-
-    log('Detailed transit drawn', steps.length, 'steps');
-  }
-
-  function updateDetailedTransitTimeline(payload, routeIndex=0){
+  function updateTransitPanelSafe(payload, routeIndex=0){
     const panel = document.getElementById('haloTransitIntelPanel');
     const body = document.getElementById('haloTransitIntelBody');
     if(!panel || !body || !payload) return;
 
-    panel.classList.add('active');
+    if(!safePanelClosed){
+      panel.classList.remove('closed');
+      panel.classList.add('active');
+    }
 
     const routes = payload.routes || [payload];
     const route = routes[routeIndex] || routes[0] || payload;
@@ -8024,20 +7878,21 @@ path.halo-transit-train-segment{
     const lines = route.transit_lines || [];
     const transfers = Math.max(lines.length - 1, 0);
 
-    const timelineRows = steps.map((step, idx) => {
+    const rows = steps.map((step, idx) => {
       const kind = stepKind(step);
-      const title = stepTitle(step, idx);
+      const badge = kind === 'walk' ? 'WALK' : kind === 'train' ? 'TRN' : 'BUS';
+      const title = stepTitle(step);
       const subtitle = stepSubtitle(step);
       const time = step.transit?.departure_time || `${step.duration_minutes}M`;
 
       return `
-        <div class="halo-transit-timeline-row">
-          <div class="halo-transit-timeline-icon">${stepEmoji(kind)}</div>
-          <div class="halo-transit-timeline-main">
+        <div class="halo-safe-timeline-row">
+          <div class="halo-safe-timeline-badge ${kind}">${badge}</div>
+          <div class="halo-safe-timeline-main">
             <strong>${esc(title)}</strong>
             <span>${esc(subtitle)}</span>
           </div>
-          <div class="halo-transit-timeline-time">${esc(time)}</div>
+          <div class="halo-safe-timeline-time">${esc(time)}</div>
         </div>
       `;
     }).join('');
@@ -8055,23 +7910,136 @@ path.halo-transit-train-segment{
         to ${esc(payload.destination || route.end_address || 'Destination')}
       </div>
 
-      <div class="halo-transit-legend">
-        <div class="halo-transit-legend-chip">🚶 WALK</div>
-        <div class="halo-transit-legend-chip">🚌 BUS</div>
-        <div class="halo-transit-legend-chip">🚆 TRAIN</div>
-        <div class="halo-transit-legend-chip">🔄 TRANSFER</div>
+      <div class="halo-safe-legend">
+        <div class="halo-safe-legend-chip">CYAN DOT = WALK</div>
+        <div class="halo-safe-legend-chip">BUS = BUS</div>
+        <div class="halo-safe-legend-chip">TRN = TRAIN</div>
+        <div class="halo-safe-legend-chip">RING = TRANSFER</div>
       </div>
 
-      <div class="halo-transit-timeline">
-        ${timelineRows || '<div class="halo-transit-step">No step details found.</div>'}
-      </div>
+      ${rows || '<div class="halo-transit-step">No step details found.</div>'}
     `;
   }
 
-  // Capture transit-intel responses and redraw with full detail after base transit draws.
+  function drawSafeTransitDetails(payload, routeIndex=0){
+    const map = getMap();
+    if(!map || typeof L === 'undefined' || !payload) return;
+
+    clearSafeTransitLayers();
+
+    const routes = payload.routes || [payload];
+    const route = routes[routeIndex] || routes[0] || payload;
+    const steps = route.steps || [];
+
+    let allPoints = [];
+    let transitCount = 0;
+
+    steps.forEach((step, idx) => {
+      const pts = decodePolyline(step.polyline);
+      if(!pts.length) return;
+
+      const kind = stepKind(step);
+      const isTransit = kind === 'bus' || kind === 'train';
+      allPoints = allPoints.concat(pts);
+
+      const segment = L.polyline(pts, {
+        color: kind === 'walk' ? '#00eaff' : kind === 'train' ? '#ff9d2e' : '#bd70ff',
+        weight: kind === 'walk' ? 4 : 7,
+        opacity: kind === 'walk' ? .78 : .92,
+        dashArray: kind === 'walk' ? '6 12' : null,
+        lineCap:'round',
+        lineJoin:'round',
+        interactive:false,
+        className: kind === 'walk'
+          ? 'halo-safe-transit-segment-walk'
+          : kind === 'train'
+            ? 'halo-safe-transit-segment-train'
+            : 'halo-safe-transit-segment-bus'
+      }).addTo(map);
+
+      safeTransitLayers.push(segment);
+
+      const stepNumber = idx + 1;
+
+      if(kind === 'walk'){
+        addMarker(
+          map,
+          pts[0],
+          'walk',
+          stepNumber,
+          `<strong>WALK</strong><br>${esc(step.instruction || 'Walking step')}<br>${esc(step.duration_minutes)} min · ${esc(step.distance_miles)} mi`
+        );
+      }
+
+      if(isTransit){
+        transitCount += 1;
+
+        if(transitCount > 1){
+          addMarker(
+            map,
+            pts[0],
+            'transfer',
+            stepNumber,
+            `<strong>TRANSFER</strong><br>Switch to ${esc(stepTitle(step))}<br>${esc(step.transit?.departure_stop || 'Transit stop')}`
+          );
+        }
+
+        addMarker(
+          map,
+          pts[0],
+          kind,
+          stepNumber,
+          `<strong>${kind === 'train' ? 'TRAIN' : 'BUS'} ${esc(stepTitle(step))}</strong><br>
+          Board: ${esc(step.transit?.departure_stop || 'Stop')}<br>
+          Exit: ${esc(step.transit?.arrival_stop || 'Stop')}<br>
+          ${step.transit?.departure_time ? 'Depart: ' + esc(step.transit.departure_time) + '<br>' : ''}
+          ${step.transit?.arrival_time ? 'Arrive: ' + esc(step.transit.arrival_time) + '<br>' : ''}
+          ${step.transit?.num_stops ? esc(step.transit.num_stops) + ' stops' : ''}`
+        );
+      }
+    });
+
+    if(allPoints.length){
+      addMarker(
+        map,
+        allPoints[allPoints.length - 1],
+        'destination',
+        steps.length + 1,
+        `<strong>ARRIVE</strong><br>${esc(payload.destination || route.end_address || 'Destination')}`
+      );
+
+      map.fitBounds(L.latLngBounds(allPoints), {
+        paddingTopLeft:[90,90],
+        paddingBottomRight:[90,90],
+        maxZoom:13
+      });
+    }
+
+    updateTransitPanelSafe(payload, routeIndex);
+  }
+
+  function bindCloseButton(){
+    const panel = document.getElementById('haloTransitIntelPanel');
+    if(!panel) return;
+
+    const btn = panel.querySelector('.halo-transit-close');
+    if(btn && btn.dataset.safeCloseBound !== 'true'){
+      btn.dataset.safeCloseBound = 'true';
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        safePanelClosed = true;
+        panel.classList.add('closed');
+        panel.classList.remove('active');
+      }, true);
+    }
+  }
+
+  // New transit route = allow panel to open again.
   const originalFetch = window.fetch;
-  if(originalFetch && !window.__haloTransitDetailFetchWrapped){
-    window.__haloTransitDetailFetchWrapped = true;
+  if(originalFetch && !window.__haloSafeTransitFetchWrapped){
+    window.__haloSafeTransitFetchWrapped = true;
 
     window.fetch = async function(){
       const response = await originalFetch.apply(this, arguments);
@@ -8079,10 +8047,13 @@ path.halo-transit-train-segment{
       try{
         const url = String(arguments[0] || '');
         if(url.includes('/transit-intel')){
+          safePanelClosed = false;
+
           response.clone().json().then(data => {
             if(data && data.success && data.routes){
               setTimeout(() => {
-                drawDetailedTransit(data, 0);
+                bindCloseButton();
+                drawSafeTransitDetails(data, 0);
               }, 650);
             }
           }).catch(()=>{});
@@ -8093,702 +8064,28 @@ path.halo-transit-train-segment{
     };
   }
 
-  // Override close to stop animation too.
   const oldCloseTransitPanel = window.haloCloseTransitPanel;
   window.haloCloseTransitPanel = function(){
-    if(typeof oldCloseTransitPanel === 'function') oldCloseTransitPanel();
-    stopTransitVehicle();
-  };
-
-  // Public helpers.
-  window.haloDrawDetailedTransit = drawDetailedTransit;
-  window.haloClearDetailedTransit = clearDetailedTransit;
-
-  console.log('[HALO TRANSIT STEP MARKERS] loaded');
-})();
-</script>
-
-
-<!-- HALO PREMIUM TRANSIT ICONS + CLOSEABLE PANEL FIX V1 -->
-<style id="halo-premium-transit-icons-close-panel-v1">
-/* Replace emoji-looking transit markers with clean HUD glyphs */
-.halo-transit-step-icon{
-  width:32px !important;
-  height:32px !important;
-  display:grid !important;
-  place-items:center !important;
-  border-radius:50% !important;
-  border:1px solid rgba(255,255,255,.58) !important;
-  background:
-    radial-gradient(circle at 35% 30%, rgba(255,255,255,.15), transparent 32%),
-    rgba(0,10,26,.92) !important;
-  font-family:'JetBrains Mono', monospace !important;
-  font-size:0 !important;
-  box-shadow:0 0 24px currentColor, 0 0 46px rgba(0,234,255,.10) !important;
-  position:relative !important;
-}
-
-.halo-transit-step-icon.walk{color:#00eaff !important;}
-.halo-transit-step-icon.bus{color:#bd70ff !important;}
-.halo-transit-step-icon.train{color:#ff9d2e !important;}
-.halo-transit-step-icon.transfer{color:#ffffff !important;background:rgba(36,12,62,.94) !important;}
-.halo-transit-step-icon.destination{color:#00ff9d !important;}
-
-/* Clean icon drawings */
-.halo-transit-step-icon.walk::before{
-  content:'';
-  width:10px;
-  height:10px;
-  border-radius:50%;
-  border:2px solid currentColor;
-  box-shadow:0 0 10px currentColor;
-  transform:translateY(-5px);
-}
-
-.halo-transit-step-icon.walk .halo-mini-glyph,
-.halo-transit-step-icon.walk::after{
-  /* keep step number from existing after but restyled below */
-}
-
-.halo-transit-step-icon.walk{
-  background-image:
-    linear-gradient(currentColor,currentColor),
-    linear-gradient(currentColor,currentColor),
-    linear-gradient(currentColor,currentColor),
-    radial-gradient(circle at 35% 30%, rgba(255,255,255,.15), transparent 32%) !important;
-  background-size:2px 12px, 9px 2px, 9px 2px, auto !important;
-  background-position:center 17px, 11px 23px, 18px 23px, center !important;
-  background-repeat:no-repeat !important;
-}
-
-.halo-transit-step-icon.bus::before{
-  content:'';
-  width:17px;
-  height:13px;
-  border:2px solid currentColor;
-  border-radius:4px;
-  box-shadow:0 0 10px currentColor;
-}
-
-.halo-transit-step-icon.bus::after{
-  content:attr(data-step);
-}
-
-.halo-transit-step-icon.bus{
-  background-image:
-    radial-gradient(circle, currentColor 0 2px, transparent 2.5px),
-    radial-gradient(circle, currentColor 0 2px, transparent 2.5px),
-    linear-gradient(currentColor,currentColor),
-    radial-gradient(circle at 35% 30%, rgba(255,255,255,.15), transparent 32%) !important;
-  background-size:5px 5px, 5px 5px, 11px 2px, auto !important;
-  background-position:10px 21px, 18px 21px, center 13px, center !important;
-  background-repeat:no-repeat !important;
-}
-
-.halo-transit-step-icon.train::before{
-  content:'';
-  width:16px;
-  height:16px;
-  border:2px solid currentColor;
-  border-radius:5px 5px 7px 7px;
-  box-shadow:0 0 10px currentColor;
-}
-
-.halo-transit-step-icon.train{
-  background-image:
-    radial-gradient(circle, currentColor 0 2px, transparent 2.5px),
-    radial-gradient(circle, currentColor 0 2px, transparent 2.5px),
-    linear-gradient(currentColor,currentColor),
-    radial-gradient(circle at 35% 30%, rgba(255,255,255,.15), transparent 32%) !important;
-  background-size:5px 5px,5px 5px,10px 2px,auto !important;
-  background-position:10px 21px,18px 21px,center 12px,center !important;
-  background-repeat:no-repeat !important;
-}
-
-.halo-transit-step-icon.transfer::before{
-  content:'';
-  width:16px;
-  height:16px;
-  border-radius:50%;
-  border:2px solid currentColor;
-  border-left-color:transparent;
-  border-bottom-color:transparent;
-  transform:rotate(35deg);
-  box-shadow:0 0 10px currentColor;
-}
-
-.halo-transit-step-icon.transfer{
-  background-image:
-    linear-gradient(45deg, transparent 45%, currentColor 45% 55%, transparent 55%),
-    linear-gradient(-45deg, transparent 45%, currentColor 45% 55%, transparent 55%),
-    radial-gradient(circle at 35% 30%, rgba(255,255,255,.15), transparent 32%) !important;
-  background-size:12px 12px,12px 12px,auto !important;
-  background-position:center,center,center !important;
-  background-repeat:no-repeat !important;
-}
-
-.halo-transit-step-icon.destination::before{
-  content:'';
-  width:15px;
-  height:15px;
-  border-radius:50%;
-  border:2px solid currentColor;
-  box-shadow:0 0 10px currentColor;
-}
-
-.halo-transit-step-icon.destination{
-  background-image:
-    linear-gradient(currentColor,currentColor),
-    linear-gradient(90deg,currentColor,currentColor),
-    radial-gradient(circle at 35% 30%, rgba(255,255,255,.15), transparent 32%) !important;
-  background-size:20px 2px,2px 20px,auto !important;
-  background-position:center,center,center !important;
-  background-repeat:no-repeat !important;
-}
-
-/* Step number badge: smaller and cleaner */
-.halo-transit-step-icon::after{
-  content:attr(data-step) !important;
-  position:absolute !important;
-  right:-5px !important;
-  top:-5px !important;
-  width:15px !important;
-  height:15px !important;
-  display:grid !important;
-  place-items:center !important;
-  border-radius:50% !important;
-  border:1px solid rgba(255,255,255,.55) !important;
-  background:rgba(0,10,26,.96) !important;
-  color:#eaffff !important;
-  font-family:'JetBrains Mono',monospace !important;
-  font-size:7px !important;
-  letter-spacing:0 !important;
-}
-
-/* Animated vehicle becomes a clean capsule icon */
-#haloTransitVehicle{
-  width:34px !important;
-  height:34px !important;
-  font-size:0 !important;
-  color:#bd70ff !important;
-  background:
-    radial-gradient(circle at 35% 30%, rgba(255,255,255,.16), transparent 32%),
-    rgba(30,10,52,.94) !important;
-  position:absolute !important;
-}
-
-#haloTransitVehicle::before{
-  content:'';
-  width:18px;
-  height:13px;
-  border:2px solid currentColor;
-  border-radius:4px;
-  box-shadow:0 0 12px currentColor;
-}
-
-#haloTransitVehicle::after{
-  content:'';
-  position:absolute;
-  width:22px;
-  height:2px;
-  background:currentColor;
-  bottom:8px;
-  left:6px;
-  box-shadow:0 0 9px currentColor;
-}
-
-/* Timeline icons: premium glyph badges, not emoji feel */
-.halo-transit-timeline-icon{
-  font-size:0 !important;
-  position:relative;
-  color:#bd70ff;
-}
-
-.halo-transit-timeline-icon::before{
-  content:'';
-  width:14px;
-  height:14px;
-  border:2px solid currentColor;
-  border-radius:4px;
-  box-shadow:0 0 8px currentColor;
-}
-
-.halo-transit-timeline-row:has(.halo-transit-timeline-icon) .halo-transit-timeline-icon{
-  display:grid;
-  place-items:center;
-}
-
-/* Panel close behavior */
-#haloTransitIntelPanel.closed{
-  display:none !important;
-}
-
-#haloTransitIntelPanel .halo-transit-close{
-  display:grid !important;
-  place-items:center !important;
-  z-index:5 !important;
-}
-
-#haloTransitIntelPanel{
-  resize:both;
-  min-width:300px;
-  min-height:220px;
-}
-
-/* Add compact panel footer controls */
-#haloTransitPanelFooter{
-  display:flex;
-  gap:7px;
-  margin-top:10px;
-}
-
-.halo-transit-footer-btn{
-  flex:1;
-  padding:8px 9px;
-  border-radius:999px;
-  border:1px solid rgba(189,112,255,.18);
-  background:rgba(189,112,255,.055);
-  color:#d9b4ff;
-  font-family:'JetBrains Mono',monospace;
-  font-size:7px;
-  letter-spacing:1.1px;
-  cursor:pointer;
-}
-
-.halo-transit-footer-btn:hover{
-  border-color:rgba(189,112,255,.48);
-  box-shadow:0 0 18px rgba(189,112,255,.14);
-}
-</style>
-
-<script id="halo-premium-transit-icons-close-panel-v1-js">
-(function(){
-  let userClosedTransitPanel = false;
-
-  function ensureCloseWorks(){
-    const panel = document.getElementById('haloTransitIntelPanel');
-    if(!panel) return;
-
-    const closeBtn = panel.querySelector('.halo-transit-close');
-    if(closeBtn && closeBtn.dataset.premiumCloseBound !== 'true'){
-      closeBtn.dataset.premiumCloseBound = 'true';
-      closeBtn.onclick = function(e){
-        e.preventDefault();
-        e.stopPropagation();
-        userClosedTransitPanel = true;
-        panel.classList.add('closed');
-        panel.classList.remove('active');
-
-        const vehicle = document.getElementById('haloTransitVehicle');
-        if(vehicle) vehicle.classList.remove('active');
-      };
-    }
-
-    const body = document.getElementById('haloTransitIntelBody');
-    if(body && !document.getElementById('haloTransitPanelFooter')){
-      const footer = document.createElement('div');
-      footer.id = 'haloTransitPanelFooter';
-      footer.innerHTML = `
-        <button class="halo-transit-footer-btn" onclick="haloTransitPanelMinimize()">MINIMIZE</button>
-        <button class="halo-transit-footer-btn" onclick="haloTransitPanelClear()">CLEAR</button>
-      `;
-      body.appendChild(footer);
-    }
-  }
-
-  window.haloTransitPanelMinimize = function(){
-    const panel = document.getElementById('haloTransitIntelPanel');
-    if(panel){
-      userClosedTransitPanel = true;
-      panel.classList.add('closed');
-      panel.classList.remove('active');
-    }
-  };
-
-  window.haloTransitPanelClear = function(){
-    try{
-      if(typeof window.haloClearDetailedTransit === 'function') window.haloClearDetailedTransit();
-    }catch(e){}
-
-    try{
-      const panel = document.getElementById('haloTransitIntelPanel');
-      if(panel){
-        userClosedTransitPanel = true;
-        panel.classList.add('closed');
-        panel.classList.remove('active');
-      }
-    }catch(e){}
-  };
-
-  // Override the existing close function too.
-  const oldCloseTransitPanel = window.haloCloseTransitPanel;
-  window.haloCloseTransitPanel = function(){
-    userClosedTransitPanel = true;
+    safePanelClosed = true;
     const panel = document.getElementById('haloTransitIntelPanel');
     if(panel){
       panel.classList.add('closed');
       panel.classList.remove('active');
     }
-
-    const vehicle = document.getElementById('haloTransitVehicle');
-    if(vehicle) vehicle.classList.remove('active');
-
     if(typeof oldCloseTransitPanel === 'function'){
       try{ oldCloseTransitPanel(); }catch(e){}
     }
   };
 
-  // When a new transit route starts, allow the panel to open again.
-  const oldRunTransit = window.haloRunTransit;
-  if(typeof oldRunTransit === 'function' && !window.__haloPremiumTransitRunWrapped){
-    window.__haloPremiumTransitRunWrapped = true;
-    window.haloRunTransit = async function(){
-      userClosedTransitPanel = false;
-      const panel = document.getElementById('haloTransitIntelPanel');
-      if(panel){
-        panel.classList.remove('closed');
-        panel.classList.add('active');
-      }
-      return oldRunTransit.apply(this, arguments);
-    };
-  }
-
-  // Watch for the transit panel being opened by old code after user closes it.
-  const observer = new MutationObserver(() => {
-    const panel = document.getElementById('haloTransitIntelPanel');
-    if(panel && userClosedTransitPanel){
-      panel.classList.add('closed');
-      panel.classList.remove('active');
-    }
-    ensureCloseWorks();
-  });
-
-  if(document.body){
-    observer.observe(document.body, {
-      childList:true,
-      subtree:true,
-      attributes:true,
-      attributeFilter:['class']
-    });
-  }
-
-  // Replace emoji text inside transit step markers after they appear.
-  function cleanMarkerText(){
-    document.querySelectorAll('.halo-transit-step-icon').forEach(el => {
-      // Remove visible emoji text while keeping data-step.
-      Array.from(el.childNodes).forEach(node => {
-        if(node.nodeType === Node.TEXT_NODE) node.textContent = '';
-      });
-    });
-
-    const vehicle = document.getElementById('haloTransitVehicle');
-    if(vehicle){
-      Array.from(vehicle.childNodes).forEach(node => {
-        if(node.nodeType === Node.TEXT_NODE) node.textContent = '';
-      });
-    }
-  }
-
-  setInterval(() => {
-    ensureCloseWorks();
-    cleanMarkerText();
-  }, 800);
+  window.haloClearSafeTransitDetails = clearSafeTransitLayers;
 
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', () => setTimeout(ensureCloseWorks, 900));
+    document.addEventListener('DOMContentLoaded', () => setTimeout(bindCloseButton, 1200));
   }else{
-    setTimeout(ensureCloseWorks, 900);
+    setTimeout(bindCloseButton, 1200);
   }
 
-  console.log('[HALO PREMIUM TRANSIT ICONS] loaded');
-})();
-</script>
-
-
-<!-- HALO CLEAN TRANSIT SYMBOL ICONS FIX V2 -->
-<style id="halo-clean-transit-symbol-icons-fix-v2">
-/* Hard override: no emoji-like or CSS-drawn weird shapes */
-.halo-transit-step-icon{
-  width:auto !important;
-  min-width:30px !important;
-  height:24px !important;
-  padding:0 8px !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  border-radius:999px !important;
-  border:1px solid currentColor !important;
-  background:rgba(0,10,26,.92) !important;
-  font-family:'JetBrains Mono', monospace !important;
-  font-size:8px !important;
-  font-weight:700 !important;
-  letter-spacing:1px !important;
-  line-height:1 !important;
-  box-shadow:0 0 18px currentColor,0 0 36px rgba(0,0,0,.45) !important;
-  position:relative !important;
-  text-transform:uppercase !important;
-  overflow:visible !important;
-}
-
-.halo-transit-step-icon::before{
-  content:none !important;
-  display:none !important;
-}
-
-.halo-transit-step-icon::after{
-  content:attr(data-step) !important;
-  position:absolute !important;
-  right:-7px !important;
-  top:-8px !important;
-  width:15px !important;
-  height:15px !important;
-  display:grid !important;
-  place-items:center !important;
-  border-radius:50% !important;
-  border:1px solid rgba(255,255,255,.55) !important;
-  background:rgba(0,10,26,.96) !important;
-  color:#eaffff !important;
-  font-family:'JetBrains Mono',monospace !important;
-  font-size:7px !important;
-  letter-spacing:0 !important;
-  text-shadow:none !important;
-}
-
-.halo-transit-step-icon.walk{
-  color:#00eaff !important;
-  min-width:24px !important;
-  width:24px !important;
-  padding:0 !important;
-  border-radius:50% !important;
-  background:
-    radial-gradient(circle, #00eaff 0 4px, rgba(0,234,255,.13) 5px 10px, rgba(0,10,26,.94) 11px) !important;
-  font-size:0 !important;
-}
-
-.halo-transit-step-icon.walk::after{
-  right:-8px !important;
-  top:-8px !important;
-}
-
-.halo-transit-step-icon.bus{
-  color:#bd70ff !important;
-}
-
-.halo-transit-step-icon.bus{
-  font-size:0 !important;
-}
-
-.halo-transit-step-icon.bus::before{
-  content:'BUS' !important;
-  display:block !important;
-  font-size:8px !important;
-  letter-spacing:1px !important;
-}
-
-.halo-transit-step-icon.train{
-  color:#ff9d2e !important;
-  font-size:0 !important;
-}
-
-.halo-transit-step-icon.train::before{
-  content:'TRN' !important;
-  display:block !important;
-  font-size:8px !important;
-  letter-spacing:1px !important;
-}
-
-.halo-transit-step-icon.transfer{
-  color:#ffffff !important;
-  width:24px !important;
-  min-width:24px !important;
-  padding:0 !important;
-  border-radius:50% !important;
-  background:
-    radial-gradient(circle, transparent 0 5px, rgba(255,255,255,.9) 6px 7px, rgba(36,12,62,.94) 8px) !important;
-  font-size:0 !important;
-}
-
-.halo-transit-step-icon.transfer::before{
-  content:none !important;
-  display:none !important;
-}
-
-.halo-transit-step-icon.destination{
-  color:#00ff9d !important;
-  width:28px !important;
-  min-width:28px !important;
-  height:28px !important;
-  padding:0 !important;
-  border-radius:50% !important;
-  background:
-    radial-gradient(circle, #00ff9d 0 3px, transparent 4px 8px, rgba(0,255,157,.20) 9px 12px, rgba(0,10,26,.94) 13px) !important;
-  font-size:0 !important;
-}
-
-/* Timeline: text-based clean badges */
-.halo-transit-timeline-icon{
-  width:32px !important;
-  height:22px !important;
-  min-width:32px !important;
-  border-radius:999px !important;
-  border:1px solid currentColor !important;
-  background:rgba(0,10,26,.74) !important;
-  color:#bd70ff !important;
-  font-family:'JetBrains Mono',monospace !important;
-  font-size:7px !important;
-  letter-spacing:.8px !important;
-  display:flex !important;
-  align-items:center !important;
-  justify-content:center !important;
-  box-shadow:0 0 14px currentColor !important;
-}
-
-.halo-transit-timeline-icon::before,
-.halo-transit-timeline-icon::after{
-  content:none !important;
-  display:none !important;
-}
-
-/* Animated vehicle as clean LIVE badge */
-#haloTransitVehicle{
-  width:auto !important;
-  min-width:42px !important;
-  height:24px !important;
-  padding:0 9px !important;
-  border-radius:999px !important;
-  border:1px solid #bd70ff !important;
-  background:rgba(30,10,52,.94) !important;
-  color:#d9b4ff !important;
-  font-family:'JetBrains Mono',monospace !important;
-  font-size:8px !important;
-  font-weight:700 !important;
-  letter-spacing:1px !important;
-  box-shadow:0 0 22px #bd70ff,0 0 44px rgba(189,112,255,.30) !important;
-}
-
-#haloTransitVehicle::before,
-#haloTransitVehicle::after{
-  content:none !important;
-  display:none !important;
-}
-
-/* Make leaflet popups less huge when clicking destination */
-.leaflet-popup-content-wrapper{
-  border-radius:12px !important;
-}
-
-/* Transit panel close button always accessible */
-#haloTransitIntelPanel{
-  pointer-events:auto !important;
-}
-
-#haloTransitIntelPanel .halo-transit-close{
-  position:relative !important;
-  z-index:20 !important;
-  pointer-events:auto !important;
-}
-</style>
-
-<script id="halo-clean-transit-symbol-icons-fix-v2-js">
-(function(){
-  function classifyTimelineText(row){
-    const txt = row.textContent.toLowerCase();
-    if(txt.includes('walk')) return 'WALK';
-    if(txt.includes('train') || txt.includes('metro') || txt.includes('rail')) return 'TRN';
-    if(txt.includes('transfer')) return 'XFER';
-    return 'BUS';
-  }
-
-  function cleanTransitSymbols(){
-    document.querySelectorAll('.halo-transit-step-icon').forEach(el => {
-      Array.from(el.childNodes).forEach(node => {
-        if(node.nodeType === Node.TEXT_NODE) node.textContent = '';
-      });
-    });
-
-    document.querySelectorAll('.halo-transit-timeline-row').forEach(row => {
-      const icon = row.querySelector('.halo-transit-timeline-icon');
-      if(icon){
-        icon.textContent = classifyTimelineText(row);
-        const label = icon.textContent;
-        icon.style.color = label === 'WALK' ? '#00eaff' : label === 'TRN' ? '#ff9d2e' : label === 'XFER' ? '#ffffff' : '#bd70ff';
-      }
-    });
-
-    const vehicle = document.getElementById('haloTransitVehicle');
-    if(vehicle){
-      vehicle.textContent = 'LIVE';
-    }
-  }
-
-  // Stronger close: no reopening until a new /transit-intel call.
-  let transitPanelClosed = false;
-
-  function bindClose(){
-    const panel = document.getElementById('haloTransitIntelPanel');
-    if(!panel) return;
-    const btn = panel.querySelector('.halo-transit-close');
-    if(!btn || btn.dataset.cleanSymbolCloseBound === 'true') return;
-
-    btn.dataset.cleanSymbolCloseBound = 'true';
-    btn.addEventListener('click', e => {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      transitPanelClosed = true;
-      panel.classList.add('closed');
-      panel.classList.remove('active');
-    }, true);
-  }
-
-  const originalFetch = window.fetch;
-  if(originalFetch && !window.__haloCleanSymbolFetchWrapped){
-    window.__haloCleanSymbolFetchWrapped = true;
-    window.fetch = async function(){
-      const response = await originalFetch.apply(this, arguments);
-      try{
-        const url = String(arguments[0] || '');
-        if(url.includes('/transit-intel')){
-          transitPanelClosed = false;
-          setTimeout(() => {
-            const panel = document.getElementById('haloTransitIntelPanel');
-            if(panel){
-              panel.classList.remove('closed');
-              panel.classList.add('active');
-            }
-          }, 500);
-        }
-      }catch(e){}
-      return response;
-    };
-  }
-
-  const observer = new MutationObserver(() => {
-    cleanTransitSymbols();
-    bindClose();
-
-    const panel = document.getElementById('haloTransitIntelPanel');
-    if(panel && transitPanelClosed){
-      panel.classList.add('closed');
-      panel.classList.remove('active');
-    }
-  });
-
-  if(document.body){
-    observer.observe(document.body, {
-      childList:true,
-      subtree:true,
-      attributes:true,
-      attributeFilter:['class']
-    });
-  }
-
-  setInterval(() => {
-    cleanTransitSymbols();
-    bindClose();
-  }, 500);
-
-  console.log('[HALO CLEAN TRANSIT SYMBOLS V2] loaded');
+  console.log('[HALO SAFE TRANSIT MARKERS V3] loaded');
 })();
 </script>
 
