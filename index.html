@@ -5256,8 +5256,43 @@ function hud(data,idx){
   return `<div class="halo-nav-row" style="${hasCoords?'cursor:pointer':''}" ${onclick}><span>🅿️ ${esc(p.name)}</span><small>${p.rating?esc(p.rating)+'★':'PARK'}</small></div>`;
 }).join('');body.innerHTML=`<div class="halo-nav-destination"><strong>${esc(rd.origin||'Origin')}</strong> → <strong>${esc(rd.destination||'Destination')}</strong></div><div class="halo-nav-stats"><div class="halo-nav-stat"><div class="halo-nav-label">ETA</div><div class="halo-nav-value">${esc(r.eta_minutes)}M</div></div><div class="halo-nav-stat"><div class="halo-nav-label">DELAY</div><div class="halo-nav-value ${c}">+${esc(r.delay_minutes||0)}M</div></div><div class="halo-nav-stat"><div class="halo-nav-label">DISTANCE</div><div class="halo-nav-value">${esc(r.distance_miles)}MI</div></div><div class="halo-nav-stat"><div class="halo-nav-label">TRAFFIC</div><div class="halo-nav-value ${c}">${esc(r.traffic_level)}</div></div></div><div class="halo-nav-section"><div class="halo-nav-section-title">ROUTE OPTIONS</div>${opts}</div><div class="halo-nav-section"><div class="halo-nav-section-title">GAS + PARKING</div>${gas}${park}</div>`}
 function draw(data,idx=0){console.log('ROUTE START — drawing route');let m=map();if(!m||typeof L==='undefined')return;payload=data;selected=idx;clear();let rd=data.route||{},rs=rd.routes||[rd],r=rs[idx]||rs[0]||rd,col=color(r.traffic_level),sel=[];rs.slice(0,3).forEach((x,i)=>{let pts=decode(x.polyline);if(!pts.length)return;let on=i===idx;if(on)sel=pts;let ln=L.polyline(pts,{color:on?col:'#00eaff',weight:on?8:3,opacity:on?.98:.25,lineCap:'round',lineJoin:'round',interactive:false,className:on?'halo-perf-route-main':''}).addTo(m);layers.push(ln);if(on){let gl=L.polyline(pts,{color:col,weight:20,opacity:.2,lineCap:'round',lineJoin:'round',interactive:false,className:'halo-perf-route-glow'}).addTo(m);layers.push(gl);try{gl.bringToFront();ln.bringToFront()}catch(e){}}});mark(m,r.start_location||rd.start_location,'start','●','Start');mark(m,r.end_location||rd.end_location,'destination','◆',`<strong>${esc(rd.destination||'Destination')}</strong><br>${esc(r.eta_minutes)} min`);(data.gas||[]).slice(0,3).forEach(p=>mark(m,p.location,'gas','⛽',`<strong>${esc(p.name)}</strong><br>${esc(p.address||'')}`));(data.parking||[]).slice(0,3).forEach(p=>mark(m,p.location,'parking','P',`<strong>${esc(p.name)}</strong><br>${esc(p.address||'')}`));if(sel.length){let b=L.latLngBounds(sel);m.fitBounds(b,{paddingTopLeft:[70,70],paddingBottomRight:[70,70],maxZoom:13});setTimeout(()=>{try{if(m.getZoom()<10)m.setZoom(10)}catch(e){}},350);console.log('ROUTE DRAWN — fitBounds applied');}hud(data,idx)}
-async function run(destination,origin='home'){if(busy)return;busy=true;destination=String(destination||'').trim();if(!destination){busy=false;return}if(window.setHaloOrbMode)window.setHaloOrbMode('thinking','NAV SCAN');await open();try{let res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({origin,destination})});let data=await res.json();if(!res.ok||!data.success){if(window.setHaloOrbMode)window.setHaloOrbMode('alert','NAV ERROR');if(typeof showIntel==='function')showIntel('NAVIGATION ERROR',`<h3>Route Failed</h3><p>${esc(data.error||'Route failed')}</p>`);busy=false;return}draw(data,0);let l=String((data.route||{}).traffic_level||'').toLowerCase();if(window.setHaloOrbMode){if(l.includes('heavy'))window.setHaloOrbMode('alert','HEAVY TRAFFIC');else if(l.includes('moderate'))window.setHaloOrbMode('thinking','TRAFFIC MODERATE');else window.setHaloOrbMode('success','ROUTE READY')}}catch(e){if(window.setHaloOrbMode)window.setHaloOrbMode('alert','NAV ERROR');if(typeof showIntel==='function')showIntel('NAVIGATION ERROR',`<h3>System Error</h3><p>${esc(e.message)}</p>`)}busy=false}
-window.haloNavRun=run;window.haloRoutePlusCommand=d=>run(d,'home');
+
+async function haloResolveNavOrigin(origin){
+  if(origin && origin !== 'home' && origin !== '__AUTO_GPS__' && origin !== 'current location' && origin !== 'my location' && origin !== 'me'){
+    return origin;
+  }
+  const cachedLat = Number(window.haloUserLat);
+  const cachedLng = Number(window.haloUserLng);
+  if(Number.isFinite(cachedLat) && Number.isFinite(cachedLng)){
+    console.log('[HALO GPS] using cached browser location', cachedLat, cachedLng);
+    return `${cachedLat},${cachedLng}`;
+  }
+  if(!navigator.geolocation){
+    console.warn('[HALO GPS] geolocation unavailable, falling back to Los Angeles');
+    return 'home';
+  }
+  return await new Promise(resolve=>{
+    navigator.geolocation.getCurrentPosition(pos=>{
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      window.haloUserLat = lat;
+      window.haloUserLng = lng;
+      console.log('[HALO GPS] resolved browser location', lat, lng);
+      resolve(`${lat},${lng}`);
+    }, err=>{
+      console.warn('[HALO GPS] failed:', err.message, 'falling back to Los Angeles');
+      resolve('home');
+    }, { enableHighAccuracy:true, timeout:10000, maximumAge:30000 });
+  });
+}
+function haloCleanDestinationText(destination){
+  return String(destination || '')
+    .replace(/\bfrom\s+(?:my\s+location|current\s+location|me|here)\b/ig, '')
+    .replace(/\bnear\s+me\b/ig, '')
+    .trim();
+}
+async function run(destination,origin='__AUTO_GPS__'){if(busy)return;busy=true;destination=haloCleanDestinationText(destination);if(!destination){busy=false;return}origin=await haloResolveNavOrigin(origin);if(window.setHaloOrbMode)window.setHaloOrbMode('thinking','NAV SCAN');await open();try{let res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({origin,destination})});let data=await res.json();if(!res.ok||!data.success){if(window.setHaloOrbMode)window.setHaloOrbMode('alert','NAV ERROR');if(typeof showIntel==='function')showIntel('NAVIGATION ERROR',`<h3>Route Failed</h3><p>${esc(data.error||'Route failed')}</p>`);busy=false;return}draw(data,0);let l=String((data.route||{}).traffic_level||'').toLowerCase();if(window.setHaloOrbMode){if(l.includes('heavy'))window.setHaloOrbMode('alert','HEAVY TRAFFIC');else if(l.includes('moderate'))window.setHaloOrbMode('thinking','TRAFFIC MODERATE');else window.setHaloOrbMode('success','ROUTE READY')}}catch(e){if(window.setHaloOrbMode)window.setHaloOrbMode('alert','NAV ERROR');if(typeof showIntel==='function')showIntel('NAVIGATION ERROR',`<h3>System Error</h3><p>${esc(e.message)}</p>`)}busy=false}
+window.haloNavRun=run;window.haloRoutePlusCommand=d=>run(d,'__AUTO_GPS__');
 window.haloRerouteTo=function(lat,lng,name){
   if(!lat||!lng)return;
   if(busy)return;
@@ -5269,7 +5304,7 @@ window.haloRerouteTo=function(lat,lng,name){
   if(window.setHaloOrbMode)window.setHaloOrbMode('thinking','REROUTING');
   // Fetch new route to exact coordinates
   fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({origin:'home',destination:name||`${lat},${lng}`})
+    body:JSON.stringify({origin:(Number.isFinite(Number(window.haloUserLat))&&Number.isFinite(Number(window.haloUserLng)))?`${window.haloUserLat},${window.haloUserLng}`:'home',destination:name||`${lat},${lng}`})
   }).then(r=>r.json()).then(data=>{
     if(data.success){
       draw(data,0);
@@ -5292,8 +5327,8 @@ window.haloRerouteTo=function(lat,lng,name){
   }).catch(e=>{console.log('Reroute error:',e);busy=false;if(window.setHaloOrbMode)window.setHaloOrbMode('alert','NAV ERROR');});
 };window.haloNavSelectRoute=i=>{if(payload)draw(payload,i)};window.haloNavFocus=()=>{if(payload)draw(payload,selected)};window.haloNavZoomIn=()=>{let m=map();if(m)m.setZoom(Math.min(15,Math.max(m.getZoom()+1,12)))};window.haloNavClear=()=>{clear();payload=null;selected=0;busy=false;let b=document.getElementById('haloNavHUDBody');if(b)b.innerHTML='<div class="halo-nav-destination">Route cleared.</div>'};
 function addUser(t){let f=document.getElementById('chatFeed');if(!f)return;let m=document.createElement('div');m.className='msg user-msg';m.textContent=t;f.appendChild(m);f.scrollTop=f.scrollHeight}
-document.addEventListener('keydown',e=>{if(e.key!=='Enter')return;let input=document.getElementById('textInp');if(!input||document.activeElement!==input)return;let v=input.value||'',d=parse(v);if(!d)return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();addUser(v);input.value='';run(d,'home')},true);
-document.addEventListener('click',e=>{let btn=e.target.closest&&e.target.closest('.send-btn');if(!btn)return;let input=document.getElementById('textInp');if(!input)return;let v=input.value||'',d=parse(v);if(!d)return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();addUser(v);input.value='';run(d,'home')},true);
+document.addEventListener('keydown',e=>{if(e.key!=='Enter')return;let input=document.getElementById('textInp');if(!input||document.activeElement!==input)return;let v=input.value||'',d=parse(v);if(!d)return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();addUser(v);input.value='';run(d,'__AUTO_GPS__')},true);
+document.addEventListener('click',e=>{let btn=e.target.closest&&e.target.closest('.send-btn');if(!btn)return;let input=document.getElementById('textInp');if(!input)return;let v=input.value||'',d=parse(v);if(!d)return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();addUser(v);input.value='';run(d,'__AUTO_GPS__')},true);
 console.log('[HALO PERFORMANCE NAV V2] clean system loaded');
 })();
 </script>
@@ -6568,7 +6603,7 @@ path.halo-perf-route-glow{
     const match = [...document.querySelectorAll('#haloCleanRightPanel .halo-clean-card')].find(card => card.textContent.toLowerCase().includes(type));
     if(match) match.classList.add('active');
 
-    if(type === 'lax' && typeof window.haloNavRun === 'function') window.haloNavRun('lax');
+    if(type === 'lax' && typeof window.haloNavRun === 'function') window.haloNavRun('lax','__AUTO_GPS__');
     else if(type === 'weather') haloToggleLayer('weather');
     else if(type === 'los angeles') addCleanMessage('Los Angeles feed selected.', 'halo');
     else addCleanMessage(type.toUpperCase() + ' feed is staged for future expansion.', 'halo');
@@ -6733,7 +6768,7 @@ path.halo-perf-route-glow{
       clearCurrentRouteVisuals();
 
       if(typeof window.haloNavRun === 'function'){
-        await window.haloNavRun(routeDestination, 'home');
+        await window.haloNavRun(routeDestination, '__AUTO_GPS__');
         addMiniMessage('Route updated.', 'halo');
         return;
       }
@@ -9026,7 +9061,7 @@ path.halo-transit-route-glow{
 
     try{
       if(typeof window.haloNavRun === 'function'){
-        window.haloNavRun(destination, 'home');
+        window.haloNavRun(destination, '__AUTO_GPS__');
       }else if(typeof window.haloRoutePlusCommand === 'function'){
         window.haloRoutePlusCommand(destination);
       }
@@ -9875,7 +9910,7 @@ path.halo-transit-route-glow{
     const destination = p.address || p.formattedAddress || `${item.lat},${item.lng}`;
 
     if(typeof window.haloNavRun === 'function'){
-      window.haloNavRun(destination, 'home');
+      window.haloNavRun(destination, '__AUTO_GPS__');
     }else if(typeof window.haloRoutePlusCommand === 'function'){
       window.haloRoutePlusCommand(destination);
     }
@@ -10907,6 +10942,38 @@ body #haloAdvancedMapOverlay #haloDestinationIntelCard.halo-v35-force-hidden{
   window.haloV41ReviveCoreMap = reviveCoreMap;
 
   console.log('[HALO V41 STABLE ROLLBACK SAFETY] loaded');
+})();
+</script>
+
+
+<script id="halo-gps-diagnostic-final-fix-v1">
+(function(){
+  window.haloGPSDiagnostic = async function(){
+    const result = { cached: null, browser: null, permission: null };
+    if(Number.isFinite(Number(window.haloUserLat)) && Number.isFinite(Number(window.haloUserLng))){
+      result.cached = { lat:Number(window.haloUserLat), lng:Number(window.haloUserLng) };
+    }
+    try{
+      if(navigator.permissions && navigator.permissions.query){
+        const p = await navigator.permissions.query({name:'geolocation'});
+        result.permission = p.state;
+      }
+    }catch(e){}
+    if(navigator.geolocation){
+      result.browser = await new Promise(resolve=>{
+        navigator.geolocation.getCurrentPosition(
+          pos => resolve({ ok:true, lat:pos.coords.latitude, lng:pos.coords.longitude, accuracy:pos.coords.accuracy }),
+          err => resolve({ ok:false, code:err.code, message:err.message }),
+          { enableHighAccuracy:true, timeout:10000, maximumAge:0 }
+        );
+      });
+    }else{
+      result.browser = { ok:false, message:'navigator.geolocation unavailable' };
+    }
+    console.log('[HALO GPS DIAGNOSTIC]', result);
+    return result;
+  };
+  console.log('[HALO GPS + GAS/PARKING DIAGNOSTIC FINAL FIX V1] loaded');
 })();
 </script>
 
