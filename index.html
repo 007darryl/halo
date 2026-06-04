@@ -10091,5 +10091,218 @@ path.halo-transit-route-glow{
 })();
 </script>
 
+
+<!-- HALO V34 CLEAR HIDES PANELS FIX -->
+<style id="halo-v34-clear-hides-panels-fix">
+/*
+  V34:
+  When CLEAR is clicked, route state clears AND the Navigation Intel /
+  Destination Brief panels disappear instead of staying open.
+*/
+
+.halo-v34-force-hidden{
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+}
+</style>
+
+<script id="halo-v34-clear-hides-panels-fix-js">
+(function(){
+  function getMap(){
+    try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
+  }
+
+  function removeLayerSafe(map, layer){
+    try{
+      if(!map || !layer) return;
+      if(map.hasLayer && map.hasLayer(layer)) map.removeLayer(layer);
+      else map.removeLayer(layer);
+    }catch(e){}
+  }
+
+  function clearRouteLayers(){
+    const map = getMap();
+    if(!map) return;
+
+    const keys = [
+      'haloRouteLine','haloRoutePolyline','haloActiveRouteLine','haloActiveRoute',
+      'haloRouteLayer','currentRouteLine','currentRoutePolyline','routePolyline',
+      'activeRoutePolyline','activeRouteLayer','haloTrafficRouteLine','haloTransitRouteLine',
+      'haloRouteGlow','haloRouteGlowLine','haloRouteShadowLine',
+      'haloGasMarkers','haloParkingMarkers','haloPlaceMarkers','haloTransitMarkers',
+      'gasMarkers','parkingMarkers','placeMarkers','routeMarkers',
+      'haloRouteMarkers','haloSupportMarkers','haloV32Markers'
+    ];
+
+    keys.forEach(k => {
+      try{
+        const val = window[k];
+        if(!val) return;
+
+        if(Array.isArray(val)){
+          val.forEach(x => removeLayerSafe(map, x && x.marker ? x.marker : x));
+          window[k] = [];
+        }else if(typeof val === 'object'){
+          Object.values(val).forEach(x => removeLayerSafe(map, x && (x.marker || x.layer) ? (x.marker || x.layer) : x));
+          window[k] = {};
+        }else{
+          removeLayerSafe(map, val);
+          window[k] = null;
+        }
+      }catch(e){}
+    });
+
+    try{
+      map.eachLayer(layer => {
+        if(!layer) return;
+
+        if(typeof L !== 'undefined' && layer instanceof L.Polyline && !(layer instanceof L.Polygon)){
+          const opts = layer.options || {};
+          const cls = String(opts.className || '').toLowerCase();
+          const color = String(opts.color || '').toLowerCase();
+          if(cls.includes('route') || cls.includes('halo') || color.includes('00ff') || color.includes('00e') || color.includes('green') || color.includes('cyan') || color.includes('purple')){
+            removeLayerSafe(map, layer);
+          }
+        }
+
+        if(typeof L !== 'undefined' && layer instanceof L.Marker){
+          const icon = layer.getElement && layer.getElement();
+          const html = icon ? String(icon.innerHTML || '').toLowerCase() : '';
+          const cls = icon ? String(icon.className || '').toLowerCase() : '';
+          const title = String(layer.options?.title || '').toLowerCase();
+
+          if(
+            html.includes('gas') || html.includes('parking') ||
+            html.includes('halo-v32-marker') || html.includes('halo-v31-marker') ||
+            cls.includes('gas') || cls.includes('parking') ||
+            title.includes('gas') || title.includes('parking') ||
+            title.includes('arco') || title.includes('shell') || title.includes('costco')
+          ){
+            removeLayerSafe(map, layer);
+          }
+        }
+      });
+    }catch(e){}
+  }
+
+  function closePopups(){
+    const map = getMap();
+    try{ if(map) map.closePopup(); }catch(e){}
+    document.querySelectorAll('.leaflet-popup-close-button').forEach(btn => {
+      try{ btn.click(); }catch(e){}
+    });
+  }
+
+  function resetVars(){
+    [
+      'currentRoute','activeDestination','routePlusData','haloRoutePlusData',
+      '__haloV32Payload','__haloV31Payload','__haloV25Payload','__haloV23Payload',
+      '__haloPolishPayload','__haloStreetRoutePayload','__haloLastRoutePayloadVisibilityFix',
+      'haloCurrentDestination','haloActiveDestination','haloRouteDestination',
+      'currentDestination','activeRoute','activeRouteData'
+    ].forEach(k => {
+      try{ window[k] = null; }catch(e){}
+    });
+  }
+
+  function hidePanels(){
+    ['haloNavHUD','haloDestinationBrief','haloDestinationIntelCard'].forEach(id => {
+      const panel = document.getElementById(id);
+      if(!panel) return;
+
+      panel.classList.add('halo-v34-force-hidden');
+      panel.classList.add('closed');
+      panel.classList.remove('active');
+
+      panel.style.display = 'none';
+      panel.style.visibility = 'hidden';
+      panel.style.opacity = '0';
+      panel.style.pointerEvents = 'none';
+    });
+  }
+
+  function clearExactLists(){
+    ['haloV20ExactPlaces','haloV22ExactPlaces','haloV23ExactPlaces','haloV25ExactPlaces','haloV32ExactPlaces'].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.remove();
+    });
+  }
+
+  function clearAll(){
+    closePopups();
+    clearRouteLayers();
+    resetVars();
+    clearExactLists();
+    hidePanels();
+
+    const map = getMap();
+    if(map){
+      setTimeout(() => {
+        try{ map.invalidateSize({animate:true}); }catch(e){}
+      }, 150);
+    }
+
+    console.log('[HALO V34] Clear button hid panels and cleared route.');
+  }
+
+  window.haloClearAndHidePanelsV34 = clearAll;
+
+  function bindClearButtons(){
+    const possible = Array.from(document.querySelectorAll('button, .ham-map-control, .ham-control, [role="button"], .leaflet-control *'));
+    possible.forEach(el => {
+      const text = String(el.textContent || el.innerText || '').trim().toLowerCase();
+      const id = String(el.id || '').toLowerCase();
+      const cls = String(el.className || '').toLowerCase();
+
+      const isClear = text === 'clear' || text.includes('clear') || id.includes('clear') || cls.includes('clear');
+      if(!isClear || el.dataset.v34ClearHideBound === 'true') return;
+
+      el.dataset.v34ClearHideBound = 'true';
+      el.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        setTimeout(clearAll, 0);
+      }, true);
+    });
+  }
+
+  // Wrap older clear functions so any clear path hides panels too.
+  ['haloClearRouteStateV33','haloClearRoute','clearHaloRoute','clearRoute','clearRouteState','haloMapClear'].forEach(fn => {
+    try{
+      if(typeof window[fn] === 'function' && !window[fn].__v34Wrapped){
+        const old = window[fn];
+        const wrapped = function(){
+          let out;
+          try{ out = old.apply(this, arguments); }catch(e){}
+          clearAll();
+          return out;
+        };
+        wrapped.__v34Wrapped = true;
+        window[fn] = wrapped;
+      }
+    }catch(e){}
+  });
+
+  const observer = new MutationObserver(() => bindClearButtons());
+  observer.observe(document.documentElement, {childList:true, subtree:true});
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => {
+      bindClearButtons();
+      setTimeout(bindClearButtons, 1000);
+    });
+  }else{
+    bindClearButtons();
+    setTimeout(bindClearButtons, 1000);
+  }
+
+  setInterval(bindClearButtons, 2500);
+
+  console.log('[HALO V34 CLEAR HIDES PANELS FIX] loaded');
+})();
+</script>
+
 </body>
 </html>
