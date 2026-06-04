@@ -6707,5 +6707,852 @@ path.halo-perf-route-glow{
 })();
 </script>
 
+
+<!-- HALO TRANSIT + MAP COMMAND CENTER UPGRADE V1 -->
+<style id="halo-transit-map-command-center-v1">
+/* Transit button added to existing clean toggles */
+.halo-transit-active{
+  color:#bd70ff !important;
+  border-color:rgba(189,112,255,.55) !important;
+  box-shadow:0 0 24px rgba(189,112,255,.18) !important;
+}
+
+/* Transit route styling */
+path.halo-transit-route-main{
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+  filter:drop-shadow(0 0 8px #bd70ff) drop-shadow(0 0 20px #bd70ff) !important;
+}
+
+path.halo-transit-route-glow{
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+  filter:blur(1px) drop-shadow(0 0 18px #bd70ff) !important;
+}
+
+/* Transit markers */
+.halo-transit-marker{
+  min-width:30px;
+  min-height:30px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.70);
+  background:rgba(16,8,32,.90);
+  color:#bd70ff;
+  font-size:14px;
+  box-shadow:0 0 24px rgba(189,112,255,.70);
+}
+
+/* Transit intel panel */
+#haloTransitIntelPanel{
+  position:absolute;
+  right:328px;
+  top:72px;
+  z-index:1235;
+  width:330px;
+  max-height:42vh;
+  overflow:auto;
+  display:none;
+  border-radius:20px;
+  border:1px solid rgba(189,112,255,.24);
+  background:
+    radial-gradient(circle at top right, rgba(189,112,255,.13), transparent 42%),
+    rgba(10,6,28,.78);
+  backdrop-filter:blur(22px);
+  -webkit-backdrop-filter:blur(22px);
+  box-shadow:0 18px 70px rgba(0,0,0,.45),0 0 40px rgba(189,112,255,.13);
+}
+
+#haloAdvancedMapOverlay.active #haloTransitIntelPanel.active{
+  display:block;
+}
+
+.halo-transit-head{
+  height:58px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:0 14px 0 16px;
+  border-bottom:1px solid rgba(189,112,255,.16);
+}
+
+.halo-transit-kicker{
+  font-family:'JetBrains Mono',monospace;
+  font-size:7px;
+  letter-spacing:2px;
+  color:rgba(189,112,255,.70);
+  margin-bottom:4px;
+}
+
+.halo-transit-title{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:16px;
+  color:#f3eaff;
+  font-weight:700;
+  letter-spacing:1px;
+}
+
+.halo-transit-close{
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  border:1px solid rgba(189,112,255,.25);
+  background:rgba(189,112,255,.06);
+  color:#d9b4ff;
+  cursor:pointer;
+  font-family:'JetBrains Mono',monospace;
+}
+
+.halo-transit-body{
+  padding:13px 15px 15px;
+}
+
+.halo-transit-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-bottom:12px;
+}
+
+.halo-transit-stat{
+  padding:9px;
+  border-radius:13px;
+  border:1px solid rgba(189,112,255,.12);
+  background:rgba(189,112,255,.045);
+}
+
+.halo-transit-stat small{
+  display:block;
+  font-family:'JetBrains Mono',monospace;
+  color:rgba(189,112,255,.70);
+  font-size:7px;
+  letter-spacing:1.3px;
+  margin-bottom:5px;
+}
+
+.halo-transit-stat strong{
+  color:#f5edff;
+  font-family:'JetBrains Mono',monospace;
+  font-size:14px;
+}
+
+.halo-transit-step{
+  padding:9px 10px;
+  border-radius:13px;
+  border:1px solid rgba(189,112,255,.10);
+  background:rgba(0,8,22,.34);
+  color:rgba(245,237,255,.78);
+  font-size:12px;
+  line-height:1.45;
+  margin-bottom:7px;
+}
+
+.halo-transit-step strong{
+  color:#d9b4ff;
+}
+
+/* Map command status */
+#haloMapCommandStatus{
+  position:absolute;
+  left:50%;
+  top:20px;
+  transform:translateX(-50%);
+  z-index:1320;
+  display:none;
+  padding:10px 15px;
+  border-radius:999px;
+  border:1px solid rgba(0,234,255,.26);
+  background:rgba(0,10,26,.78);
+  color:#00eaff;
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  letter-spacing:1.6px;
+  backdrop-filter:blur(18px);
+  box-shadow:0 0 30px rgba(0,234,255,.14);
+}
+#haloMapCommandStatus.active{display:block}
+
+/* Location fly-to marker */
+.halo-location-focus-marker{
+  width:34px;
+  height:34px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  border:1px solid rgba(0,234,255,.78);
+  background:rgba(0,13,31,.88);
+  color:#00eaff;
+  font-size:18px;
+  box-shadow:0 0 30px #00eaff,0 0 58px rgba(0,234,255,.32);
+}
+
+@media(max-width:1100px){
+  #haloTransitIntelPanel{right:266px !important}
+}
+@media(max-width:900px){
+  #haloTransitIntelPanel{right:16px !important;width:310px}
+}
+</style>
+
+<script id="halo-transit-map-command-center-v1-js">
+(function(){
+  const TRANSIT_API = 'https://halo-server-d3h3.onrender.com/transit-intel';
+  const GEOCODE_API = 'https://maps.googleapis.com/maps/api/geocode/json'; // not used directly without key
+  let transitLayers = [];
+  let focusLayers = [];
+  let transitActive = false;
+  let lastTransitPayload = null;
+
+  const KNOWN_LOCATIONS = {
+    home: 'Sylmar, CA',
+    work: 'Santa Clarita, CA',
+    gym: 'Planet Fitness, Sylmar, CA',
+    lax: 'Los Angeles International Airport',
+    beach: 'Santa Monica Pier',
+    dodgers: 'Dodger Stadium',
+    downtown: 'Downtown Los Angeles, CA',
+    dtla: 'Downtown Los Angeles, CA',
+    hollywood: 'Hollywood, Los Angeles, CA',
+    tokyo: 'Tokyo, Japan',
+    paris: 'Paris, France',
+    london: 'London, United Kingdom',
+    mexico: 'Mexico City, Mexico',
+    'mexico city': 'Mexico City, Mexico',
+    japan: 'Tokyo, Japan',
+    italy: 'Rome, Italy',
+    rome: 'Rome, Italy',
+    newyork: 'New York City, NY',
+    'new york': 'New York City, NY'
+  };
+
+  function log(){ try{ console.log('[HALO TRANSIT MAP COMMAND]', ...arguments); }catch(e){} }
+
+  function getMap(){
+    try{
+      return window.haloRealMap || haloRealMap;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function esc(str){
+    return String(str ?? '').replace(/[&<>"']/g, m => ({
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#039;'
+    })[m]);
+  }
+
+  function decodePolyline(encoded){
+    if(!encoded) return [];
+    let points = [];
+    let index = 0, lat = 0, lng = 0;
+
+    while(index < encoded.length){
+      let b, shift = 0, result = 0;
+      do{
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      }while(b >= 0x20);
+      lat += ((result & 1) ? ~(result >> 1) : (result >> 1));
+
+      shift = 0;
+      result = 0;
+      do{
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      }while(b >= 0x20);
+      lng += ((result & 1) ? ~(result >> 1) : (result >> 1));
+
+      points.push([lat / 1e5, lng / 1e5]);
+    }
+
+    return points;
+  }
+
+  function normalizeLocation(query){
+    const raw = String(query || '').trim();
+    const key = raw.toLowerCase().replace(/[^a-z0-9 ]/g, '').trim();
+    const compact = key.replace(/\s+/g, '');
+    return KNOWN_LOCATIONS[key] || KNOWN_LOCATIONS[compact] || raw;
+  }
+
+  function ensureTransitUI(){
+    const overlay = document.getElementById('haloAdvancedMapOverlay');
+    if(!overlay) return;
+    const panel = overlay.querySelector('.ham-map-panel') || overlay;
+
+    if(!document.getElementById('haloTransitIntelPanel')){
+      const p = document.createElement('div');
+      p.id = 'haloTransitIntelPanel';
+      p.innerHTML = `
+        <div class="halo-transit-head">
+          <div>
+            <div class="halo-transit-kicker">PUBLIC TRANSIT</div>
+            <div class="halo-transit-title">TRANSIT INTEL</div>
+          </div>
+          <button class="halo-transit-close" onclick="haloCloseTransitPanel()">×</button>
+        </div>
+        <div class="halo-transit-body" id="haloTransitIntelBody">
+          <div class="halo-transit-step">Transit mode standing by.</div>
+        </div>
+      `;
+      panel.appendChild(p);
+    }
+
+    if(!document.getElementById('haloMapCommandStatus')){
+      const s = document.createElement('div');
+      s.id = 'haloMapCommandStatus';
+      s.textContent = 'MAP COMMAND READY';
+      panel.appendChild(s);
+    }
+
+    // Add TRANSIT toggle button into clean toggles if present.
+    const toggles = document.getElementById('haloCleanMapToggles') || document.getElementById('haloMapLayerControls');
+    if(toggles && !document.getElementById('cleanTransitToggle')){
+      const btn = document.createElement('button');
+      btn.id = 'cleanTransitToggle';
+      btn.className = 'halo-clean-toggle';
+      btn.textContent = 'TRANSIT';
+      btn.onclick = () => haloToggleTransitMode();
+      toggles.appendChild(btn);
+    }
+  }
+
+  function status(text, timeout=3000){
+    ensureTransitUI();
+    const el = document.getElementById('haloMapCommandStatus');
+    if(!el) return;
+    el.textContent = text;
+    el.classList.add('active');
+    clearTimeout(el._t);
+    el._t = setTimeout(()=>el.classList.remove('active'), timeout);
+  }
+
+  async function openMap(){
+    if(typeof openHaloAdvancedMap === 'function'){
+      openHaloAdvancedMap();
+    }else{
+      const overlay = document.getElementById('haloAdvancedMapOverlay');
+      if(overlay) overlay.classList.add('active');
+    }
+
+    await new Promise(r => setTimeout(r, 450));
+
+    try{
+      if(typeof initHaloRealMap === 'function') initHaloRealMap();
+    }catch(e){}
+
+    await new Promise(r => setTimeout(r, 250));
+
+    const map = getMap();
+    if(map){
+      try{
+        map.options.maxZoom = 19;
+        if(map.setMaxZoom) map.setMaxZoom(19);
+        map.eachLayer && map.eachLayer(layer => {
+          if(layer && layer.options && layer._url){
+            layer.options.maxZoom = 19;
+            layer.options.maxNativeZoom = 19;
+          }
+        });
+        map.invalidateSize && map.invalidateSize();
+      }catch(e){}
+    }
+
+    ensureTransitUI();
+    return map;
+  }
+
+  function clearTransit(){
+    const map = getMap();
+    if(map){
+      transitLayers.forEach(layer => {
+        try{ map.removeLayer(layer); }catch(e){}
+      });
+    }
+    transitLayers = [];
+  }
+
+  function clearFocus(){
+    const map = getMap();
+    if(map){
+      focusLayers.forEach(layer => {
+        try{ map.removeLayer(layer); }catch(e){}
+      });
+    }
+    focusLayers = [];
+  }
+
+  function transitIcon(type, label){
+    return L.divIcon({
+      className:'',
+      html:`<div class="halo-transit-marker">${label}</div>`,
+      iconSize:[32,32],
+      iconAnchor:[16,16],
+      popupAnchor:[0,-18]
+    });
+  }
+
+  function focusIcon(){
+    return L.divIcon({
+      className:'',
+      html:`<div class="halo-location-focus-marker">⌖</div>`,
+      iconSize:[34,34],
+      iconAnchor:[17,17],
+      popupAnchor:[0,-18]
+    });
+  }
+
+  function addTransitMarker(map, loc, label, popup){
+    if(!loc) return;
+    const lat = loc.lat ?? loc.latitude;
+    const lng = loc.lng ?? loc.longitude;
+    if(typeof lat !== 'number' || typeof lng !== 'number') return;
+
+    const marker = L.marker([lat,lng], {icon:transitIcon('transit', label)}).addTo(map);
+    if(popup) marker.bindPopup(popup, {className:'ham-popup'});
+    transitLayers.push(marker);
+  }
+
+  function updateTransitPanel(data, index=0){
+    ensureTransitUI();
+    const panel = document.getElementById('haloTransitIntelPanel');
+    const body = document.getElementById('haloTransitIntelBody');
+    if(!panel || !body) return;
+
+    panel.classList.add('active');
+
+    const routes = data.routes || [data];
+    const route = routes[index] || routes[0] || data;
+    const lines = route.transit_lines || [];
+    const steps = route.steps || [];
+    const transfers = Math.max(lines.length - 1, 0);
+
+    const linesHTML = lines.length
+      ? lines.map(line => `
+        <div class="halo-transit-step">
+          <strong>${esc(line.vehicle || 'Transit')} ${esc(line.line || '')}</strong><br>
+          ${esc(line.departure_stop || 'Stop')} → ${esc(line.arrival_stop || 'Stop')}<br>
+          ${line.departure_time ? 'Depart ' + esc(line.departure_time) + ' · ' : ''}${line.arrival_time ? 'Arrive ' + esc(line.arrival_time) : ''}
+          ${line.headsign ? '<br>Headsign: ' + esc(line.headsign) : ''}
+        </div>
+      `).join('')
+      : '<div class="halo-transit-step">No transit lines returned. Try a different destination or time.</div>';
+
+    const stepPreview = steps.slice(0,5).map(step => `
+      <div class="halo-transit-step">
+        <strong>${esc(step.travel_mode)}</strong> · ${esc(step.duration_minutes)} min<br>
+        ${esc(step.instruction)}
+      </div>
+    `).join('');
+
+    body.innerHTML = `
+      <div class="halo-transit-grid">
+        <div class="halo-transit-stat"><small>TOTAL</small><strong>${esc(route.total_duration_minutes)}M</strong></div>
+        <div class="halo-transit-stat"><small>WALK</small><strong>${esc(route.walking_minutes || 0)}M</strong></div>
+        <div class="halo-transit-stat"><small>TRANSFERS</small><strong>${esc(transfers)}</strong></div>
+        <div class="halo-transit-stat"><small>ARRIVAL</small><strong>${esc(route.arrival_time || '—')}</strong></div>
+      </div>
+      <div class="halo-transit-step">
+        <strong>${esc(data.origin || route.start_address || 'Origin')}</strong><br>
+        to ${esc(data.destination || route.end_address || 'Destination')}
+      </div>
+      ${linesHTML}
+      <div class="halo-transit-step"><strong>Step Preview</strong></div>
+      ${stepPreview}
+    `;
+  }
+
+  function drawTransit(data, index=0){
+    const map = getMap();
+    if(!map || typeof L === 'undefined') return;
+
+    clearTransit();
+    lastTransitPayload = data;
+
+    const routes = data.routes || [data];
+    const route = routes[index] || routes[0] || data;
+    const points = decodePolyline(route.polyline);
+
+    if(points.length){
+      const glow = L.polyline(points, {
+        color:'#bd70ff',
+        weight:20,
+        opacity:.20,
+        lineCap:'round',
+        lineJoin:'round',
+        interactive:false,
+        className:'halo-transit-route-glow'
+      }).addTo(map);
+
+      const line = L.polyline(points, {
+        color:'#bd70ff',
+        weight:7,
+        opacity:.95,
+        lineCap:'round',
+        lineJoin:'round',
+        interactive:false,
+        className:'halo-transit-route-main'
+      }).addTo(map);
+
+      transitLayers.push(glow, line);
+
+      map.fitBounds(L.latLngBounds(points), {
+        paddingTopLeft:[80,80],
+        paddingBottomRight:[80,80],
+        maxZoom:13
+      });
+
+      setTimeout(() => {
+        try{
+          if(map.getZoom() < 10) map.setZoom(10);
+        }catch(e){}
+      }, 350);
+    }
+
+    addTransitMarker(map, route.start_location, '●', 'Transit origin');
+    addTransitMarker(map, route.end_location, '◆', 'Transit destination');
+
+    (route.steps || []).forEach(step => {
+      if(step.transit?.departure_stop && step.transit?.line_short_name){
+        // Directions API step geometry does not include stop lat/lng directly in this normalized payload.
+        // Keeping markers to origin/destination for now.
+      }
+    });
+
+    updateTransitPanel(data, index);
+  }
+
+  async function runTransit(destination, origin='home'){
+    destination = normalizeLocation(destination);
+    transitActive = true;
+    ensureTransitUI();
+    const btn = document.getElementById('cleanTransitToggle');
+    if(btn) btn.classList.add('active','halo-transit-active');
+
+    status('TRANSIT SCAN ACTIVE');
+    if(window.setHaloOrbMode) window.setHaloOrbMode('thinking','TRANSIT SCAN');
+
+    await openMap();
+
+    try{
+      const res = await fetch(TRANSIT_API, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({origin,destination,alternatives:true})
+      });
+
+      const data = await res.json();
+
+      if(!res.ok || !data.success){
+        status('TRANSIT ERROR');
+        if(typeof showIntel === 'function'){
+          showIntel('TRANSIT ERROR', `<h3>Transit Route Failed</h3><p>${esc(data.error || 'No transit route found')}</p>`);
+        }
+        return;
+      }
+
+      drawTransit(data, 0);
+      status('TRANSIT ROUTE READY');
+
+      if(window.setHaloOrbMode) window.setHaloOrbMode('success','TRANSIT READY');
+
+    }catch(error){
+      status('TRANSIT ERROR');
+      if(typeof showIntel === 'function'){
+        showIntel('TRANSIT ERROR', `<h3>System Error</h3><p>${esc(error.message)}</p>`);
+      }
+    }
+  }
+
+  async function geocodePublic(query){
+    const resolved = normalizeLocation(query);
+    // Use Nominatim for map fly-to so we don't expose Google key in frontend.
+    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(resolved)}&limit=1`;
+
+    const res = await fetch(url, {
+      headers:{
+        'Accept':'application/json'
+      }
+    });
+
+    const data = await res.json();
+    if(!Array.isArray(data) || !data[0]) throw new Error('Location not found');
+
+    return {
+      label: data[0].display_name || resolved,
+      lat: Number(data[0].lat),
+      lng: Number(data[0].lon)
+    };
+  }
+
+  async function flyToLocation(query, zoom=11){
+    await openMap();
+    const map = getMap();
+    if(!map || typeof L === 'undefined') return;
+
+    const place = await geocodePublic(query);
+
+    clearFocus();
+
+    const marker = L.marker([place.lat, place.lng], {
+      icon: focusIcon()
+    }).addTo(map);
+
+    marker.bindPopup(`<strong>${esc(normalizeLocation(query))}</strong><br>${esc(place.label)}`, {className:'ham-popup'});
+    focusLayers.push(marker);
+
+    map.setView([place.lat, place.lng], zoom, {
+      animate:true,
+      duration:1.2
+    });
+
+    status('MAP TARGET LOCKED');
+  }
+
+  function parseTransitCommand(text){
+    text = String(text || '').trim();
+
+    const patterns = [
+      /^(?:halo\s+)?(?:transit|bus|train|metro)\s+(?:to|towards?)\s+(.+)$/i,
+      /^(?:halo\s+)?(?:how\s+do\s+i\s+get\s+to)\s+(.+?)\s+(?:by\s+bus|by\s+train|by\s+transit|on\s+transit)$/i,
+      /^(?:halo\s+)?(?:public\s+transit)\s+(?:to|towards?)\s+(.+)$/i
+    ];
+
+    for(const p of patterns){
+      const m = text.match(p);
+      if(m && m[1]) return m[1].trim();
+    }
+
+    return null;
+  }
+
+  function parseMapCommand(text){
+    text = String(text || '').trim();
+
+    if(/^(?:halo\s+)?zoom\s+in$/i.test(text)) return {type:'zoomIn'};
+    if(/^(?:halo\s+)?zoom\s+out$/i.test(text)) return {type:'zoomOut'};
+    if(/^(?:halo\s+)?(?:street\s+zoom|closer|zoom closer)$/i.test(text)) return {type:'streetZoom'};
+
+    const flyPatterns = [
+      /^(?:halo\s+)?(?:go|fly|take me|show me|show|open map)\s+(?:to\s+)?(.+)$/i,
+      /^(?:halo\s+)?(?:zoom\s+to|focus\s+on|map\s+to)\s+(.+)$/i
+    ];
+
+    for(const p of flyPatterns){
+      const m = text.match(p);
+      if(m && m[1]) return {type:'flyTo', destination:m[1].trim()};
+    }
+
+    return null;
+  }
+
+  async function handleCommand(text){
+    const transitDest = parseTransitCommand(text);
+    const mapCmd = parseMapCommand(text);
+
+    if(transitDest){
+      await runTransit(transitDest, 'home');
+      return true;
+    }
+
+    if(mapCmd){
+      const map = getMap() || await openMap();
+
+      if(mapCmd.type === 'zoomIn'){
+        map.setZoom(Math.min(19, map.getZoom() + 1));
+        status('ZOOM IN');
+        return true;
+      }
+
+      if(mapCmd.type === 'zoomOut'){
+        map.setZoom(Math.max(2, map.getZoom() - 1));
+        status('ZOOM OUT');
+        return true;
+      }
+
+      if(mapCmd.type === 'streetZoom'){
+        map.setZoom(Math.max(14, map.getZoom()));
+        status('STREET ZOOM');
+        return true;
+      }
+
+      if(mapCmd.type === 'flyTo'){
+        status('SEARCHING LOCATION');
+        try{
+          await flyToLocation(mapCmd.destination, 11);
+        }catch(e){
+          status('LOCATION NOT FOUND');
+          if(typeof showIntel === 'function'){
+            showIntel('MAP SEARCH ERROR', `<h3>Location Not Found</h3><p>${esc(e.message)}</p>`);
+          }
+        }
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  window.haloRunTransit = runTransit;
+  window.haloToggleTransitMode = function(){
+    transitActive = !transitActive;
+    const btn = document.getElementById('cleanTransitToggle');
+    if(btn) btn.classList.toggle('active', transitActive);
+    if(btn) btn.classList.toggle('halo-transit-active', transitActive);
+
+    if(!transitActive){
+      clearTransit();
+      document.getElementById('haloTransitIntelPanel')?.classList.remove('active');
+      status('TRANSIT MODE OFF');
+    }else{
+      status('TRANSIT MODE ON');
+    }
+  };
+  window.haloCloseTransitPanel = function(){
+    document.getElementById('haloTransitIntelPanel')?.classList.remove('active');
+  };
+  window.haloMapFlyTo = flyToLocation;
+
+  // Hook into mini chat directly
+  function addMiniMessage(text, role){
+    const log = document.getElementById('haloCleanChatLog') || document.getElementById('haloMiniChatLog');
+    if(!log) return;
+    const msg = document.createElement('div');
+    msg.className = (log.id === 'haloCleanChatLog' ? 'halo-clean-msg ' : 'halo-mini-msg ') + (role || 'halo');
+    msg.textContent = text;
+    log.appendChild(msg);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  function bindInputs(){
+    ensureTransitUI();
+
+    const miniInput = document.getElementById('haloCleanChatInput') || document.getElementById('haloMiniChatInput');
+    const miniBtn = document.getElementById('haloCleanChatSend') || document.getElementById('haloMiniChatSend');
+
+    if(miniInput && miniInput.dataset.transitMapBound !== 'true'){
+      miniInput.dataset.transitMapBound = 'true';
+      miniInput.addEventListener('keydown', async e => {
+        if(e.key !== 'Enter') return;
+        const text = miniInput.value.trim();
+        if(!text) return;
+
+        const handled = parseTransitCommand(text) || parseMapCommand(text);
+        if(!handled) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        miniInput.value = '';
+        addMiniMessage(text, 'user');
+        await handleCommand(text);
+      }, true);
+    }
+
+    if(miniBtn && miniBtn.dataset.transitMapBound !== 'true'){
+      miniBtn.dataset.transitMapBound = 'true';
+      miniBtn.addEventListener('click', async e => {
+        const input = document.getElementById('haloCleanChatInput') || document.getElementById('haloMiniChatInput');
+        if(!input) return;
+        const text = input.value.trim();
+        if(!text) return;
+
+        const handled = parseTransitCommand(text) || parseMapCommand(text);
+        if(!handled) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+
+        input.value = '';
+        addMiniMessage(text, 'user');
+        await handleCommand(text);
+      }, true);
+    }
+  }
+
+  // Hook main command input too
+  document.addEventListener('keydown', async e => {
+    if(e.key !== 'Enter') return;
+    const input = document.getElementById('textInp');
+    if(!input || document.activeElement !== input) return;
+
+    const text = input.value.trim();
+    if(!text) return;
+
+    const handled = parseTransitCommand(text) || parseMapCommand(text);
+    if(!handled) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    input.value = '';
+    await handleCommand(text);
+  }, true);
+
+  document.addEventListener('click', async e => {
+    const btn = e.target.closest && e.target.closest('.send-btn');
+    if(!btn) return;
+
+    const input = document.getElementById('textInp');
+    if(!input) return;
+
+    const text = input.value.trim();
+    if(!text) return;
+
+    const handled = parseTransitCommand(text) || parseMapCommand(text);
+    if(!handled) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    input.value = '';
+    await handleCommand(text);
+  }, true);
+
+  const oldOpenMap = window.openHaloAdvancedMap;
+  if(typeof oldOpenMap === 'function' && !window.__haloTransitOpenMapWrapped){
+    window.__haloTransitOpenMapWrapped = true;
+    window.openHaloAdvancedMap = function(){
+      const result = oldOpenMap.apply(this, arguments);
+      setTimeout(() => {
+        ensureTransitUI();
+        bindInputs();
+      }, 300);
+      return result;
+    };
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        ensureTransitUI();
+        bindInputs();
+      }, 1200);
+    });
+  }else{
+    setTimeout(() => {
+      ensureTransitUI();
+      bindInputs();
+    }, 1200);
+  }
+
+  setInterval(bindInputs, 2000);
+
+  log('loaded');
+})();
+</script>
+
 </body>
 </html>
