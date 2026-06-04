@@ -9374,5 +9374,437 @@ path.halo-transit-route-glow{
 })();
 </script>
 
+
+<!-- HALO V32 EXACT GAS PARKING COORDINATE FIX -->
+<style id="halo-v32-exact-gas-parking-coordinate-fix">
+/*
+  V32:
+  - Keeps the working V31 map.
+  - Stops old gas/parking rows from sending to random locations.
+  - Builds new exact rows using the actual lat/lng from /route-plus.
+*/
+
+#haloV32ExactPlaces{
+  margin-top:10px !important;
+  padding-bottom:20px !important;
+  display:block !important;
+  visibility:visible !important;
+}
+
+.halo-v32-section-title{
+  font-family:'JetBrains Mono',monospace;
+  font-size:7px;
+  letter-spacing:1.6px;
+  color:#00eaff;
+  margin:12px 0 7px;
+  opacity:.9;
+}
+
+.halo-v32-place-row{
+  cursor:pointer !important;
+  border:1px solid rgba(0,234,255,.16);
+  border-radius:12px;
+  padding:9px 10px;
+  margin-bottom:7px;
+  background:rgba(0,10,26,.46);
+  color:rgba(235,250,255,.84);
+  font-size:10px;
+  line-height:1.25;
+  transition:.15s ease;
+  pointer-events:auto !important;
+  opacity:1 !important;
+}
+
+.halo-v32-place-row:hover{
+  border-color:rgba(0,234,255,.56);
+  background:rgba(0,234,255,.08);
+  transform:translateX(2px);
+}
+
+.halo-v32-place-name{
+  display:block;
+  color:#eaffff;
+  font-weight:800;
+  white-space:normal;
+}
+
+.halo-v32-place-address{
+  display:block;
+  margin-top:3px;
+  color:rgba(235,250,255,.58);
+  font-size:8px;
+  line-height:1.25;
+}
+
+.halo-v32-place-meta{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  margin-top:4px;
+  font-family:'JetBrains Mono', monospace;
+  color:#00eaff;
+  font-size:8px;
+}
+
+.halo-v32-disabled-old-place{
+  pointer-events:none !important;
+  opacity:.23 !important;
+}
+
+.halo-v32-marker{
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  border:1px solid currentColor;
+  background:rgba(0,10,26,.95);
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px;
+  font-weight:900;
+  box-shadow:0 0 20px currentColor,0 0 42px rgba(0,0,0,.45);
+}
+
+.halo-v32-marker.gas{ color:#ff4545; }
+.halo-v32-marker.parking{ color:#bd70ff; }
+
+.halo-v32-popup-title{
+  font-family:'Space Grotesk',sans-serif;
+  color:#eaffff;
+  font-weight:800;
+  font-size:14px;
+  margin-bottom:5px;
+}
+
+.halo-v32-popup-meta{
+  color:rgba(230,250,255,.76);
+  font-size:11px;
+  line-height:1.45;
+  margin-bottom:10px;
+}
+
+.halo-v32-popup-actions{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+}
+
+.halo-v32-popup-btn{
+  border:1px solid rgba(0,234,255,.24);
+  background:rgba(0,234,255,.08);
+  color:#00eaff;
+  border-radius:999px;
+  padding:7px 9px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:7px;
+  letter-spacing:1px;
+  cursor:pointer;
+}
+
+.halo-v32-popup-btn.dest{
+  border-color:rgba(0,255,157,.24);
+  background:rgba(0,255,157,.07);
+  color:#00ff9d;
+}
+
+/* hide failed earlier exact lists */
+#haloV20ExactPlaces,
+#haloV22ExactPlaces,
+#haloV23ExactPlaces,
+#haloV25ExactPlaces{
+  display:none !important;
+}
+</style>
+
+<script id="halo-v32-exact-gas-parking-coordinate-fix-js">
+(function(){
+  let latestPayload = null;
+  let exact = {};
+  let markers = {};
+
+  function getMap(){
+    try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
+  }
+
+  function esc(str){
+    return String(str ?? '').replace(/[&<>"']/g, m => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;'
+    })[m]);
+  }
+
+  function loc(place){
+    const l = place?.location || {};
+    const lat = l.latitude ?? l.lat;
+    const lng = l.longitude ?? l.lng;
+    if(typeof lat !== 'number' || typeof lng !== 'number') return null;
+    return {lat,lng};
+  }
+
+  function makeId(type, index, place){
+    const l = loc(place);
+    return `${type}_${index}_${String(place?.name || type)}_${String(place?.address || place?.formattedAddress || '')}_${l ? l.lat + '_' + l.lng : ''}`
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g,'_')
+      .replace(/^_+|_+$/g,'')
+      .slice(0,100);
+  }
+
+  function markerHtml(type){
+    return `<div class="halo-v32-marker ${type}">${type === 'parking' ? 'P' : 'G'}</div>`;
+  }
+
+  function popupHtml(id){
+    const item = exact[id];
+    if(!item) return '';
+    const p = item.place;
+    return `
+      <div class="halo-v32-popup">
+        <div class="halo-v32-popup-title">${esc(p.name || item.type)}</div>
+        <div class="halo-v32-popup-meta">
+          ${esc(p.address || p.formattedAddress || '')}<br>
+          ${item.type.toUpperCase()} ${p.rating ? '· ' + esc(p.rating) + '★' : ''}
+        </div>
+        <div class="halo-v32-popup-actions">
+          <button class="halo-v32-popup-btn" onclick="haloV32OpenDirections('${id}')">NAVIGATE</button>
+          <button class="halo-v32-popup-btn dest" onclick="haloV32SetDestination('${id}')">SET DESTINATION</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function ensureMarker(id){
+    const item = exact[id];
+    const map = getMap();
+    if(!item || !map || typeof L === 'undefined') return null;
+
+    if(markers[id]) return markers[id];
+
+    const marker = L.marker([item.lat, item.lng], {
+      icon:L.divIcon({
+        className:'',
+        html:markerHtml(item.type),
+        iconSize:[30,30],
+        iconAnchor:[15,15],
+        popupAnchor:[0,-16]
+      })
+    }).addTo(map);
+
+    marker.bindPopup(popupHtml(id), {className:'ham-popup'});
+    markers[id] = marker;
+    return marker;
+  }
+
+  function register(payload){
+    if(!payload || (!payload.gas && !payload.parking)) return false;
+
+    latestPayload = payload;
+    exact = {};
+
+    [
+      {type:'gas', items:payload.gas || []},
+      {type:'parking', items:payload.parking || []}
+    ].forEach(group => {
+      group.items.forEach((place, index) => {
+        const l = loc(place);
+        if(!l) return;
+
+        const id = makeId(group.type, index, place);
+        exact[id] = {
+          id,
+          type:group.type,
+          place,
+          lat:l.lat,
+          lng:l.lng,
+          index
+        };
+      });
+    });
+
+    return Object.keys(exact).length > 0;
+  }
+
+  function fallbackPayload(){
+    return (
+      latestPayload ||
+      window.__haloV32Payload ||
+      window.__haloV31Payload ||
+      window.__haloV25Payload ||
+      window.__haloV23Payload ||
+      window.__haloPolishPayload ||
+      window.__haloStreetRoutePayload ||
+      window.__haloLastRoutePayloadVisibilityFix ||
+      null
+    );
+  }
+
+  function render(){
+    const payload = fallbackPayload();
+    const nav = document.getElementById('haloNavHUD');
+    if(!nav || !payload) return;
+    if(!register(payload)) return;
+
+    const body = nav.querySelector('.halo-nav-body') || nav;
+    let area = nav.querySelector('#haloV32ExactPlaces');
+
+    if(!area){
+      area = document.createElement('div');
+      area.id = 'haloV32ExactPlaces';
+      body.appendChild(area);
+    }
+
+    const gas = Object.values(exact).filter(x => x.type === 'gas').slice(0,5);
+    const parking = Object.values(exact).filter(x => x.type === 'parking').slice(0,5);
+
+    function row(item){
+      const p = item.place;
+      const rating = p.rating ? `${esc(p.rating)}★` : '';
+      return `
+        <div class="halo-v32-place-row" data-v32-id="${item.id}">
+          <span class="halo-v32-place-name">${item.type === 'gas' ? '⛽' : 'Ⓟ'} ${esc(p.name || item.type)}</span>
+          <span class="halo-v32-place-address">${esc(p.address || p.formattedAddress || '')}</span>
+          <span class="halo-v32-place-meta">
+            <span>${item.type === 'gas' ? 'GAS EXACT' : 'PARK EXACT'}</span>
+            <span>${rating}</span>
+          </span>
+        </div>
+      `;
+    }
+
+    area.innerHTML = `
+      <div class="halo-v32-section-title">EXACT GAS STATIONS</div>
+      ${gas.map(row).join('') || '<div class="halo-v32-place-row">No gas returned.</div>'}
+      <div class="halo-v32-section-title">EXACT PARKING</div>
+      ${parking.map(row).join('') || '<div class="halo-v32-place-row">No parking returned.</div>'}
+    `;
+
+    disableOldAmbiguousRows(nav, gas.concat(parking));
+  }
+
+  function disableOldAmbiguousRows(nav, items){
+    const names = items.map(i => String(i.place?.name || '').toLowerCase()).filter(Boolean);
+
+    Array.from(nav.querySelectorAll('.halo-nav-row, .halo-place-clickable, .halo-v17-exact-place, .halo-v19-exact-place-row')).forEach(row => {
+      if(row.closest('#haloV32ExactPlaces')) return;
+
+      const text = String(row.textContent || '').toLowerCase();
+
+      // Keep route choices active.
+      if(text.includes('recommended') || text.includes('option')) return;
+
+      // Disable old gas/parking rows that match names.
+      if(names.some(n => n && text.includes(n))){
+        row.classList.add('halo-v32-disabled-old-place');
+        row.onclick = null;
+        row.removeAttribute('onclick');
+      }
+    });
+  }
+
+  window.haloV32FocusPlace = function(id){
+    const item = exact[id];
+    const map = getMap();
+    if(!item || !map) return;
+
+    const marker = ensureMarker(id);
+
+    try{
+      if(map.flyTo){
+        map.flyTo([item.lat, item.lng], 16, {animate:true, duration:1.05, easeLinearity:.18});
+      }else{
+        map.setView([item.lat, item.lng], 16, {animate:true});
+      }
+    }catch(e){}
+
+    setTimeout(() => {
+      try{ if(marker) marker.openPopup(); }catch(e){}
+    }, 450);
+  };
+
+  window.haloV32OpenDirections = function(id){
+    const item = exact[id];
+    if(!item) return;
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}`, '_blank');
+  };
+
+  window.haloV32SetDestination = function(id){
+    const item = exact[id];
+    if(!item) return;
+
+    const p = item.place;
+    const destination = p.address || p.formattedAddress || `${item.lat},${item.lng}`;
+
+    if(typeof window.haloNavRun === 'function'){
+      window.haloNavRun(destination, 'home');
+    }else if(typeof window.haloRoutePlusCommand === 'function'){
+      window.haloRoutePlusCommand(destination);
+    }
+  };
+
+  document.addEventListener('click', function(e){
+    const row = e.target.closest && e.target.closest('#haloV32ExactPlaces .halo-v32-place-row[data-v32-id]');
+    if(!row) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    window.haloV32FocusPlace(row.dataset.v32Id);
+  }, true);
+
+  const oldFetch = window.fetch;
+  if(oldFetch && !window.__haloV32FetchWrapped){
+    window.__haloV32FetchWrapped = true;
+
+    window.fetch = async function(){
+      const response = await oldFetch.apply(this, arguments);
+
+      try{
+        const url = String(arguments[0] || '');
+        if(url.includes('/route-plus')){
+          response.clone().json().then(data => {
+            if(data && data.success){
+              latestPayload = data;
+              window.__haloV32Payload = data;
+              window.__haloPolishPayload = data;
+              window.__haloStreetRoutePayload = data;
+              window.__haloLastRoutePayloadVisibilityFix = data;
+
+              setTimeout(render, 600);
+              setTimeout(render, 1400);
+              setTimeout(render, 2600);
+            }
+          }).catch(()=>{});
+        }
+
+        if(url.includes('/route-intel')){
+          setTimeout(render, 900);
+          setTimeout(render, 1800);
+        }
+      }catch(e){}
+
+      return response;
+    };
+  }
+
+  const oldOpen = window.openHaloAdvancedMap;
+  if(typeof oldOpen === 'function' && !window.__haloV32OpenWrapped){
+    window.__haloV32OpenWrapped = true;
+    window.openHaloAdvancedMap = function(){
+      const out = oldOpen.apply(this, arguments);
+      setTimeout(render, 900);
+      return out;
+    };
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => setTimeout(render, 1500));
+  }else{
+    setTimeout(render, 1500);
+  }
+
+  console.log('[HALO V32 EXACT GAS/PARKING COORDINATE FIX] loaded');
+})();
+</script>
+
 </body>
 </html>
