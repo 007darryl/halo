@@ -11390,5 +11390,230 @@ body #haloAdvancedMapOverlay #haloDestinationIntelCard.halo-v35-force-hidden{
 })();
 </script>
 
+
+<!-- HALO V43 PERSISTENT RIGHT PANEL COLLAPSE FIX -->
+<style id="halo-v43-persistent-right-panel-collapse">
+/*
+  V43:
+  - Fixes collapse button disappearing after route panel re-renders.
+  - Uses an external floating button instead of putting the button inside panel.innerHTML.
+  - Works even when Destination Brief gets rebuilt after a new route.
+*/
+
+#haloV43RightPanelCollapseBtn{
+  position: fixed !important;
+  z-index: 1000000 !important;
+  width: 34px !important;
+  height: 34px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(0,234,255,.38) !important;
+  background: rgba(0,18,40,.88) !important;
+  color: #00eaff !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 18px !important;
+  line-height: 1 !important;
+  display: none;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  box-shadow: 0 0 18px rgba(0,234,255,.18) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+#haloV43RightPanelCollapseBtn.active{
+  display: flex !important;
+}
+
+#haloV43RightPanelCollapseBtn:hover{
+  background: rgba(0,38,72,.96) !important;
+  box-shadow: 0 0 28px rgba(0,234,255,.32) !important;
+}
+
+#haloV43RightPanelRestoreTab{
+  position: fixed !important;
+  right: 12px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 1000000 !important;
+  width: 44px !important;
+  height: 92px !important;
+  border-radius: 20px 0 0 20px !important;
+  border: 1px solid rgba(0,234,255,.36) !important;
+  border-right: none !important;
+  background: rgba(0,18,40,.9) !important;
+  color: #00eaff !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 24px !important;
+  display: none;
+  align-items: center !important;
+  justify-content: center !important;
+  cursor: pointer !important;
+  box-shadow: 0 0 24px rgba(0,234,255,.2) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+#haloV43RightPanelRestoreTab.active{
+  display: flex !important;
+}
+
+#haloDestinationBrief.halo-v43-collapsed,
+#haloDestinationIntelCard.halo-v43-collapsed{
+  transform: translateX(calc(100% + 34px)) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  filter: blur(2px) !important;
+}
+</style>
+
+<script id="halo-v43-persistent-right-panel-collapse-js">
+(function(){
+  if(window.__haloV43PersistentRightPanelLoaded) return;
+  window.__haloV43PersistentRightPanelLoaded = true;
+
+  let collapsed = false;
+
+  function getMap(){
+    try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
+  }
+
+  function invalidateMap(){
+    const map = getMap();
+    if(!map) return;
+    setTimeout(() => { try{ map.invalidateSize({animate:true}); }catch(e){} }, 80);
+    setTimeout(() => { try{ map.invalidateSize({animate:true}); }catch(e){} }, 320);
+  }
+
+  function getRightPanel(){
+    return document.getElementById('haloDestinationBrief') || document.getElementById('haloDestinationIntelCard');
+  }
+
+  function ensureButton(){
+    let btn = document.getElementById('haloV43RightPanelCollapseBtn');
+    if(!btn){
+      btn = document.createElement('button');
+      btn.id = 'haloV43RightPanelCollapseBtn';
+      btn.type = 'button';
+      btn.title = 'Collapse destination brief';
+      btn.textContent = '−';
+      btn.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        collapsed = true;
+        apply();
+      }, true);
+      document.body.appendChild(btn);
+    }
+    return btn;
+  }
+
+  function ensureRestoreTab(){
+    let tab = document.getElementById('haloV43RightPanelRestoreTab');
+    if(!tab){
+      tab = document.createElement('button');
+      tab.id = 'haloV43RightPanelRestoreTab';
+      tab.type = 'button';
+      tab.title = 'Restore destination brief';
+      tab.textContent = '‹';
+      tab.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        collapsed = false;
+        apply();
+      }, true);
+      document.body.appendChild(tab);
+    }
+    return tab;
+  }
+
+  function positionButton(panel, btn){
+    if(!panel || !btn) return;
+    const r = panel.getBoundingClientRect();
+    if(!r || r.width < 20 || r.height < 20) {
+      btn.classList.remove('active');
+      return;
+    }
+
+    btn.style.left = `${Math.max(8, r.right - 86)}px`;
+    btn.style.top = `${Math.max(8, r.top + 18)}px`;
+    btn.classList.add('active');
+  }
+
+  function apply(){
+    const panel = getRightPanel();
+    const btn = ensureButton();
+    const tab = ensureRestoreTab();
+
+    if(panel){
+      panel.classList.toggle('halo-v43-collapsed', collapsed);
+      panel.classList.toggle('halo-v42-collapsed', collapsed);
+    }
+
+    if(collapsed){
+      btn.classList.remove('active');
+      tab.classList.add('active');
+    }else{
+      tab.classList.remove('active');
+      if(panel) positionButton(panel, btn);
+      else btn.classList.remove('active');
+    }
+
+    invalidateMap();
+  }
+
+  window.haloV43CollapseRightPanel = function(){ collapsed = true; apply(); };
+  window.haloV43RestoreRightPanel = function(){ collapsed = false; apply(); };
+  window.haloV43ToggleRightPanel = function(){ collapsed = !collapsed; apply(); };
+
+  // Keep button alive after every route because updateDestinationBrief rewrites panel.innerHTML.
+  const prevFetch = window.fetch;
+  if(prevFetch && !prevFetch.__haloV43RightPanelWrapped){
+    const wrapped = async function(input, init){
+      const response = await prevFetch.apply(this, arguments);
+
+      try{
+        const url = typeof input === 'string' ? input : String(input?.url || '');
+        if(url.includes('/route-plus') || url.includes('/route-intel')){
+          setTimeout(apply, 350);
+          setTimeout(apply, 900);
+          setTimeout(apply, 1800);
+          setTimeout(apply, 3000);
+        }
+      }catch(e){}
+
+      return response;
+    };
+    wrapped.__haloV43RightPanelWrapped = true;
+    window.fetch = wrapped;
+  }
+
+  const mo = new MutationObserver(() => {
+    requestAnimationFrame(apply);
+  });
+
+  try{
+    mo.observe(document.documentElement, {childList:true, subtree:true, attributes:true, attributeFilter:['class','style']});
+  }catch(e){}
+
+  window.addEventListener('resize', apply, {passive:true});
+  window.addEventListener('scroll', apply, {passive:true});
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(apply, 600);
+      setTimeout(apply, 1600);
+    });
+  }else{
+    setTimeout(apply, 600);
+    setTimeout(apply, 1600);
+  }
+
+  setInterval(apply, 1500);
+
+  console.log('[HALO V43 PERSISTENT RIGHT PANEL COLLAPSE FIX] loaded');
+})();
+</script>
+
 </body>
 </html>
