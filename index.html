@@ -5694,169 +5694,329 @@ path.halo-perf-route-glow{
 </script>
 
 
-<!-- HALO ULTIMATE NAVIGATION EXPERIENCE PACK V1 -->
-<style id="halo-ultimate-navigation-experience-pack-v1">
-/* Mission cinematic status */
-#haloNavMissionStatus{
+<!-- HALO CLEAN PANELS + TOGGLE CONTROLS FIX V1 -->
+<style id="halo-clean-panels-toggle-controls-v1">
+/* Clean side panels that do not stack over duplicate cards */
+#haloCleanLeftPanel,
+#haloCleanRightPanel{
   position:absolute;
-  left:50%;
-  top:22px;
-  transform:translateX(-50%);
-  z-index:1250;
-  padding:10px 16px;
-  border-radius:999px;
-  border:1px solid rgba(0,234,255,.28);
-  background:rgba(0,10,26,.78);
-  color:#00eaff;
-  font-family:'JetBrains Mono',monospace;
-  font-size:8px;
-  letter-spacing:1.8px;
-  display:none;
-  backdrop-filter:blur(18px);
-  -webkit-backdrop-filter:blur(18px);
-  box-shadow:0 0 32px rgba(0,234,255,.14);
-}
-#haloNavMissionStatus.active{display:block}
-
-/* Energy particles moving along route */
-.halo-route-pulse-dot{
-  position:absolute;
-  width:9px;
-  height:9px;
-  border-radius:50%;
-  background:#eaffff;
-  box-shadow:0 0 9px #fff,0 0 22px #00eaff,0 0 42px #00eaff;
-  pointer-events:none;
-  z-index:1350;
-  transform:translate(-50%,-50%);
-  opacity:.95;
-}
-
-/* Make route look more alive */
-path.halo-perf-route-main,
-path.halo-ultimate-route-main{
-  stroke-linecap:round !important;
-  stroke-linejoin:round !important;
-  filter:drop-shadow(0 0 8px currentColor) drop-shadow(0 0 22px currentColor) !important;
-}
-
-path.halo-perf-route-glow,
-path.halo-ultimate-route-glow{
-  stroke-linecap:round !important;
-  stroke-linejoin:round !important;
-  filter:blur(1px) drop-shadow(0 0 18px currentColor) !important;
-}
-
-/* Destination Intel card */
-#haloDestinationIntelCard{
-  position:absolute;
-  right:18px;
-  top:78px;
+  top:76px;
+  bottom:18px;
+  width:282px;
   z-index:1220;
-  width:315px;
-  max-height:44vh;
-  overflow:auto;
-  display:none;
-  border-radius:20px;
+  border-radius:22px;
   border:1px solid rgba(0,234,255,.18);
   background:
-    radial-gradient(circle at top right, rgba(0,234,255,.12), transparent 42%),
-    rgba(0,10,26,.76);
+    radial-gradient(circle at top, rgba(0,234,255,.09), transparent 42%),
+    rgba(0,10,26,.78);
   backdrop-filter:blur(22px);
   -webkit-backdrop-filter:blur(22px);
-  box-shadow:0 18px 70px rgba(0,0,0,.45),0 0 40px rgba(0,234,255,.13);
+  box-shadow:0 18px 70px rgba(0,0,0,.44),0 0 36px rgba(0,234,255,.10);
+  overflow:hidden;
+  display:none;
 }
-#haloAdvancedMapOverlay.active #haloDestinationIntelCard{display:block}
 
-.halo-dintel-head{
-  padding:14px 15px 10px;
+#haloCleanLeftPanel{left:18px}
+#haloCleanRightPanel{right:18px}
+
+#haloAdvancedMapOverlay.active #haloCleanLeftPanel,
+#haloAdvancedMapOverlay.active #haloCleanRightPanel{
+  display:block;
+}
+
+#haloCleanLeftPanel.closed,
+#haloCleanRightPanel.closed,
+#haloCleanMiniChat.closed,
+#haloDestinationBrief.closed,
+#haloDestinationIntelCard.closed{
+  display:none !important;
+}
+
+.halo-clean-head{
+  height:58px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:0 14px 0 16px;
   border-bottom:1px solid rgba(0,234,255,.10);
 }
-.halo-dintel-kicker{
+
+.halo-clean-kicker{
   font-family:'JetBrains Mono',monospace;
   font-size:7px;
   letter-spacing:2px;
-  color:rgba(0,234,255,.55);
-  margin-bottom:6px;
-}
-.halo-dintel-title{
-  font-family:'Space Grotesk',sans-serif;
-  color:#eaffff;
-  font-size:16px;
-  font-weight:700;
-}
-.halo-dintel-body{padding:13px 15px 15px}
-.halo-dintel-grid{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:8px;
-  margin-bottom:12px;
-}
-.halo-dintel-stat{
-  padding:9px;
-  border-radius:13px;
-  border:1px solid rgba(0,234,255,.10);
-  background:rgba(0,234,255,.045);
-}
-.halo-dintel-stat small{
-  display:block;
-  font-family:'JetBrains Mono',monospace;
   color:rgba(0,234,255,.48);
-  font-size:7px;
-  letter-spacing:1.3px;
-  margin-bottom:5px;
-}
-.halo-dintel-stat strong{
-  color:#eaffff;
-  font-family:'JetBrains Mono',monospace;
-  font-size:14px;
-}
-.halo-dintel-strip{
-  padding:10px 11px;
-  border-radius:14px;
-  border:1px solid rgba(0,234,255,.10);
-  background:rgba(0,8,22,.34);
-  color:rgba(230,250,255,.78);
-  font-size:12px;
-  line-height:1.5;
-  margin-bottom:10px;
+  margin-bottom:4px;
 }
 
-/* Map layer buttons */
-#haloMapLayerControls{
+.halo-clean-title{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:17px;
+  letter-spacing:2.4px;
+  color:#eaffff;
+  font-weight:700;
+}
+
+.halo-clean-close{
+  width:34px;
+  height:34px;
+  border-radius:50%;
+  border:1px solid rgba(0,234,255,.20);
+  background:rgba(0,234,255,.04);
+  color:#00eaff;
+  cursor:pointer;
+  font-family:'JetBrains Mono',monospace;
+  font-size:12px;
+}
+
+.halo-clean-close:hover{
+  border-color:rgba(0,234,255,.55);
+  box-shadow:0 0 18px rgba(0,234,255,.14);
+}
+
+.halo-clean-body{
+  height:calc(100% - 58px);
+  overflow:auto;
+  padding:14px 14px 16px;
+}
+
+.halo-clean-card{
+  padding:13px 12px;
+  border-radius:16px;
+  border:1px solid rgba(0,234,255,.09);
+  background:rgba(0,234,255,.035);
+  margin-bottom:10px;
+  cursor:pointer;
+  transition:.18s ease;
+}
+
+.halo-clean-card:hover,
+.halo-clean-card.active{
+  border-color:rgba(0,234,255,.32);
+  background:rgba(0,234,255,.07);
+}
+
+.halo-clean-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:7px;
+}
+
+.halo-clean-name{
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  letter-spacing:1.8px;
+  color:#00eaff;
+}
+
+.halo-clean-badge{
+  font-family:'JetBrains Mono',monospace;
+  font-size:7px;
+  letter-spacing:1.1px;
+  padding:5px 7px;
+  border-radius:999px;
+  border:1px solid currentColor;
+  color:#00ff9d;
+}
+
+.halo-clean-badge.warn{color:#ff9d2e}
+.halo-clean-badge.off{color:rgba(226,245,255,.42)}
+
+.halo-clean-copy{
+  font-size:12px;
+  line-height:1.5;
+  color:rgba(226,245,255,.68);
+}
+
+/* Top utility toggle strip */
+#haloCleanMapToggles{
   position:absolute;
-  right:18px;
+  right:318px;
   top:18px;
-  z-index:1230;
+  z-index:1240;
   display:flex;
   gap:7px;
   flex-wrap:wrap;
-  max-width:300px;
   justify-content:flex-end;
 }
-.halo-map-layer-btn{
+
+.halo-clean-toggle{
   padding:9px 11px;
   border-radius:999px;
   border:1px solid rgba(0,234,255,.18);
-  background:rgba(0,10,26,.72);
-  color:rgba(190,245,255,.78);
+  background:rgba(0,10,26,.76);
+  color:rgba(190,245,255,.76);
   font-family:'JetBrains Mono',monospace;
   font-size:7px;
   letter-spacing:1.3px;
   cursor:pointer;
   backdrop-filter:blur(16px);
-  -webkit-backdrop-filter:blur(16px);
 }
-.halo-map-layer-btn.active,
-.halo-map-layer-btn:hover{
+
+.halo-clean-toggle.active{
   color:#00eaff;
   border-color:rgba(0,234,255,.50);
   box-shadow:0 0 24px rgba(0,234,255,.14);
 }
 
-/* Weather markers */
-.halo-weather-pin{
-  min-width:48px;
+/* Mini chat starts collapsed, not blocking the map */
+#haloCleanMiniChat{
+  position:absolute;
+  left:50%;
+  bottom:18px;
+  transform:translateX(-50%);
+  width:430px;
+  z-index:1230;
+  border-radius:22px;
+  border:1px solid rgba(0,234,255,.18);
+  background:rgba(0,10,26,.76);
+  backdrop-filter:blur(22px);
+  -webkit-backdrop-filter:blur(22px);
+  box-shadow:0 18px 70px rgba(0,0,0,.44),0 0 36px rgba(0,234,255,.10);
+  overflow:hidden;
+  display:none;
+}
+
+#haloAdvancedMapOverlay.active #haloCleanMiniChat.open{
+  display:block;
+}
+
+#haloCleanChatLauncher{
+  position:absolute;
+  left:50%;
+  bottom:22px;
+  transform:translateX(-50%);
+  z-index:1235;
+  padding:11px 16px;
+  border-radius:999px;
+  border:1px solid rgba(0,234,255,.22);
+  background:rgba(0,10,26,.78);
+  color:#00eaff;
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  letter-spacing:1.6px;
+  cursor:pointer;
+  backdrop-filter:blur(18px);
+  box-shadow:0 0 28px rgba(0,234,255,.12);
+  display:none;
+}
+
+#haloAdvancedMapOverlay.active #haloCleanChatLauncher{
+  display:block;
+}
+
+#haloCleanMiniChat.open + #haloCleanChatLauncher{
+  display:none !important;
+}
+
+.halo-clean-chat-head{
+  height:46px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:0 12px 0 14px;
+  border-bottom:1px solid rgba(0,234,255,.10);
+}
+
+.halo-clean-chat-title{
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px;
+  letter-spacing:2px;
+  color:#00eaff;
+}
+
+.halo-clean-chat-body{
+  padding:11px 13px 13px;
+}
+
+#haloCleanChatLog{
+  max-height:80px;
+  overflow:auto;
+  display:grid;
+  gap:7px;
+  margin-bottom:10px;
+}
+
+.halo-clean-msg{
+  font-size:12px;
+  line-height:1.45;
+  color:rgba(230,250,255,.78);
+  padding:8px 10px;
+  border-radius:12px;
+  background:rgba(0,234,255,.035);
+  border:1px solid rgba(0,234,255,.07);
+}
+
+.halo-clean-msg.user{
+  background:rgba(0,255,157,.045);
+  color:#eaffff;
+}
+
+.halo-clean-chat-row{
+  display:flex;
+  gap:8px;
+}
+
+#haloCleanChatInput{
+  flex:1;
+  height:40px;
+  border-radius:999px;
+  border:1px solid rgba(0,234,255,.16);
+  background:rgba(0,8,22,.55);
+  color:#eaffff;
+  padding:0 13px;
+  outline:none;
+}
+
+#haloCleanChatSend{
+  width:72px;
+  border-radius:999px;
+  border:1px solid rgba(0,234,255,.22);
+  background:rgba(0,234,255,.08);
+  color:#00eaff;
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  letter-spacing:1.5px;
+  cursor:pointer;
+}
+
+/* Keep main map clean */
+#haloAdvancedMapOverlay .ham-map-panel,
+#haloAdvancedMapOverlay .hgi-map-wrap{
+  margin-left:312px !important;
+  margin-right:312px !important;
+  width:auto !important;
+}
+
+/* Reposition nav tools so panels don't stack */
+#haloNavHUD{
+  left:328px !important;
+  bottom:18px !important;
+  max-height:38vh !important;
+}
+
+#haloDestinationBrief,
+#haloDestinationIntelCard{
+  right:328px !important;
+  top:72px !important;
+  max-height:36vh !important;
+}
+
+#haloMapLayerControls{
+  display:none !important;
+}
+
+#haloNavShortcutRail{
+  bottom:86px !important;
+}
+
+/* Weather pins */
+.halo-clean-weather-pin{
+  min-width:50px;
   padding:7px 9px;
   border-radius:999px;
   border:1px solid rgba(0,234,255,.28);
@@ -5869,837 +6029,54 @@ path.halo-ultimate-route-glow{
   box-shadow:0 0 24px rgba(0,234,255,.16);
 }
 
-/* Globe mode visual overlay */
-#haloGlobeVisualMode{
-  position:absolute;
-  inset:0;
-  z-index:850;
-  display:none;
-  pointer-events:none;
-  background:
-    radial-gradient(circle at center, rgba(0,234,255,.10), transparent 32%),
-    radial-gradient(circle at center, rgba(0,0,0,.08), transparent 60%);
-}
-#haloGlobeVisualMode.active{display:block}
-.halo-globe-core{
-  position:absolute;
-  left:50%;
-  top:50%;
-  width:360px;
-  height:360px;
-  transform:translate(-50%,-50%);
-  border-radius:50%;
-  border:1px solid rgba(0,234,255,.24);
-  box-shadow:0 0 80px rgba(0,234,255,.14), inset 0 0 60px rgba(0,234,255,.09);
-  background:
-    radial-gradient(circle at 40% 35%, rgba(160,255,255,.22), transparent 18%),
-    radial-gradient(circle at center, rgba(0,234,255,.10), rgba(0,0,0,.24) 70%);
-  animation:haloGlobePulse 5s ease-in-out infinite;
-}
-.halo-globe-core::before{
-  content:'';
-  position:absolute;
-  inset:40px;
-  border-radius:50%;
-  border:1px dashed rgba(0,234,255,.30);
-  animation:haloGlobeSpin 14s linear infinite;
-}
-.halo-globe-core::after{
-  content:'GLOBAL INTEL';
-  position:absolute;
-  left:50%;
-  bottom:-38px;
-  transform:translateX(-50%);
-  color:#00eaff;
-  font-family:'JetBrains Mono',monospace;
-  font-size:9px;
-  letter-spacing:2.6px;
-}
-@keyframes haloGlobeSpin{to{transform:rotate(360deg)}}
-@keyframes haloGlobePulse{50%{box-shadow:0 0 110px rgba(0,234,255,.22), inset 0 0 75px rgba(0,234,255,.12)}}
-
-/* Fly camera badge */
-#haloFlyCameraBadge{
-  position:absolute;
-  left:50%;
-  bottom:28px;
-  transform:translateX(-50%);
-  z-index:1260;
-  display:none;
-  padding:10px 15px;
-  border-radius:999px;
-  border:1px solid rgba(0,255,157,.28);
-  background:rgba(0,20,24,.78);
-  color:#00ff9d;
-  font-family:'JetBrains Mono',monospace;
-  font-size:8px;
-  letter-spacing:1.8px;
-  backdrop-filter:blur(16px);
-  box-shadow:0 0 34px rgba(0,255,157,.16);
-}
-#haloFlyCameraBadge.active{display:block}
-
-.halo-traffic-clear{color:#00ff9d!important}
-.halo-traffic-light{color:#ffe83f!important}
-.halo-traffic-moderate{color:#ff9d2e!important}
-.halo-traffic-heavy{color:#ff4545!important}
-
-@media(max-width:1000px){
-  #haloDestinationIntelCard{width:285px;right:14px;top:70px}
-  #haloMapLayerControls{right:14px;top:14px;max-width:240px}
-  .halo-map-layer-btn{padding:8px 9px}
-}
-</style>
-
-<script id="halo-ultimate-navigation-experience-pack-v1-js">
-(function(){
-  let pulseTimer=null;
-  let pulseDots=[];
-  let weatherLayers=[];
-  let lastPayload=null;
-  let lastRouteIndex=0;
-  let globeMode=false;
-
-  function log(){try{console.log('[HALO ULTIMATE NAV]',...arguments)}catch(e){}}
-  function getMap(){try{return window.haloRealMap||haloRealMap}catch(e){return null}}
-  function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
-  function tClass(l){l=String(l||'').toLowerCase();return l.includes('heavy')?'halo-traffic-heavy':l.includes('moderate')?'halo-traffic-moderate':l.includes('light')?'halo-traffic-light':'halo-traffic-clear'}
-  function tColor(l){l=String(l||'').toLowerCase();return l.includes('heavy')?'#ff4545':l.includes('moderate')?'#ff9d2e':l.includes('light')?'#ffe83f':'#00ff9d'}
-
-  function decodePolyline(e){
-    if(!e)return[];
-    let p=[],i=0,lat=0,lng=0;
-    while(i<e.length){
-      let b,s=0,r=0;
-      do{b=e.charCodeAt(i++)-63;r|=(b&31)<<s;s+=5}while(b>=32);
-      lat+=r&1?~(r>>1):r>>1;
-      s=0;r=0;
-      do{b=e.charCodeAt(i++)-63;r|=(b&31)<<s;s+=5}while(b>=32);
-      lng+=r&1?~(r>>1):r>>1;
-      p.push([lat/1e5,lng/1e5]);
-    }
-    return p;
-  }
-
-  function ensureUI(){
-    const overlay=document.getElementById('haloAdvancedMapOverlay');
-    if(!overlay)return;
-    const panel=overlay.querySelector('.ham-map-panel')||overlay;
-
-    if(!document.getElementById('haloNavMissionStatus')){
-      const el=document.createElement('div');
-      el.id='haloNavMissionStatus';
-      el.textContent='NAVIGATION SYSTEM READY';
-      panel.appendChild(el);
-    }
-
-    if(!document.getElementById('haloDestinationIntelCard')){
-      const card=document.createElement('div');
-      card.id='haloDestinationIntelCard';
-      card.innerHTML='<div class="halo-dintel-head"><div class="halo-dintel-kicker">DESTINATION INTEL</div><div class="halo-dintel-title">Standing by</div></div><div class="halo-dintel-body"><div class="halo-dintel-strip">Awaiting route data.</div></div>';
-      panel.appendChild(card);
-    }
-
-    if(!document.getElementById('haloMapLayerControls')){
-      const c=document.createElement('div');
-      c.id='haloMapLayerControls';
-      c.innerHTML=`
-        <button class="halo-map-layer-btn active" onclick="haloUltimateLayer('traffic')">TRAFFIC</button>
-        <button class="halo-map-layer-btn" onclick="haloUltimateLayer('weather')">WEATHER</button>
-        <button class="halo-map-layer-btn" onclick="haloUltimateLayer('fly')">FLY</button>
-        <button class="halo-map-layer-btn" onclick="haloUltimateLayer('globe')">GLOBE</button>
-      `;
-      panel.appendChild(c);
-    }
-
-    if(!document.getElementById('haloGlobeVisualMode')){
-      const g=document.createElement('div');
-      g.id='haloGlobeVisualMode';
-      g.innerHTML='<div class="halo-globe-core"></div>';
-      panel.appendChild(g);
-    }
-
-    if(!document.getElementById('haloFlyCameraBadge')){
-      const f=document.createElement('div');
-      f.id='haloFlyCameraBadge';
-      f.textContent='CAMERA LOCK';
-      panel.appendChild(f);
-    }
-  }
-
-  function mission(text,timeout=3600){
-    ensureUI();
-    const el=document.getElementById('haloNavMissionStatus');
-    if(!el)return;
-    el.textContent=text;
-    el.classList.add('active');
-    clearTimeout(el._t);
-    el._t=setTimeout(()=>el.classList.remove('active'),timeout);
-  }
-
-  function flyBadge(text,timeout=2600){
-    ensureUI();
-    const el=document.getElementById('haloFlyCameraBadge');
-    if(!el)return;
-    el.textContent=text;
-    el.classList.add('active');
-    clearTimeout(el._t);
-    el._t=setTimeout(()=>el.classList.remove('active'),timeout);
-  }
-
-  function clearPulse(){
-    pulseDots.forEach(d=>d.remove());
-    pulseDots=[];
-    if(pulseTimer){clearInterval(pulseTimer);pulseTimer=null}
-  }
-
-  function startPulse(points){
-    clearPulse();
-    const map=getMap();
-    const overlay=document.getElementById('haloAdvancedMapOverlay');
-    if(!map||!overlay||!points.length)return;
-    const panel=overlay.querySelector('.ham-map-panel')||overlay;
-
-    for(let i=0;i<5;i++){
-      const d=document.createElement('div');
-      d.className='halo-route-pulse-dot';
-      panel.appendChild(d);
-      pulseDots.push(d);
-    }
-
-    let tick=0;
-    pulseTimer=setInterval(()=>{
-      const m=getMap();
-      if(!m)return;
-      pulseDots.forEach((dot,i)=>{
-        const phase=((tick+i*18)%100)/100;
-        const idx=Math.min(points.length-1,Math.floor(phase*(points.length-1)));
-        const pt=m.latLngToContainerPoint(points[idx]);
-        dot.style.left=pt.x+'px';
-        dot.style.top=pt.y+'px';
-        dot.style.opacity=String(.35+(i/pulseDots.length)*.55);
-      });
-      tick=(tick+2)%100;
-    },90);
-  }
-
-  function selectedRoute(payload,idx=0){
-    const rd=payload?.route||{};
-    const rs=rd.routes||[rd];
-    return rs[idx]||rs[0]||rd;
-  }
-
-  function refocus(payload,idx=0){
-    const map=getMap();
-    if(!map||!payload||typeof L==='undefined')return;
-    const route=selectedRoute(payload,idx);
-    const pts=decodePolyline(route.polyline);
-    if(!pts.length)return;
-    const b=L.latLngBounds(pts);
-    map.fitBounds(b,{paddingTopLeft:[120,90],paddingBottomRight:[100,90],maxZoom:13});
-    setTimeout(()=>{try{if(map.getZoom()<10)map.setZoom(10)}catch(e){}},350);
-    startPulse(pts);
-  }
-
-  function wIcon(code){
-    code=Number(code);
-    if(code===0)return'☀️';
-    if([1,2,3].includes(code))return'⛅';
-    if([45,48].includes(code))return'🌫️';
-    if([51,53,55,61,63,65,80,81,82].includes(code))return'🌧️';
-    if([95,96,99].includes(code))return'⛈️';
-    return'🌤️';
-  }
-
-  async function weatherFor(loc){
-    const lat=loc?.latitude??loc?.lat,lng=loc?.longitude??loc?.lng;
-    if(typeof lat!=='number'||typeof lng!=='number')return null;
-    try{
-      const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph`);
-      const data=await res.json();
-      return data.current||null;
-    }catch(e){return null}
-  }
-
-  async function updateDestinationIntel(payload,idx=0){
-    ensureUI();
-    const card=document.getElementById('haloDestinationIntelCard');
-    if(!card||!payload)return;
-    const rd=payload.route||{};
-    const route=selectedRoute(payload,idx);
-    const gas=payload.gas||[];
-    const parking=payload.parking||[];
-    const weather=await weatherFor(route.end_location||rd.end_location);
-    const wc=weather?`${wIcon(weather.weather_code)} ${Math.round(weather.temperature_2m)}°F · Wind ${Math.round(weather.wind_speed_10m||0)} mph`:'Weather layer standing by.';
-    const c=tClass(route.traffic_level);
-
-    card.innerHTML=`
-      <div class="halo-dintel-head">
-        <div class="halo-dintel-kicker">DESTINATION INTEL</div>
-        <div class="halo-dintel-title">${esc(rd.destination||'Destination')}</div>
-      </div>
-      <div class="halo-dintel-body">
-        <div class="halo-dintel-grid">
-          <div class="halo-dintel-stat"><small>ETA</small><strong>${esc(route.eta_minutes)}M</strong></div>
-          <div class="halo-dintel-stat"><small>DELAY</small><strong class="${c}">+${esc(route.delay_minutes||0)}M</strong></div>
-          <div class="halo-dintel-stat"><small>DISTANCE</small><strong>${esc(route.distance_miles)}MI</strong></div>
-          <div class="halo-dintel-stat"><small>TRAFFIC</small><strong class="${c}">${esc(route.traffic_level)}</strong></div>
-        </div>
-        <div class="halo-dintel-strip"><strong>Weather near destination:</strong><br>${esc(wc)}</div>
-        <div class="halo-dintel-strip"><strong>Support nearby:</strong><br>⛽ ${esc(gas[0]?.name||'No gas result')}<br>🅿️ ${esc(parking[0]?.name||'No parking result')}</div>
-      </div>`;
-  }
-
-  function clearWeather(){
-    const map=getMap();
-    if(map) weatherLayers.forEach(l=>{try{map.removeLayer(l)}catch(e){}});
-    weatherLayers=[];
-  }
-
-  async function drawWeatherLayer(payload){
-    clearWeather();
-    const map=getMap();
-    if(!map||typeof L==='undefined'||!payload)return;
-    const rd=payload.route||{};
-    const route=selectedRoute(payload,lastRouteIndex);
-    const locs=[route.start_location||rd.start_location,route.end_location||rd.end_location].filter(Boolean);
-
-    for(const loc of locs){
-      const w=await weatherFor(loc);
-      if(!w)continue;
-      const lat=loc.latitude??loc.lat,lng=loc.longitude??loc.lng;
-      const marker=L.marker([lat,lng],{
-        icon:L.divIcon({
-          className:'',
-          html:`<div class="halo-weather-pin">${wIcon(w.weather_code)} ${Math.round(w.temperature_2m)}°</div>`,
-          iconSize:[58,30],
-          iconAnchor:[29,15]
-        })
-      }).addTo(map);
-      weatherLayers.push(marker);
-    }
-  }
-
-  function activateButtons(which){
-    document.querySelectorAll('.halo-map-layer-btn').forEach(b=>b.classList.remove('active'));
-    const btn=[...document.querySelectorAll('.halo-map-layer-btn')].find(b=>b.textContent.toLowerCase().includes(which));
-    if(btn)btn.classList.add('active');
-  }
-
-  window.haloUltimateLayer=function(which){
-    ensureUI();
-    which=String(which||'').toLowerCase();
-
-    if(which==='weather'){
-      activateButtons('weather');
-      mission('WEATHER LAYER ACTIVE');
-      if(lastPayload)drawWeatherLayer(lastPayload);
-    }
-
-    if(which==='traffic'){
-      activateButtons('traffic');
-      mission('TRAFFIC LAYER ACTIVE');
-      clearWeather();
-      if(lastPayload)refocus(lastPayload,lastRouteIndex);
-    }
-
-    if(which==='fly'){
-      activateButtons('fly');
-      window.haloUltimateFlyRoute();
-    }
-
-    if(which==='globe'){
-      const globe=document.getElementById('haloGlobeVisualMode');
-      globeMode=!globeMode;
-      if(globe)globe.classList.toggle('active',globeMode);
-      activateButtons('globe');
-      mission(globeMode?'GLOBE MODE ONLINE':'GLOBE MODE OFFLINE');
-    }
-  };
-
-  window.haloUltimateFlyRoute=function(){
-    const map=getMap();
-    if(!map||!lastPayload)return;
-    const route=selectedRoute(lastPayload,lastRouteIndex);
-    const pts=decodePolyline(route.polyline);
-    if(!pts.length)return;
-
-    mission('SCANNING ROUTE',1600);
-    flyBadge('SCANNING ROUTE',1600);
-
-    setTimeout(()=>{
-      mission('LOCKING TARGET',1600);
-      flyBadge('LOCKING TARGET',1600);
-      try{map.setView(pts[0],11,{animate:true,duration:1.1})}catch(e){}
-    },1000);
-
-    setTimeout(()=>{
-      mission('TRACING ROUTE',1800);
-      flyBadge('TRACING ROUTE',1800);
-      const mid=pts[Math.floor(pts.length*.55)];
-      try{map.setView(mid,12,{animate:true,duration:1.4})}catch(e){}
-    },2300);
-
-    setTimeout(()=>{
-      mission('ROUTE CONFIRMED',2200);
-      flyBadge('ROUTE CONFIRMED',2200);
-      const end=pts[pts.length-1];
-      try{map.setView(end,13,{animate:true,duration:1.2})}catch(e){}
-    },4000);
-  };
-
-  // Wrap route selection.
-  const oldSelect=window.haloNavSelectRoute;
-  window.haloNavSelectRoute=function(index){
-    lastRouteIndex=index||0;
-    if(typeof oldSelect==='function')oldSelect(index);
-    setTimeout(()=>{
-      if(lastPayload){
-        refocus(lastPayload,lastRouteIndex);
-        updateDestinationIntel(lastPayload,lastRouteIndex);
-      }
-    },350);
-  };
-
-  const oldFocus=window.haloNavFocus;
-  window.haloNavFocus=function(){
-    if(typeof oldFocus==='function')oldFocus();
-    setTimeout(()=>{if(lastPayload)refocus(lastPayload,lastRouteIndex)},250);
-  };
-
-  const oldClear=window.haloNavClear;
-  window.haloNavClear=function(){
-    if(typeof oldClear==='function')oldClear();
-    clearPulse();
-    clearWeather();
-    lastPayload=null;
-    const card=document.getElementById('haloDestinationIntelCard');
-    if(card)card.innerHTML='<div class="halo-dintel-head"><div class="halo-dintel-kicker">DESTINATION INTEL</div><div class="halo-dintel-title">Route cleared</div></div><div class="halo-dintel-body"><div class="halo-dintel-strip">Navigation layer standing by.</div></div>';
-  };
-
-  // Capture route-plus and run polish once clean nav finishes drawing.
-  const originalFetch=window.fetch;
-  if(originalFetch&&!window.__haloUltimateNavFetchWrapped){
-    window.__haloUltimateNavFetchWrapped=true;
-    window.fetch=async function(){
-      const response=await originalFetch.apply(this,arguments);
-      try{
-        const url=String(arguments[0]||'');
-        if(url.includes('/route-plus')){
-          response.clone().json().then(data=>{
-            if(data&&data.success&&data.route){
-              lastPayload=data;
-              lastRouteIndex=0;
-              setTimeout(()=>{
-                ensureUI();
-                mission('ROUTE CONFIRMED');
-                refocus(data,0);
-                updateDestinationIntel(data,0);
-              },850);
-            }
-          }).catch(()=>{});
-        }
-      }catch(e){}
-      return response;
-    };
-  }
-
-  // Voice command phrases / typed command extras.
-  function parseUltimateCommand(text){
-    text=String(text||'').trim();
-    const commands=[
-      [/^(?:halo\s+)?(?:fly|scan|camera)\s+(?:route|the route)$/i,()=>window.haloUltimateFlyRoute()],
-      [/^(?:halo\s+)?(?:show|enable|turn on)\s+weather(?:\s+layer)?$/i,()=>window.haloUltimateLayer('weather')],
-      [/^(?:halo\s+)?(?:show|enable|turn on)\s+traffic(?:\s+layer)?$/i,()=>window.haloUltimateLayer('traffic')],
-      [/^(?:halo\s+)?(?:globe|globe mode|global mode)$/i,()=>window.haloUltimateLayer('globe')]
-    ];
-    for(const [re,fn] of commands){
-      if(re.test(text))return fn;
-    }
-    return null;
-  }
-
-  document.addEventListener('keydown',function(e){
-    if(e.key!=='Enter')return;
-    const input=document.getElementById('textInp');
-    if(!input||document.activeElement!==input)return;
-    const fn=parseUltimateCommand(input.value);
-    if(!fn)return;
-    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
-    input.value='';
-    fn();
-  },true);
-
-  document.addEventListener('click',function(e){
-    const btn=e.target.closest&&e.target.closest('.send-btn');
-    if(!btn)return;
-    const input=document.getElementById('textInp');
-    if(!input)return;
-    const fn=parseUltimateCommand(input.value);
-    if(!fn)return;
-    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
-    input.value='';
-    fn();
-  },true);
-
-  setTimeout(ensureUI,1200);
-  log('loaded');
-})();
-</script>
-
-
-<!-- HALO GLOBAL BRIEFING + ACTIVE FEEDS PANEL UPGRADE -->
-<style id="halo-global-briefing-active-feeds-upgrade">
-/* Hide/override old OMKEER-heavy copy in the global intel overlay with cleaner system panels */
-#haloAdvancedMapOverlay .hgi-left,
-#haloAdvancedMapOverlay .global-left,
-#haloAdvancedMapOverlay .ham-left{
-  position:relative;
-}
-
-/* New Jarvis-style left intelligence panel */
-#haloSystemBriefingPanel{
+/* Small reopen buttons */
+#haloPanelReopenBar{
   position:absolute;
   left:18px;
-  top:78px;
   bottom:18px;
-  width:280px;
-  z-index:1180;
-  border-radius:22px;
-  border:1px solid rgba(0,234,255,.18);
-  background:
-    radial-gradient(circle at top left, rgba(0,234,255,.10), transparent 42%),
-    rgba(0,10,26,.76);
-  backdrop-filter:blur(22px);
-  -webkit-backdrop-filter:blur(22px);
-  box-shadow:0 18px 70px rgba(0,0,0,.42), 0 0 36px rgba(0,234,255,.10);
-  overflow:hidden;
+  z-index:1250;
   display:none;
-}
-
-#haloAdvancedMapOverlay.active #haloSystemBriefingPanel{
-  display:block;
-}
-
-.halo-system-panel-head{
-  padding:16px 17px 12px;
-  border-bottom:1px solid rgba(0,234,255,.10);
-}
-
-.halo-system-kicker{
-  font-family:'JetBrains Mono', monospace;
-  font-size:8px;
-  letter-spacing:2.8px;
-  color:rgba(0,234,255,.58);
-  margin-bottom:7px;
-}
-
-.halo-system-title{
-  font-family:'Space Grotesk', sans-serif;
-  font-size:18px;
-  letter-spacing:3px;
-  color:#eaffff;
-  font-weight:700;
-}
-
-.halo-system-panel-body{
-  padding:14px 16px 18px;
-  height:calc(100% - 72px);
-  overflow:auto;
-}
-
-.halo-brief-item{
-  padding:13px 12px;
-  border-radius:16px;
-  border:1px solid rgba(0,234,255,.09);
-  background:rgba(0,234,255,.035);
-  margin-bottom:10px;
-  transition:.18s ease;
-}
-
-.halo-brief-item:hover{
-  border-color:rgba(0,234,255,.28);
-  background:rgba(0,234,255,.065);
-  transform:translateX(2px);
-}
-
-.halo-brief-row{
-  display:flex;
-  justify-content:space-between;
-  gap:12px;
-  align-items:center;
-  margin-bottom:7px;
-}
-
-.halo-brief-name{
-  font-family:'JetBrains Mono', monospace;
-  font-size:10px;
-  letter-spacing:2px;
-  color:#00eaff;
-}
-
-.halo-brief-badge{
-  font-family:'JetBrains Mono', monospace;
-  font-size:7px;
-  letter-spacing:1.3px;
-  padding:5px 7px;
-  border-radius:999px;
-  border:1px solid currentColor;
-  color:#00ff9d;
-}
-
-.halo-brief-copy{
-  font-size:12px;
-  line-height:1.55;
-  color:rgba(226,245,255,.70);
-}
-
-/* Right active feeds panel */
-#haloActiveFeedsPanel{
-  position:absolute;
-  right:18px;
-  top:78px;
-  bottom:18px;
-  width:280px;
-  z-index:1180;
-  border-radius:22px;
-  border:1px solid rgba(0,234,255,.18);
-  background:
-    radial-gradient(circle at top right, rgba(0,234,255,.10), transparent 42%),
-    rgba(0,10,26,.76);
-  backdrop-filter:blur(22px);
-  -webkit-backdrop-filter:blur(22px);
-  box-shadow:0 18px 70px rgba(0,0,0,.42), 0 0 36px rgba(0,234,255,.10);
-  overflow:hidden;
-  display:none;
-}
-
-#haloAdvancedMapOverlay.active #haloActiveFeedsPanel{
-  display:block;
-}
-
-.halo-feed-grid{
-  display:grid;
-  gap:9px;
-}
-
-.halo-feed-card{
-  padding:12px 12px;
-  border-radius:15px;
-  border:1px solid rgba(0,234,255,.09);
-  background:rgba(0,8,22,.38);
-  cursor:pointer;
-  transition:.18s ease;
-}
-
-.halo-feed-card:hover,
-.halo-feed-card.active{
-  border-color:rgba(0,234,255,.35);
-  background:rgba(0,234,255,.06);
-  box-shadow:0 0 24px rgba(0,234,255,.08);
-}
-
-.halo-feed-top{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  margin-bottom:6px;
-}
-
-.halo-feed-name{
-  font-family:'JetBrains Mono', monospace;
-  font-size:10px;
-  letter-spacing:2px;
-  color:#eaffff;
-}
-
-.halo-feed-dot{
-  width:8px;
-  height:8px;
-  border-radius:50%;
-  background:#00ff9d;
-  box-shadow:0 0 14px currentColor;
-}
-
-.halo-feed-card.warning .halo-feed-dot{
-  background:#ff9d2e;
-}
-
-.halo-feed-card.alert .halo-feed-dot{
-  background:#ff4545;
-}
-
-.halo-feed-copy{
-  font-size:12px;
-  line-height:1.45;
-  color:rgba(226,245,255,.68);
-}
-
-/* Small floating command/chat box */
-#haloMiniChatBox{
-  position:absolute;
-  left:50%;
-  bottom:20px;
-  transform:translateX(-50%);
-  width:min(520px, calc(100% - 640px));
-  min-width:380px;
-  z-index:1210;
-  border-radius:22px;
-  border:1px solid rgba(0,234,255,.18);
-  background:rgba(0,10,26,.72);
-  backdrop-filter:blur(22px);
-  -webkit-backdrop-filter:blur(22px);
-  box-shadow:0 18px 70px rgba(0,0,0,.44), 0 0 36px rgba(0,234,255,.10);
-  display:none;
-  overflow:hidden;
-}
-
-#haloAdvancedMapOverlay.active #haloMiniChatBox{
-  display:block;
-}
-
-.halo-mini-chat-head{
-  padding:12px 14px 8px;
-  border-bottom:1px solid rgba(0,234,255,.10);
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-}
-
-.halo-mini-chat-title{
-  font-family:'JetBrains Mono', monospace;
-  font-size:9px;
-  letter-spacing:2.3px;
-  color:#00eaff;
-}
-
-.halo-mini-chat-status{
-  font-family:'JetBrains Mono', monospace;
-  font-size:7px;
-  letter-spacing:1.2px;
-  color:#00ff9d;
-}
-
-.halo-mini-chat-body{
-  padding:11px 13px 13px;
-}
-
-#haloMiniChatLog{
-  max-height:88px;
-  overflow:auto;
-  margin-bottom:10px;
-  display:grid;
   gap:7px;
 }
 
-.halo-mini-msg{
-  font-size:12px;
-  line-height:1.45;
-  color:rgba(230,250,255,.78);
-  padding:8px 10px;
-  border-radius:12px;
-  background:rgba(0,234,255,.035);
-  border:1px solid rgba(0,234,255,.07);
-}
-
-.halo-mini-msg.user{
-  color:#eaffff;
-  background:rgba(0,255,157,.045);
-}
-
-.halo-mini-input-row{
+#haloAdvancedMapOverlay.active #haloPanelReopenBar{
   display:flex;
-  gap:8px;
 }
 
-#haloMiniChatInput{
-  flex:1;
-  height:42px;
+.halo-reopen-btn{
+  padding:9px 11px;
   border-radius:999px;
-  border:1px solid rgba(0,234,255,.16);
-  background:rgba(0,8,22,.55);
-  color:#eaffff;
-  padding:0 14px;
-  outline:none;
-  font-size:13px;
-}
-
-#haloMiniChatInput::placeholder{
-  color:rgba(0,234,255,.28);
-}
-
-#haloMiniChatSend{
-  width:76px;
-  border-radius:999px;
-  border:1px solid rgba(0,234,255,.22);
-  background:rgba(0,234,255,.08);
+  border:1px solid rgba(0,234,255,.20);
+  background:rgba(0,10,26,.76);
   color:#00eaff;
-  font-family:'JetBrains Mono', monospace;
-  font-size:9px;
-  letter-spacing:1.7px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:7px;
+  letter-spacing:1.2px;
   cursor:pointer;
+  backdrop-filter:blur(16px);
 }
 
-#haloMiniChatSend:hover{
-  background:rgba(0,234,255,.14);
-  border-color:rgba(0,234,255,.45);
-}
-
-/* Push map visual focus so side panels don't feel cramped */
-#haloAdvancedMapOverlay .ham-map-panel,
-#haloAdvancedMapOverlay .hgi-map-wrap{
-  margin-left:300px !important;
-  margin-right:300px !important;
-  width:auto !important;
-}
-
-/* Keep navigation HUD from colliding too hard with new panels */
-#haloNavHUD{
-  left:318px !important;
-  bottom:18px !important;
-  max-height:38vh !important;
-}
-
-#haloDestinationIntelCard{
-  right:318px !important;
-}
-
-#haloMapLayerControls{
-  right:318px !important;
-}
-
-@media(max-width:1280px){
-  #haloSystemBriefingPanel,
-  #haloActiveFeedsPanel{
-    width:245px;
+@media(max-width:1100px){
+  #haloCleanLeftPanel,
+  #haloCleanRightPanel{
+    width:238px;
   }
 
   #haloAdvancedMapOverlay .ham-map-panel,
   #haloAdvancedMapOverlay .hgi-map-wrap{
-    margin-left:260px !important;
-    margin-right:260px !important;
+    margin-left:252px !important;
+    margin-right:252px !important;
   }
 
-  #haloNavHUD{
-    left:276px !important;
-  }
-
-  #haloDestinationIntelCard,
-  #haloMapLayerControls{
-    right:276px !important;
-  }
-
-  #haloMiniChatBox{
-    width:min(460px, calc(100% - 540px));
-    min-width:320px;
-  }
+  #haloNavHUD{left:266px !important}
+  #haloDestinationBrief,
+  #haloDestinationIntelCard{right:266px !important}
+  #haloCleanMapToggles{right:266px !important}
 }
 
-@media(max-width:980px){
-  #haloSystemBriefingPanel,
-  #haloActiveFeedsPanel{
+@media(max-width:900px){
+  #haloCleanLeftPanel,
+  #haloCleanRightPanel{
     display:none !important;
   }
 
@@ -6709,207 +6086,205 @@ path.halo-ultimate-route-glow{
     margin-right:14px !important;
   }
 
-  #haloNavHUD{
-    left:16px !important;
-  }
-
-  #haloDestinationIntelCard,
-  #haloMapLayerControls{
-    right:16px !important;
-  }
-
-  #haloMiniChatBox{
-    width:calc(100% - 32px);
-    min-width:0;
-  }
+  #haloNavHUD{left:16px !important}
+  #haloDestinationBrief,
+  #haloDestinationIntelCard{right:16px !important}
+  #haloCleanMapToggles{right:16px !important}
+  #haloCleanMiniChat{width:calc(100% - 32px)}
 }
 </style>
 
-<script id="halo-global-briefing-active-feeds-upgrade-js">
+<script id="halo-clean-panels-toggle-controls-v1-js">
 (function(){
-  function ensurePanels(){
+  let weatherLayerActive = false;
+  let trafficLayerActive = true;
+  let globeLayerActive = false;
+  let cleanWeatherLayers = [];
+
+  function getMap(){
+    try{
+      return window.haloRealMap || haloRealMap;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function ensureCleanUI(){
     const overlay = document.getElementById('haloAdvancedMapOverlay');
     if(!overlay) return;
 
-    if(!document.getElementById('haloSystemBriefingPanel')){
+    // Remove duplicate cards created by older patches if they exist and are not our clean panels.
+    const duplicateDestination = document.getElementById('haloDestinationIntelCard');
+    if(duplicateDestination && !duplicateDestination.dataset.cleanManaged){
+      duplicateDestination.classList.add('closed');
+    }
+
+    if(!document.getElementById('haloCleanLeftPanel')){
       const left = document.createElement('div');
-      left.id = 'haloSystemBriefingPanel';
+      left.id = 'haloCleanLeftPanel';
       left.innerHTML = `
-        <div class="halo-system-panel-head">
-          <div class="halo-system-kicker">SYSTEM OVERVIEW</div>
-          <div class="halo-system-title">GLOBAL BRIEFING</div>
+        <div class="halo-clean-head">
+          <div>
+            <div class="halo-clean-kicker">SYSTEM OVERVIEW</div>
+            <div class="halo-clean-title">GLOBAL BRIEFING</div>
+          </div>
+          <button class="halo-clean-close" onclick="haloClosePanel('left')">×</button>
         </div>
-        <div class="halo-system-panel-body">
-          <div class="halo-brief-item">
-            <div class="halo-brief-row">
-              <div class="halo-brief-name">TRAFFIC NETWORK</div>
-              <div class="halo-brief-badge">LIVE</div>
-            </div>
-            <div class="halo-brief-copy">Traffic-aware routing, ETA analysis, route options, gas, and parking systems online.</div>
+        <div class="halo-clean-body">
+          <div class="halo-clean-card active" onclick="haloBriefAction('traffic')">
+            <div class="halo-clean-row"><div class="halo-clean-name">TRAFFIC NETWORK</div><div class="halo-clean-badge">LIVE</div></div>
+            <div class="halo-clean-copy">Traffic-aware routing, ETA analysis, alternate routes, gas, and parking.</div>
           </div>
-
-          <div class="halo-brief-item">
-            <div class="halo-brief-row">
-              <div class="halo-brief-name">WEATHER SYSTEMS</div>
-              <div class="halo-brief-badge">READY</div>
-            </div>
-            <div class="halo-brief-copy">Destination weather, wind, and route condition layer available during navigation.</div>
+          <div class="halo-clean-card" onclick="haloBriefAction('weather')">
+            <div class="halo-clean-row"><div class="halo-clean-name">WEATHER SYSTEMS</div><div class="halo-clean-badge" id="weatherBriefBadge">OFF</div></div>
+            <div class="halo-clean-copy">Toggle destination weather and route condition markers on the map.</div>
           </div>
-
-          <div class="halo-brief-item">
-            <div class="halo-brief-row">
-              <div class="halo-brief-name">WORLD WATCH</div>
-              <div class="halo-brief-badge">SCAN</div>
-            </div>
-            <div class="halo-brief-copy">Global map layer ready for major events, regional monitoring, and location intelligence.</div>
+          <div class="halo-clean-card" onclick="haloBriefAction('world')">
+            <div class="halo-clean-row"><div class="halo-clean-name">WORLD WATCH</div><div class="halo-clean-badge">SCAN</div></div>
+            <div class="halo-clean-copy">Global map view for world events, regional intelligence, and monitoring.</div>
           </div>
-
-          <div class="halo-brief-item">
-            <div class="halo-brief-row">
-              <div class="halo-brief-name">AIRSPACE STATUS</div>
-              <div class="halo-brief-badge">IDLE</div>
-            </div>
-            <div class="halo-brief-copy">Airport, route, and travel intelligence module can be expanded for flights and delays.</div>
+          <div class="halo-clean-card" onclick="haloBriefAction('airspace')">
+            <div class="halo-clean-row"><div class="halo-clean-name">AIRSPACE STATUS</div><div class="halo-clean-badge off">IDLE</div></div>
+            <div class="halo-clean-copy">Future airport, flight, and airspace delay intelligence module.</div>
           </div>
-
-          <div class="halo-brief-item">
-            <div class="halo-brief-row">
-              <div class="halo-brief-name">SYSTEM HEALTH</div>
-              <div class="halo-brief-badge">ONLINE</div>
-            </div>
-            <div class="halo-brief-copy">HALO core, command routing, map interface, and navigation endpoints are operational.</div>
+          <div class="halo-clean-card" onclick="haloBriefAction('system')">
+            <div class="halo-clean-row"><div class="halo-clean-name">SYSTEM HEALTH</div><div class="halo-clean-badge">ONLINE</div></div>
+            <div class="halo-clean-copy">HALO core, command routing, map interface, and navigation endpoints online.</div>
           </div>
         </div>
       `;
       overlay.appendChild(left);
     }
 
-    if(!document.getElementById('haloActiveFeedsPanel')){
+    if(!document.getElementById('haloCleanRightPanel')){
       const right = document.createElement('div');
-      right.id = 'haloActiveFeedsPanel';
+      right.id = 'haloCleanRightPanel';
       right.innerHTML = `
-        <div class="halo-system-panel-head">
-          <div class="halo-system-kicker">LIVE CHANNELS</div>
-          <div class="halo-system-title">ACTIVE FEEDS</div>
+        <div class="halo-clean-head">
+          <div>
+            <div class="halo-clean-kicker">LIVE CHANNELS</div>
+            <div class="halo-clean-title">ACTIVE FEEDS</div>
+          </div>
+          <button class="halo-clean-close" onclick="haloClosePanel('right')">×</button>
         </div>
-        <div class="halo-system-panel-body">
-          <div class="halo-feed-grid">
-            <div class="halo-feed-card active" onclick="haloFeedSelect('los angeles')">
-              <div class="halo-feed-top">
-                <div class="halo-feed-name">LOS ANGELES</div>
-                <div class="halo-feed-dot"></div>
-              </div>
-              <div class="halo-feed-copy">Local navigation, route conditions, and regional map focus.</div>
-            </div>
-
-            <div class="halo-feed-card warning" onclick="haloFeedSelect('lax')">
-              <div class="halo-feed-top">
-                <div class="halo-feed-name">LAX</div>
-                <div class="halo-feed-dot"></div>
-              </div>
-              <div class="halo-feed-copy">Airport route intelligence, parking, and nearby support options.</div>
-            </div>
-
-            <div class="halo-feed-card" onclick="haloFeedSelect('weather')">
-              <div class="halo-feed-top">
-                <div class="halo-feed-name">WEATHER</div>
-                <div class="halo-feed-dot"></div>
-              </div>
-              <div class="halo-feed-copy">Destination temperature, wind, and route weather layer.</div>
-            </div>
-
-            <div class="halo-feed-card" onclick="haloFeedSelect('transit')">
-              <div class="halo-feed-top">
-                <div class="halo-feed-name">TRANSIT</div>
-                <div class="halo-feed-dot"></div>
-              </div>
-              <div class="halo-feed-copy">Future module for buses, trains, rideshare, and public transit decisions.</div>
-            </div>
-
-            <div class="halo-feed-card" onclick="haloFeedSelect('world news')">
-              <div class="halo-feed-top">
-                <div class="halo-feed-name">WORLD NEWS</div>
-                <div class="halo-feed-dot"></div>
-              </div>
-              <div class="halo-feed-copy">Future global news and alert stream for the World Watch layer.</div>
-            </div>
-
-            <div class="halo-feed-card" onclick="haloFeedSelect('tech')">
-              <div class="halo-feed-top">
-                <div class="halo-feed-name">TECH</div>
-                <div class="halo-feed-dot"></div>
-              </div>
-              <div class="halo-feed-copy">AI, systems, tools, and software intelligence feed.</div>
-            </div>
+        <div class="halo-clean-body">
+          <div class="halo-clean-card active" onclick="haloFeedAction('los angeles')">
+            <div class="halo-clean-row"><div class="halo-clean-name">LOS ANGELES</div><div class="halo-clean-badge">LIVE</div></div>
+            <div class="halo-clean-copy">Local routes, regional map focus, and traffic conditions.</div>
+          </div>
+          <div class="halo-clean-card" onclick="haloFeedAction('lax')">
+            <div class="halo-clean-row"><div class="halo-clean-name">LAX</div><div class="halo-clean-badge warn">ROUTE</div></div>
+            <div class="halo-clean-copy">Airport route intelligence, parking, gas, and travel support.</div>
+          </div>
+          <div class="halo-clean-card" onclick="haloFeedAction('weather')">
+            <div class="halo-clean-row"><div class="halo-clean-name">WEATHER</div><div class="halo-clean-badge" id="weatherFeedBadge">OFF</div></div>
+            <div class="halo-clean-copy">Enable or disable weather markers on the active route.</div>
+          </div>
+          <div class="halo-clean-card" onclick="haloFeedAction('transit')">
+            <div class="halo-clean-row"><div class="halo-clean-name">TRANSIT</div><div class="halo-clean-badge off">SOON</div></div>
+            <div class="halo-clean-copy">Future buses, trains, rideshare, and transit decision feed.</div>
+          </div>
+          <div class="halo-clean-card" onclick="haloFeedAction('world news')">
+            <div class="halo-clean-row"><div class="halo-clean-name">WORLD NEWS</div><div class="halo-clean-badge off">SOON</div></div>
+            <div class="halo-clean-copy">Future global alert and news stream for World Watch mode.</div>
+          </div>
+          <div class="halo-clean-card" onclick="haloFeedAction('tech')">
+            <div class="halo-clean-row"><div class="halo-clean-name">TECH</div><div class="halo-clean-badge off">SOON</div></div>
+            <div class="halo-clean-copy">Future AI, systems, software, and technology intelligence feed.</div>
           </div>
         </div>
       `;
       overlay.appendChild(right);
     }
 
-    if(!document.getElementById('haloMiniChatBox')){
+    if(!document.getElementById('haloCleanMapToggles')){
+      const toggles = document.createElement('div');
+      toggles.id = 'haloCleanMapToggles';
+      toggles.innerHTML = `
+        <button class="halo-clean-toggle active" id="cleanTrafficToggle" onclick="haloToggleLayer('traffic')">TRAFFIC</button>
+        <button class="halo-clean-toggle" id="cleanWeatherToggle" onclick="haloToggleLayer('weather')">WEATHER</button>
+        <button class="halo-clean-toggle" id="cleanGlobeToggle" onclick="haloToggleLayer('globe')">GLOBE</button>
+        <button class="halo-clean-toggle" onclick="haloOpenCleanChat()">CHAT</button>
+      `;
+      overlay.appendChild(toggles);
+    }
+
+    if(!document.getElementById('haloCleanMiniChat')){
       const chat = document.createElement('div');
-      chat.id = 'haloMiniChatBox';
+      chat.id = 'haloCleanMiniChat';
+      chat.className = '';
       chat.innerHTML = `
-        <div class="halo-mini-chat-head">
-          <div class="halo-mini-chat-title">HALO COMMAND LINE</div>
-          <div class="halo-mini-chat-status">READY</div>
+        <div class="halo-clean-chat-head">
+          <div class="halo-clean-chat-title">HALO COMMAND LINE</div>
+          <button class="halo-clean-close" onclick="haloClosePanel('chat')">×</button>
         </div>
-        <div class="halo-mini-chat-body">
-          <div id="haloMiniChatLog">
-            <div class="halo-mini-msg">Ask HALO for routes, traffic, weather, or system commands.</div>
+        <div class="halo-clean-chat-body">
+          <div id="haloCleanChatLog">
+            <div class="halo-clean-msg">Ask HALO for routes, traffic, weather, or map commands.</div>
           </div>
-          <div class="halo-mini-input-row">
-            <input id="haloMiniChatInput" placeholder="route to LAX..." />
-            <button id="haloMiniChatSend">SEND</button>
+          <div class="halo-clean-chat-row">
+            <input id="haloCleanChatInput" placeholder="route to LAX..." />
+            <button id="haloCleanChatSend">SEND</button>
           </div>
         </div>
       `;
       overlay.appendChild(chat);
     }
 
-    bindMiniChat();
+    if(!document.getElementById('haloCleanChatLauncher')){
+      const launcher = document.createElement('button');
+      launcher.id = 'haloCleanChatLauncher';
+      launcher.textContent = 'HALO CHAT';
+      launcher.onclick = () => haloOpenCleanChat();
+      overlay.appendChild(launcher);
+    }
+
+    if(!document.getElementById('haloPanelReopenBar')){
+      const reopen = document.createElement('div');
+      reopen.id = 'haloPanelReopenBar';
+      reopen.innerHTML = `
+        <button class="halo-reopen-btn" onclick="haloOpenPanel('left')">BRIEF</button>
+        <button class="halo-reopen-btn" onclick="haloOpenPanel('right')">FEEDS</button>
+      `;
+      overlay.appendChild(reopen);
+    }
+
+    bindCleanChat();
+    syncToggleState();
   }
 
-  function addMiniMessage(text, role){
-    const log = document.getElementById('haloMiniChatLog');
+  function addCleanMessage(text, role){
+    const log = document.getElementById('haloCleanChatLog');
     if(!log) return;
     const msg = document.createElement('div');
-    msg.className = 'halo-mini-msg ' + (role || 'halo');
+    msg.className = 'halo-clean-msg ' + (role || 'halo');
     msg.textContent = text;
     log.appendChild(msg);
     log.scrollTop = log.scrollHeight;
   }
 
-  function routeMiniCommand(text){
+  function sendToMainCommand(text){
     const input = document.getElementById('textInp');
     if(input){
       input.value = text;
-      const event = new KeyboardEvent('keydown', {
-        key:'Enter',
-        bubbles:true,
-        cancelable:true
-      });
-      input.dispatchEvent(event);
+      const evt = new KeyboardEvent('keydown', {key:'Enter', bubbles:true, cancelable:true});
+      input.dispatchEvent(evt);
     }
-
-    addMiniMessage(text, 'user');
-    addMiniMessage('Command sent to HALO navigation system.', 'halo');
+    addCleanMessage(text, 'user');
   }
 
-  function bindMiniChat(){
-    const input = document.getElementById('haloMiniChatInput');
-    const btn = document.getElementById('haloMiniChatSend');
+  function bindCleanChat(){
+    const input = document.getElementById('haloCleanChatInput');
+    const btn = document.getElementById('haloCleanChatSend');
     if(!input || !btn || btn.dataset.bound === 'true') return;
-
     btn.dataset.bound = 'true';
 
-    btn.addEventListener('click', () => {
+    btn.onclick = () => {
       const text = input.value.trim();
       if(!text) return;
       input.value = '';
-      routeMiniCommand(text);
-    });
+      sendToMainCommand(text);
+    };
 
     input.addEventListener('keydown', e => {
       if(e.key !== 'Enter') return;
@@ -6917,48 +6292,230 @@ path.halo-ultimate-route-glow{
       if(!text) return;
       e.preventDefault();
       input.value = '';
-      routeMiniCommand(text);
+      sendToMainCommand(text);
     });
   }
 
-  window.haloFeedSelect = function(feed){
-    document.querySelectorAll('.halo-feed-card').forEach(card => card.classList.remove('active'));
-    const selected = [...document.querySelectorAll('.halo-feed-card')].find(card => card.textContent.toLowerCase().includes(String(feed).toLowerCase()));
-    if(selected) selected.classList.add('active');
+  function syncToggleState(){
+    const traffic = document.getElementById('cleanTrafficToggle');
+    const weather = document.getElementById('cleanWeatherToggle');
+    const globe = document.getElementById('cleanGlobeToggle');
+    const weatherFeedBadge = document.getElementById('weatherFeedBadge');
+    const weatherBriefBadge = document.getElementById('weatherBriefBadge');
 
-    addMiniMessage('Active feed selected: ' + String(feed).toUpperCase(), 'halo');
+    if(traffic) traffic.classList.toggle('active', trafficLayerActive);
+    if(weather) weather.classList.toggle('active', weatherLayerActive);
+    if(globe) globe.classList.toggle('active', globeLayerActive);
 
-    if(feed === 'lax' && typeof window.haloNavRun === 'function'){
-      window.haloNavRun('lax');
+    if(weatherFeedBadge){
+      weatherFeedBadge.textContent = weatherLayerActive ? 'ON' : 'OFF';
+      weatherFeedBadge.classList.toggle('off', !weatherLayerActive);
+    }
+    if(weatherBriefBadge){
+      weatherBriefBadge.textContent = weatherLayerActive ? 'ON' : 'OFF';
+      weatherBriefBadge.classList.toggle('off', !weatherLayerActive);
+    }
+  }
+
+  function clearWeatherLayer(){
+    const map = getMap();
+    if(map){
+      cleanWeatherLayers.forEach(layer => {
+        try{ map.removeLayer(layer); }catch(e){}
+      });
+    }
+    cleanWeatherLayers = [];
+  }
+
+  function weatherIcon(code){
+    code = Number(code);
+    if(code === 0) return '☀️';
+    if([1,2,3].includes(code)) return '⛅';
+    if([45,48].includes(code)) return '🌫️';
+    if([51,53,55,61,63,65,80,81,82].includes(code)) return '🌧️';
+    if([95,96,99].includes(code)) return '⛈️';
+    return '🌤️';
+  }
+
+  async function fetchWeather(loc){
+    const lat = loc?.latitude ?? loc?.lat;
+    const lng = loc?.longitude ?? loc?.lng;
+    if(typeof lat !== 'number' || typeof lng !== 'number') return null;
+    try{
+      const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph`);
+      const data = await res.json();
+      return data.current || null;
+    }catch(e){
+      return null;
+    }
+  }
+
+  async function drawWeatherLayer(){
+    clearWeatherLayer();
+    const map = getMap();
+    const payload = window.__haloPolishPayload || window.__haloStreetRoutePayload || window.__haloLastRoutePayloadVisibilityFix;
+    if(!map || !payload || typeof L === 'undefined') return;
+
+    const route = payload.route || {};
+    const selected = route.routes?.[0] || route;
+    const locations = [selected.start_location || route.start_location, selected.end_location || route.end_location].filter(Boolean);
+
+    for(const loc of locations){
+      const w = await fetchWeather(loc);
+      if(!w) continue;
+      const lat = loc.latitude ?? loc.lat;
+      const lng = loc.longitude ?? loc.lng;
+      const marker = L.marker([lat,lng], {
+        icon:L.divIcon({
+          className:'',
+          html:`<div class="halo-clean-weather-pin">${weatherIcon(w.weather_code)} ${Math.round(w.temperature_2m)}°</div>`,
+          iconSize:[58,30],
+          iconAnchor:[29,15]
+        })
+      }).addTo(map);
+      cleanWeatherLayers.push(marker);
+    }
+  }
+
+  function toggleGlobe(){
+    let globe = document.getElementById('haloGlobeVisualMode');
+    const overlay = document.getElementById('haloAdvancedMapOverlay');
+    if(!globe && overlay){
+      globe = document.createElement('div');
+      globe.id = 'haloGlobeVisualMode';
+      globe.innerHTML = '<div class="halo-globe-core"></div>';
+      overlay.appendChild(globe);
+    }
+    globeLayerActive = !globeLayerActive;
+    if(globe) globe.classList.toggle('active', globeLayerActive);
+  }
+
+  window.haloToggleLayer = async function(layer){
+    layer = String(layer || '').toLowerCase();
+
+    if(layer === 'traffic'){
+      trafficLayerActive = !trafficLayerActive;
+      addCleanMessage('Traffic layer ' + (trafficLayerActive ? 'enabled.' : 'disabled.'), 'halo');
+      // Traffic is mainly the route lines. We don't remove the route because that makes navigation confusing.
+      // This toggle controls status/UI state only for now.
     }
 
-    if(feed === 'weather' && typeof window.haloUltimateLayer === 'function'){
-      window.haloUltimateLayer('weather');
+    if(layer === 'weather'){
+      weatherLayerActive = !weatherLayerActive;
+      if(weatherLayerActive){
+        addCleanMessage('Weather layer enabled.', 'halo');
+        await drawWeatherLayer();
+      }else{
+        addCleanMessage('Weather layer disabled.', 'halo');
+        clearWeatherLayer();
+      }
+    }
+
+    if(layer === 'globe'){
+      toggleGlobe();
+      addCleanMessage('Globe mode ' + (globeLayerActive ? 'enabled.' : 'disabled.'), 'halo');
+    }
+
+    syncToggleState();
+  };
+
+  window.haloBriefAction = function(type){
+    type = String(type || '').toLowerCase();
+    document.querySelectorAll('#haloCleanLeftPanel .halo-clean-card').forEach(card => card.classList.remove('active'));
+    const match = [...document.querySelectorAll('#haloCleanLeftPanel .halo-clean-card')].find(card => card.textContent.toLowerCase().includes(type));
+    if(match) match.classList.add('active');
+
+    if(type === 'weather') haloToggleLayer('weather');
+    if(type === 'traffic') addCleanMessage('Traffic network selected.', 'halo');
+    if(type === 'world') addCleanMessage('World Watch selected. Use globe mode for global view.', 'halo');
+    if(type === 'airspace') addCleanMessage('Airspace module is currently a future expansion.', 'halo');
+    if(type === 'system') addCleanMessage('System health nominal. Navigation endpoints online.', 'halo');
+  };
+
+  window.haloFeedAction = function(type){
+    type = String(type || '').toLowerCase();
+    document.querySelectorAll('#haloCleanRightPanel .halo-clean-card').forEach(card => card.classList.remove('active'));
+    const match = [...document.querySelectorAll('#haloCleanRightPanel .halo-clean-card')].find(card => card.textContent.toLowerCase().includes(type));
+    if(match) match.classList.add('active');
+
+    if(type === 'lax' && typeof window.haloNavRun === 'function') window.haloNavRun('lax');
+    else if(type === 'weather') haloToggleLayer('weather');
+    else if(type === 'los angeles') addCleanMessage('Los Angeles feed selected.', 'halo');
+    else addCleanMessage(type.toUpperCase() + ' feed is staged for future expansion.', 'halo');
+  };
+
+  window.haloClosePanel = function(panel){
+    if(panel === 'left') document.getElementById('haloCleanLeftPanel')?.classList.add('closed');
+    if(panel === 'right') document.getElementById('haloCleanRightPanel')?.classList.add('closed');
+    if(panel === 'chat'){
+      document.getElementById('haloCleanMiniChat')?.classList.remove('open');
+      document.getElementById('haloCleanMiniChat')?.classList.add('closed');
+    }
+    if(panel === 'destination'){
+      document.getElementById('haloDestinationBrief')?.classList.add('closed');
+      document.getElementById('haloDestinationIntelCard')?.classList.add('closed');
     }
   };
 
+  window.haloOpenPanel = function(panel){
+    if(panel === 'left') document.getElementById('haloCleanLeftPanel')?.classList.remove('closed');
+    if(panel === 'right') document.getElementById('haloCleanRightPanel')?.classList.remove('closed');
+    if(panel === 'chat') haloOpenCleanChat();
+  };
+
+  window.haloOpenCleanChat = function(){
+    const chat = document.getElementById('haloCleanMiniChat');
+    if(!chat) return;
+    chat.classList.remove('closed');
+    chat.classList.add('open');
+    document.getElementById('haloCleanChatInput')?.focus();
+  };
+
+  // When a new route finishes loading, refresh weather if enabled.
+  const originalFetch = window.fetch;
+  if(originalFetch && !window.__haloCleanPanelFetchWrapped){
+    window.__haloCleanPanelFetchWrapped = true;
+    window.fetch = async function(){
+      const response = await originalFetch.apply(this, arguments);
+      try{
+        const url = String(arguments[0] || '');
+        if(url.includes('/route-plus')){
+          response.clone().json().then(data => {
+            if(data && data.success && data.route){
+              window.__haloPolishPayload = data;
+              setTimeout(() => {
+                if(weatherLayerActive) drawWeatherLayer();
+              }, 900);
+            }
+          }).catch(()=>{});
+        }
+      }catch(e){}
+      return response;
+    };
+  }
+
   const oldOpenMap = window.openHaloAdvancedMap;
-  if(typeof oldOpenMap === 'function' && !window.__haloPanelsOpenWrapped){
-    window.__haloPanelsOpenWrapped = true;
+  if(typeof oldOpenMap === 'function' && !window.__haloCleanPanelsOpenWrapped){
+    window.__haloCleanPanelsOpenWrapped = true;
     window.openHaloAdvancedMap = function(){
       const result = oldOpenMap.apply(this, arguments);
-      setTimeout(ensurePanels, 250);
+      setTimeout(ensureCleanUI, 250);
       return result;
     };
   }
 
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', () => setTimeout(ensurePanels, 800));
+    document.addEventListener('DOMContentLoaded', () => setTimeout(ensureCleanUI, 900));
   }else{
-    setTimeout(ensurePanels, 800);
+    setTimeout(ensureCleanUI, 900);
   }
 
   setInterval(() => {
     const overlay = document.getElementById('haloAdvancedMapOverlay');
-    if(overlay && overlay.classList.contains('active')) ensurePanels();
-  }, 2500);
+    if(overlay && overlay.classList.contains('active')) ensureCleanUI();
+  }, 3000);
 
-  console.log('[HALO PANEL UPGRADE] Global Briefing + Active Feeds loaded');
+  console.log('[HALO CLEAN PANELS] loaded');
 })();
 </script>
 
