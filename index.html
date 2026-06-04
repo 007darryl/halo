@@ -1477,11 +1477,13 @@ async function askHalo(text){
     if(typeof openHaloAdvancedMap === 'function') openHaloAdvancedMap();
     setTimeout(()=>{
       if(typeof window.haloNavRun === 'function'){
+        console.log('Calling haloNavRun for:', destination);
         window.haloNavRun(destination, 'home');
       } else {
         addChat('halo', 'Navigation system not ready. Please open the map first.');
+        console.log('haloNavRun not available');
       }
-    }, 600);
+    }, 1500);
     history.push({role:'assistant', content:msg});
     return;
   }
