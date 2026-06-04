@@ -1423,18 +1423,21 @@ async function askHalo(text){
       })
     }).then(r=>r.json()).then(d=>{
       setOrbState('');
+      console.log('Post response:', d);
       if(d.success){
         playSuccessBeep();
         const found = d.filename || filename;
-        const hasUrl = d.url && d.url.length > 0;
-        const msg = hasUrl 
-          ? `"${found}" deployed across all channels.`
-          : `"${found}" queued — no image URL found. Check Dropbox permissions.`;
+        const msg = `"${found}" deployed across all channels.`;
         addChat('halo', msg);
-        speakText(hasUrl ? `${found} deployed.` : `Queued without image.`);
-        if(typeof showHoloNotif==='function') showHoloNotif('CONTENT QUEUED', found, hasUrl?'success':'warning', 4000);
+        speakText(`${found} deployed.`);
+        if(typeof showHoloNotif==='function') showHoloNotif('CONTENT QUEUED', found, 'success', 4000);
       } else {
-        addChat('halo','Posting issue: '+(d.error||'Unknown error'));
+        // Show actual error reason from server
+        const reason = d.error || 'Unknown error';
+        console.error('Post failed:', reason);
+        addChat('halo', `Posting failed: ${reason}`);
+        speakText('Posting failed. Check logs for details.');
+        if(typeof showHoloNotif==='function') showHoloNotif('POST FAILED', reason.substring(0,80), 'error', 6000);
       }
     }).catch(e=>{
       setOrbState('');
