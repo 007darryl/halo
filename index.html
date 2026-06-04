@@ -11320,5 +11320,207 @@ body:not(.halo-v45-map-active) .halo-v45-panel-tab{
 })();
 </script>
 
+
+<!-- HALO V46 EXACT PLACE DESTINATION FIX -->
+<script id="halo-v46-exact-place-destination-fix-js">
+(function(){
+  if(window.__haloV46ExactPlaceDestinationLoaded) return;
+  window.__haloV46ExactPlaceDestinationLoaded = true;
+
+  function getMap(){
+    try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
+  }
+
+  function getPlaceLocation(place){
+    if(!place) return null;
+
+    const candidates = [
+      place.location,
+      place.geometry?.location,
+      place.coordinates,
+      place.coords,
+      place.position,
+      place
+    ];
+
+    for(const c of candidates){
+      if(!c) continue;
+
+      let lat = c.lat;
+      let lng = c.lng ?? c.lon ?? c.longitude;
+
+      if(typeof lat === 'function') lat = lat();
+      if(typeof lng === 'function') lng = lng();
+
+      lat = Number(lat);
+      lng = Number(lng);
+
+      if(Number.isFinite(lat) && Number.isFinite(lng)){
+        return {lat, lng};
+      }
+    }
+
+    return null;
+  }
+
+  function getExactItem(id){
+    const pools = [
+      window.haloPlaceMarkers,
+      window.haloV32Markers,
+      window.haloSupportMarkers,
+      window.placeMarkers,
+      window.supportMarkers
+    ];
+
+    for(const pool of pools){
+      if(!pool) continue;
+
+      try{
+        if(pool instanceof Map && pool.has(id)) return pool.get(id);
+        if(pool[id]) return pool[id];
+      }catch(e){}
+    }
+
+    // Try DOM row fallback
+    const row = document.querySelector(`[data-v32-id="${CSS.escape(String(id))}"], [data-place-id="${CSS.escape(String(id))}"], [data-halo-place-id="${CSS.escape(String(id))}"]`);
+    if(row){
+      const lat = Number(row.dataset.lat || row.dataset.placeLat || row.getAttribute('data-lat'));
+      const lng = Number(row.dataset.lng || row.dataset.lon || row.dataset.placeLng || row.getAttribute('data-lng'));
+      if(Number.isFinite(lat) && Number.isFinite(lng)){
+        return {
+          lat,
+          lng,
+          place: {
+            name: row.dataset.name || row.textContent.trim().split('\n')[0] || 'Selected place',
+            lat,
+            lng
+          }
+        };
+      }
+    }
+
+    return null;
+  }
+
+  async function getAutoGPSOrigin(){
+    return new Promise(resolve => {
+      if(!navigator.geolocation){
+        resolve('__AUTO_GPS__');
+        return;
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        pos => resolve({
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude
+        }),
+        () => resolve('__AUTO_GPS__'),
+        {enableHighAccuracy:true, timeout:7000, maximumAge:60000}
+      );
+    });
+  }
+
+  async function routeToExactPlace(item){
+    if(!item) return false;
+
+    const place = item.place || item;
+    const loc = getPlaceLocation(place) || getPlaceLocation(item);
+
+    if(!loc){
+      console.warn('[HALO V46] No exact coordinates found for selected place. Refusing text fallback to prevent random routing.', item);
+      if(typeof addChat === 'function'){
+        try{ addChat('halo', 'Exact coordinates missing for that place. I blocked the reroute so it does not send you somewhere random.'); }catch(e){}
+      }
+      return false;
+    }
+
+    const name = place.name || item.name || 'Selected place';
+    const destination = `${loc.lat},${loc.lng}`;
+
+    console.log('[HALO V46] Routing to exact selected place:', {name, destination, loc, item});
+
+    try{
+      if(typeof window.haloV45ClearRouteSupport === 'function') window.haloV45ClearRouteSupport();
+      else if(typeof window.haloV42ClearRouteSupport === 'function') window.haloV42ClearRouteSupport();
+    }catch(e){}
+
+    // Prefer a dedicated reroute function if it accepts coords reliably.
+    try{
+      if(typeof window.haloRerouteTo === 'function'){
+        window.haloRerouteTo(loc.lat, loc.lng, name);
+        return true;
+      }
+    }catch(e){
+      console.warn('[HALO V46] haloRerouteTo failed, falling back to haloNavRun', e);
+    }
+
+    try{
+      const origin = await getAutoGPSOrigin();
+      if(typeof window.haloNavRun === 'function'){
+        window.haloNavRun(destination, origin);
+        return true;
+      }
+      if(typeof window.haloRoutePlusCommand === 'function'){
+        window.haloRoutePlusCommand(destination);
+        return true;
+      }
+    }catch(e){
+      console.error('[HALO V46] Exact place route failed', e);
+    }
+
+    return false;
+  }
+
+  window.haloV46RouteToExactPlace = routeToExactPlace;
+
+  // Override older place destination handlers that used place.address/name and caused random routes.
+  window.haloSetPlaceDestination = function(id){
+    const item = getExactItem(id);
+    routeToExactPlace(item);
+  };
+
+  window.haloV32SetDestination = function(id){
+    const item = getExactItem(id);
+    routeToExactPlace(item);
+  };
+
+  // Catch clicks on exact gas/parking rows and force coord route if a destination button exists.
+  document.addEventListener('click', function(e){
+    const target = e.target;
+    if(!target) return;
+
+    const row = target.closest && target.closest(
+      '[data-v32-id], [data-place-id], [data-halo-place-id], .halo-v32-place-row, .halo-place-row'
+    );
+
+    if(!row) return;
+
+    const clickedRouteAction =
+      /destination|route|go|directions|set/i.test(String(target.textContent || target.title || target.className || '')) ||
+      target.closest('[onclick*="haloSetPlaceDestination"], [onclick*="haloV32SetDestination"]');
+
+    if(!clickedRouteAction && target === row){
+      // Let simple row focus clicks keep working.
+      return;
+    }
+
+    const id = row.dataset.v32Id || row.dataset.placeId || row.dataset.haloPlaceId;
+    if(!id) return;
+
+    const item = getExactItem(id);
+    const loc = item && (getPlaceLocation(item.place || item) || getPlaceLocation(item));
+    if(!loc) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    routeToExactPlace(item);
+  }, true);
+
+  console.log('[HALO V46 EXACT PLACE DESTINATION FIX] loaded');
+})();
+</script>
+
 </body>
 </html>
