@@ -5204,8 +5204,8 @@ window.haloRerouteTo=function(lat,lng,name){
       });
     }
     busy=false;
-  }).catch(()=>{busy=false;if(window.setHaloOrbMode)window.setHaloOrbMode('alert','NAV ERROR');});
-};window.haloNavSelectRoute=i=>{if(payload)draw(payload,i)};window.haloNavFocus=()=>{if(payload)draw(payload,selected)};window.haloNavZoomIn=()=>{let m=map();if(m)m.setZoom(Math.min(15,Math.max(m.getZoom()+1,12)))};window.haloNavClear=()=>{clear();payload=null;let b=document.getElementById('haloNavHUDBody');if(b)b.innerHTML='<div class="halo-nav-destination">Route cleared.</div>'};
+  }).catch(e=>{console.log('Reroute error:',e);busy=false;if(window.setHaloOrbMode)window.setHaloOrbMode('alert','NAV ERROR');});
+};window.haloNavSelectRoute=i=>{if(payload)draw(payload,i)};window.haloNavFocus=()=>{if(payload)draw(payload,selected)};window.haloNavZoomIn=()=>{let m=map();if(m)m.setZoom(Math.min(15,Math.max(m.getZoom()+1,12)))};window.haloNavClear=()=>{clear();payload=null;selected=0;busy=false;let b=document.getElementById('haloNavHUDBody');if(b)b.innerHTML='<div class="halo-nav-destination">Route cleared.</div>'};
 function addUser(t){let f=document.getElementById('chatFeed');if(!f)return;let m=document.createElement('div');m.className='msg user-msg';m.textContent=t;f.appendChild(m);f.scrollTop=f.scrollHeight}
 document.addEventListener('keydown',e=>{if(e.key!=='Enter')return;let input=document.getElementById('textInp');if(!input||document.activeElement!==input)return;let v=input.value||'',d=parse(v);if(!d)return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();addUser(v);input.value='';run(d,'home')},true);
 document.addEventListener('click',e=>{let btn=e.target.closest&&e.target.closest('.send-btn');if(!btn)return;let input=document.getElementById('textInp');if(!input)return;let v=input.value||'',d=parse(v);if(!d)return;e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();addUser(v);input.value='';run(d,'home')},true);
@@ -8924,9 +8924,20 @@ path.halo-transit-route-glow{
 
     const place = entry.place;
     const loc = getPlaceLocation(place);
-    const destination = loc ? `${loc.lat},${loc.lng}` : (place.address || place.name);
+    const name = place.name || entry.type || 'Destination';
 
-    status(`REROUTING // ${String(place.name || entry.type).toUpperCase()}`);
+    status(`REROUTING // ${String(name).toUpperCase()}`);
+
+    // Use coords-based reroute if available — most reliable
+    if(loc && typeof loc.lat === 'number' && typeof loc.lng === 'number'){
+      if(typeof window.haloRerouteTo === 'function'){
+        window.haloRerouteTo(loc.lat, loc.lng, name);
+        return;
+      }
+    }
+
+    // Fallback to name/address routing
+    const destination = loc ? `${loc.lat},${loc.lng}` : (place.address || name);
 
     try{
       if(typeof window.haloNavRun === 'function'){
