@@ -8190,46 +8190,84 @@ path.halo-transit-route-glow{
 </script>
 
 
-<!-- HALO TRANSIT SIDE PANEL + SMOOTH MAP PAN FIX V6 -->
-<style id="halo-transit-side-panel-smooth-pan-v6">
-/* Move transit box out of the map and into the empty right-side space */
+
+
+
+<!-- HALO TRANSIT BETWEEN MAP AND FEEDS LAYOUT FIX V7 -->
+<style id="halo-transit-between-map-feeds-layout-v7">
+/*
+  Final layout:
+  LEFT BRIEF | MAP | TRANSIT INTEL | ACTIVE FEEDS
+  Transit panel no longer blocks the Active Feeds panel.
+*/
+
 #haloTransitIntelPanel{
   position:absolute !important;
-  right:18px !important;
   top:78px !important;
-  bottom:150px !important;
-  width:282px !important;
-  max-height:none !important;
+  right:316px !important; /* sits LEFT of Active Feeds */
+  bottom:18px !important;
+  width:268px !important;
   height:auto !important;
-  z-index:1290 !important;
+  max-height:none !important;
+  z-index:1260 !important;
   border-radius:22px !important;
   border:1px solid rgba(189,112,255,.24) !important;
   background:
     radial-gradient(circle at top right, rgba(189,112,255,.13), transparent 42%),
-    rgba(10,6,28,.84) !important;
+    rgba(10,6,28,.86) !important;
   backdrop-filter:blur(22px) !important;
   -webkit-backdrop-filter:blur(22px) !important;
   box-shadow:0 18px 70px rgba(0,0,0,.45),0 0 40px rgba(189,112,255,.13) !important;
   overflow:hidden !important;
   pointer-events:auto !important;
   resize:none !important;
+  transform:none !important;
 }
 
-/* Hide the right Active Feeds panel while transit intel is open so they don't stack */
-#haloAdvancedMapOverlay:has(#haloTransitIntelPanel.active:not(.closed)) #haloCleanRightPanel,
-#haloAdvancedMapOverlay:has(#haloTransitIntelPanel.active:not(.closed)) #haloActiveFeedsPanel{
-  opacity:0 !important;
-  pointer-events:none !important;
-  transform:translateX(12px) !important;
+#haloTransitIntelPanel.closed{
+  display:none !important;
 }
 
-/* Make map use the available space cleanly */
+#haloAdvancedMapOverlay.active #haloTransitIntelPanel.active:not(.closed){
+  display:block !important;
+}
+
+/* Active Feeds stays visible and remains on the far right */
+#haloCleanRightPanel,
+#haloActiveFeedsPanel{
+  right:18px !important;
+  width:282px !important;
+  opacity:1 !important;
+  pointer-events:auto !important;
+  transform:none !important;
+}
+
+/* When transit is active, shrink map to leave space for both transit + feeds */
 #haloAdvancedMapOverlay:has(#haloTransitIntelPanel.active:not(.closed)) .ham-map-panel,
 #haloAdvancedMapOverlay:has(#haloTransitIntelPanel.active:not(.closed)) .hgi-map-wrap{
-  margin-right:318px !important;
+  margin-left:312px !important;
+  margin-right:604px !important; /* transit 268 + gap + feeds 282 */
+  width:auto !important;
 }
 
-/* Make the transit panel body scroll internally */
+/* If transit is closed, go back to normal map margins */
+#haloAdvancedMapOverlay:not(:has(#haloTransitIntelPanel.active:not(.closed))) .ham-map-panel,
+#haloAdvancedMapOverlay:not(:has(#haloTransitIntelPanel.active:not(.closed))) .hgi-map-wrap{
+  margin-left:312px !important;
+  margin-right:312px !important;
+  width:auto !important;
+}
+
+/* Transit body scrolls internally */
+#haloTransitIntelPanel .halo-transit-head{
+  height:58px !important;
+  position:sticky !important;
+  top:0 !important;
+  z-index:3 !important;
+  background:rgba(10,6,28,.94) !important;
+  backdrop-filter:blur(14px) !important;
+}
+
 #haloTransitIntelPanel .halo-transit-body,
 #haloTransitIntelBody{
   max-height:calc(100% - 58px) !important;
@@ -8237,24 +8275,33 @@ path.halo-transit-route-glow{
   padding-right:12px !important;
 }
 
-#haloTransitIntelPanel .halo-transit-head{
-  position:sticky !important;
-  top:0 !important;
-  z-index:2 !important;
-  background:rgba(10,6,28,.92) !important;
-  backdrop-filter:blur(14px) !important;
-}
-
-/* Add a small button to bring feeds back by closing transit */
 #haloTransitIntelPanel .halo-transit-close{
   width:34px !important;
   height:34px !important;
   border-radius:50% !important;
   display:grid !important;
   place-items:center !important;
+  pointer-events:auto !important;
+  z-index:30 !important;
 }
 
-/* Smooth Leaflet movement */
+/* Move top controls so they do not collide with transit/feeds */
+#haloCleanMapToggles{
+  right:604px !important;
+}
+
+#haloMapLayerControls{
+  right:604px !important;
+}
+
+/* Keep route/nav HUD from colliding */
+#haloNavHUD{
+  left:328px !important;
+  bottom:18px !important;
+  max-height:34vh !important;
+}
+
+/* Smooth map movement */
 .leaflet-map-pane{
   transition:transform .42s cubic-bezier(.2,.85,.2,1) !important;
 }
@@ -8264,21 +8311,7 @@ path.halo-transit-route-glow{
   transition-timing-function:cubic-bezier(.2,.85,.2,1) !important;
 }
 
-.leaflet-marker-icon,
-.leaflet-overlay-pane path{
-  transition:opacity .22s ease, filter .22s ease !important;
-}
-
-/* Keep command/status buttons out of the way */
-#haloCleanMapToggles{
-  right:318px !important;
-}
-
-#haloMapCommandStatus{
-  top:18px !important;
-}
-
-/* Transit panel compact typography */
+/* Compact transit panel text */
 #haloTransitIntelPanel .halo-transit-title{
   font-size:15px !important;
   letter-spacing:1.4px !important;
@@ -8289,26 +8322,64 @@ path.halo-transit-route-glow{
   gap:7px !important;
 }
 
-#haloTransitIntelPanel .halo-transit-lite-line{
+#haloTransitIntelPanel .halo-transit-lite-line,
+#haloTransitIntelPanel .halo-transit-step{
   font-size:11px !important;
   line-height:1.42 !important;
 }
 
-/* Mobile fallback */
-@media(max-width:1050px){
+/* Responsive fallbacks */
+@media(max-width:1350px){
   #haloTransitIntelPanel{
-    right:14px !important;
-    width:260px !important;
-    bottom:120px !important;
+    width:240px !important;
+    right:276px !important;
+  }
+
+  #haloCleanRightPanel,
+  #haloActiveFeedsPanel{
+    width:245px !important;
+    right:18px !important;
   }
 
   #haloAdvancedMapOverlay:has(#haloTransitIntelPanel.active:not(.closed)) .ham-map-panel,
   #haloAdvancedMapOverlay:has(#haloTransitIntelPanel.active:not(.closed)) .hgi-map-wrap{
-    margin-right:286px !important;
+    margin-left:260px !important;
+    margin-right:530px !important;
   }
 
-  #haloCleanMapToggles{
-    right:286px !important;
+  #haloAdvancedMapOverlay:not(:has(#haloTransitIntelPanel.active:not(.closed))) .ham-map-panel,
+  #haloAdvancedMapOverlay:not(:has(#haloTransitIntelPanel.active:not(.closed))) .hgi-map-wrap{
+    margin-left:260px !important;
+    margin-right:260px !important;
+  }
+
+  #haloCleanMapToggles,
+  #haloMapLayerControls{
+    right:530px !important;
+  }
+}
+
+@media(max-width:1050px){
+  #haloTransitIntelPanel{
+    right:14px !important;
+    width:270px !important;
+    bottom:120px !important;
+  }
+
+  #haloCleanRightPanel,
+  #haloActiveFeedsPanel{
+    display:none !important;
+  }
+
+  #haloAdvancedMapOverlay:has(#haloTransitIntelPanel.active:not(.closed)) .ham-map-panel,
+  #haloAdvancedMapOverlay:has(#haloTransitIntelPanel.active:not(.closed)) .hgi-map-wrap{
+    margin-left:252px !important;
+    margin-right:300px !important;
+  }
+
+  #haloCleanMapToggles,
+  #haloMapLayerControls{
+    right:300px !important;
   }
 }
 
@@ -8324,12 +8395,18 @@ path.halo-transit-route-glow{
 
   #haloAdvancedMapOverlay:has(#haloTransitIntelPanel.active:not(.closed)) .ham-map-panel,
   #haloAdvancedMapOverlay:has(#haloTransitIntelPanel.active:not(.closed)) .hgi-map-wrap{
+    margin-left:14px !important;
     margin-right:14px !important;
+  }
+
+  #haloCleanMapToggles,
+  #haloMapLayerControls{
+    right:16px !important;
   }
 }
 </style>
 
-<script id="halo-transit-side-panel-smooth-pan-v6-js">
+<script id="halo-transit-between-map-feeds-layout-v7-js">
 (function(){
   function getMap(){
     try{
@@ -8339,11 +8416,11 @@ path.halo-transit-route-glow{
     }
   }
 
-  function makeMapSmooth(){
+  function applySmoothMap(){
     const map = getMap();
-    if(!map || map.__haloSmoothPanApplied) return;
+    if(!map || map.__haloV7SmoothApplied) return;
 
-    map.__haloSmoothPanApplied = true;
+    map.__haloV7SmoothApplied = true;
 
     try{
       map.options.zoomAnimation = true;
@@ -8357,85 +8434,79 @@ path.halo-transit-route-glow{
       map.options.wheelPxPerZoomLevel = 95;
     }catch(e){}
 
-    const originalSetView = map.setView.bind(map);
+    const oldSetView = map.setView.bind(map);
     map.setView = function(center, zoom, options){
-      return originalSetView(center, zoom, Object.assign({
+      return oldSetView(center, zoom, Object.assign({
         animate:true,
         duration:1.05,
         easeLinearity:0.18
       }, options || {}));
     };
 
-    const originalPanTo = map.panTo.bind(map);
+    const oldPanTo = map.panTo.bind(map);
     map.panTo = function(center, options){
-      return originalPanTo(center, Object.assign({
+      return oldPanTo(center, Object.assign({
         animate:true,
         duration:1.05,
         easeLinearity:0.18
       }, options || {}));
     };
 
-    if(map.flyTo){
-      const originalFlyTo = map.flyTo.bind(map);
-      map.flyTo = function(center, zoom, options){
-        return originalFlyTo(center, zoom, Object.assign({
+    if(map.fitBounds){
+      const oldFitBounds = map.fitBounds.bind(map);
+      map.fitBounds = function(bounds, options){
+        return oldFitBounds(bounds, Object.assign({
           animate:true,
-          duration:1.35,
+          duration:1.15,
           easeLinearity:0.18
         }, options || {}));
       };
     }
-
-    if(map.fitBounds){
-      const originalFitBounds = map.fitBounds.bind(map);
-      map.fitBounds = function(bounds, options){
-        return originalFitBounds(bounds, Object.assign({
-          animate:true,
-          duration:1.15,
-          easeLinearity:0.18,
-          paddingTopLeft:[90,90],
-          paddingBottomRight:[90,90]
-        }, options || {}));
-      };
-    }
-
-    console.log('[HALO SMOOTH MAP] applied');
   }
 
-  function moveTransitPanelToOverlay(){
+  function moveTransitPanelToOverlayRoot(){
     const overlay = document.getElementById('haloAdvancedMapOverlay');
     const panel = document.getElementById('haloTransitIntelPanel');
     if(!overlay || !panel) return;
 
-    // Move panel to overlay root so it's in the right empty space, not inside the map pane.
     if(panel.parentElement !== overlay){
       overlay.appendChild(panel);
     }
 
     const close = panel.querySelector('.halo-transit-close');
-    if(close && close.dataset.sidePanelCloseBound !== 'true'){
-      close.dataset.sidePanelCloseBound = 'true';
+    if(close && close.dataset.v7CloseBound !== 'true'){
+      close.dataset.v7CloseBound = 'true';
       close.addEventListener('click', e => {
         e.preventDefault();
         e.stopPropagation();
         panel.classList.add('closed');
         panel.classList.remove('active');
 
-        // Bring Active Feeds back visually after closing transit.
-        const feeds = document.getElementById('haloCleanRightPanel') || document.getElementById('haloActiveFeedsPanel');
-        if(feeds){
-          feeds.style.opacity = '';
-          feeds.style.pointerEvents = '';
-          feeds.style.transform = '';
+        const map = getMap();
+        if(map){
+          setTimeout(() => {
+            try{ map.invalidateSize({animate:true}); }catch(err){}
+          }, 220);
         }
       }, true);
     }
   }
 
-  // When transit starts, force panel to side and keep map smooth.
+  function refreshLayout(){
+    moveTransitPanelToOverlayRoot();
+    applySmoothMap();
+
+    const map = getMap();
+    if(map){
+      setTimeout(() => {
+        try{ map.invalidateSize({animate:true}); }catch(e){}
+      }, 260);
+    }
+  }
+
   const originalFetch = window.fetch;
-  if(originalFetch && !window.__haloTransitSidePanelFetchWrapped){
-    window.__haloTransitSidePanelFetchWrapped = true;
+  if(originalFetch && !window.__haloV7TransitLayoutFetchWrapped){
+    window.__haloV7TransitLayoutFetchWrapped = true;
 
     window.fetch = async function(){
       const response = await originalFetch.apply(this, arguments);
@@ -8444,21 +8515,12 @@ path.halo-transit-route-glow{
         const url = String(arguments[0] || '');
         if(url.includes('/transit-intel')){
           setTimeout(() => {
-            moveTransitPanelToOverlay();
-            makeMapSmooth();
-
             const panel = document.getElementById('haloTransitIntelPanel');
             if(panel){
               panel.classList.remove('closed');
               panel.classList.add('active');
             }
-
-            const map = getMap();
-            if(map){
-              setTimeout(() => {
-                try{ map.invalidateSize({animate:true}); }catch(e){}
-              }, 250);
-            }
+            refreshLayout();
           }, 250);
         }
       }catch(e){}
@@ -8468,33 +8530,22 @@ path.halo-transit-route-glow{
   }
 
   const oldOpenMap = window.openHaloAdvancedMap;
-  if(typeof oldOpenMap === 'function' && !window.__haloSmoothOpenWrapped){
-    window.__haloSmoothOpenWrapped = true;
+  if(typeof oldOpenMap === 'function' && !window.__haloV7OpenWrapped){
+    window.__haloV7OpenWrapped = true;
     window.openHaloAdvancedMap = function(){
       const result = oldOpenMap.apply(this, arguments);
-      setTimeout(() => {
-        makeMapSmooth();
-        moveTransitPanelToOverlay();
-      }, 450);
+      setTimeout(refreshLayout, 450);
       return result;
     };
   }
 
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', () => {
-      setTimeout(() => {
-        makeMapSmooth();
-        moveTransitPanelToOverlay();
-      }, 1200);
-    });
+    document.addEventListener('DOMContentLoaded', () => setTimeout(refreshLayout, 1200));
   }else{
-    setTimeout(() => {
-      makeMapSmooth();
-      moveTransitPanelToOverlay();
-    }, 1200);
+    setTimeout(refreshLayout, 1200);
   }
 
-  console.log('[HALO TRANSIT SIDE PANEL + SMOOTH PAN] loaded');
+  console.log('[HALO V7 TRANSIT BETWEEN MAP AND FEEDS] loaded');
 })();
 </script>
 
