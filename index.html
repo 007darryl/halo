@@ -11506,5 +11506,442 @@ path.halo-transit-route-glow{
 })();
 </script>
 
+
+<!-- HALO V22 EXACT ROW CLICK FIX - NO RANDOM LOCATIONS -->
+<style id="halo-v22-exact-row-click-fix">
+/* V22 exact list: replaces ambiguous gas/parking clicks with exact coordinate rows */
+#haloV22ExactPlaces{
+  margin-top:10px !important;
+  padding-bottom:18px !important;
+  display:block !important;
+  visibility:visible !important;
+}
+
+.halo-v22-section-title{
+  font-family:'JetBrains Mono',monospace;
+  font-size:7px;
+  letter-spacing:1.5px;
+  color:#00eaff;
+  margin:10px 0 6px;
+  opacity:.9;
+}
+
+.halo-v22-place-row{
+  cursor:pointer !important;
+  border:1px solid rgba(0,234,255,.12);
+  border-radius:12px;
+  padding:8px 9px;
+  margin-bottom:6px;
+  background:rgba(0,10,26,.42);
+  color:rgba(235,250,255,.82);
+  font-size:10px;
+  line-height:1.25;
+  transition:.15s ease;
+  pointer-events:auto !important;
+  opacity:1 !important;
+}
+
+.halo-v22-place-row:hover{
+  border-color:rgba(0,234,255,.52);
+  background:rgba(0,234,255,.08);
+  transform:translateX(2px);
+}
+
+.halo-v22-place-name{
+  display:block;
+  color:#eaffff;
+  font-weight:700;
+  white-space:normal;
+}
+
+.halo-v22-place-address{
+  display:block;
+  margin-top:3px;
+  color:rgba(235,250,255,.58);
+  font-size:8px;
+  line-height:1.25;
+}
+
+.halo-v22-place-meta{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  margin-top:4px;
+  font-family:'JetBrains Mono', monospace;
+  color:#00eaff;
+  font-size:8px;
+}
+
+/* Disable ONLY older ambiguous gas/parking rows, not route option rows */
+#haloNavHUD .halo-v22-disabled-old-place{
+  pointer-events:none !important;
+  opacity:.35 !important;
+}
+
+/* Hide previous failed exact-list attempts */
+#haloV20ExactPlaces{
+  display:none !important;
+}
+
+.halo-v20-place-row{
+  display:none !important;
+}
+
+.halo-v22-marker{
+  width:28px;
+  height:28px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  border:1px solid currentColor;
+  background:rgba(0,10,26,.94);
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px;
+  font-weight:800;
+  box-shadow:0 0 20px currentColor,0 0 42px rgba(0,0,0,.45);
+}
+
+.halo-v22-marker.gas{ color:#ff4545; }
+.halo-v22-marker.parking{ color:#bd70ff; }
+
+.halo-v22-popup{
+  min-width:215px;
+}
+
+.halo-v22-popup-title{
+  font-family:'Space Grotesk',sans-serif;
+  color:#eaffff;
+  font-weight:700;
+  font-size:14px;
+  margin-bottom:5px;
+}
+
+.halo-v22-popup-meta{
+  color:rgba(230,250,255,.76);
+  font-size:11px;
+  line-height:1.45;
+  margin-bottom:10px;
+}
+
+.halo-v22-popup-actions{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+}
+
+.halo-v22-popup-btn{
+  border:1px solid rgba(0,234,255,.24);
+  background:rgba(0,234,255,.08);
+  color:#00eaff;
+  border-radius:999px;
+  padding:7px 9px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:7px;
+  letter-spacing:1px;
+  cursor:pointer;
+}
+
+.halo-v22-popup-btn.dest{
+  border-color:rgba(0,255,157,.24);
+  background:rgba(0,255,157,.07);
+  color:#00ff9d;
+}
+</style>
+
+<script id="halo-v22-exact-row-click-fix-js">
+(function(){
+  let latestPayloadV22 = null;
+  let exactPlacesV22 = {};
+  let exactMarkersV22 = {};
+
+  function getMap(){
+    try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
+  }
+
+  function esc(str){
+    return String(str ?? '').replace(/[&<>"']/g, m => ({
+      '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#039;'
+    })[m]);
+  }
+
+  function getLoc(place){
+    const loc = place?.location || {};
+    const lat = loc.latitude ?? loc.lat;
+    const lng = loc.longitude ?? loc.lng;
+    if(typeof lat !== 'number' || typeof lng !== 'number') return null;
+    return {lat,lng};
+  }
+
+  function makeId(type, index, place){
+    const name = String(place?.name || type);
+    const address = String(place?.address || place?.formattedAddress || '');
+    const loc = getLoc(place);
+    const raw = `${type}_${index}_${name}_${address}_${loc ? loc.lat + '_' + loc.lng : ''}`;
+    return raw.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,90);
+  }
+
+  function markerHtml(type){
+    return `<div class="halo-v22-marker ${type}">${type === 'parking' ? 'P' : 'G'}</div>`;
+  }
+
+  function popupHtml(id){
+    const item = exactPlacesV22[id];
+    if(!item) return '';
+    const p = item.place;
+    return `
+      <div class="halo-v22-popup">
+        <div class="halo-v22-popup-title">${esc(p.name || item.type)}</div>
+        <div class="halo-v22-popup-meta">
+          ${esc(p.address || p.formattedAddress || '')}<br>
+          ${item.type.toUpperCase()} ${p.rating ? '· ' + esc(p.rating) + '★' : ''}
+        </div>
+        <div class="halo-v22-popup-actions">
+          <button class="halo-v22-popup-btn" onclick="haloV22OpenDirections('${id}')">NAVIGATE</button>
+          <button class="halo-v22-popup-btn dest" onclick="haloV22SetDestination('${id}')">SET DESTINATION</button>
+        </div>
+      </div>
+    `;
+  }
+
+  function ensureMarker(id){
+    const item = exactPlacesV22[id];
+    const map = getMap();
+
+    if(!item || !map || typeof L === 'undefined') return null;
+    if(exactMarkersV22[id]) return exactMarkersV22[id];
+
+    const marker = L.marker([item.lat, item.lng], {
+      icon:L.divIcon({
+        className:'',
+        html:markerHtml(item.type),
+        iconSize:[28,28],
+        iconAnchor:[14,14],
+        popupAnchor:[0,-16]
+      })
+    }).addTo(map);
+
+    marker.bindPopup(popupHtml(id), {className:'ham-popup'});
+    exactMarkersV22[id] = marker;
+
+    return marker;
+  }
+
+  function registerPayload(payload){
+    if(!payload || (!payload.gas && !payload.parking)) return false;
+
+    latestPayloadV22 = payload;
+    exactPlacesV22 = {};
+
+    const groups = [
+      {type:'gas', items:payload.gas || []},
+      {type:'parking', items:payload.parking || []}
+    ];
+
+    groups.forEach(group => {
+      group.items.forEach((place, index) => {
+        const loc = getLoc(place);
+        if(!loc) return;
+
+        const id = makeId(group.type, index, place);
+        place.__haloV22Id = id;
+
+        exactPlacesV22[id] = {
+          id,
+          type:group.type,
+          place,
+          lat:loc.lat,
+          lng:loc.lng,
+          index
+        };
+      });
+    });
+
+    return Object.keys(exactPlacesV22).length > 0;
+  }
+
+  function getFallbackPayload(){
+    return (
+      latestPayloadV22 ||
+      window.__haloPolishPayload ||
+      window.__haloStreetRoutePayload ||
+      window.__haloLastRoutePayloadVisibilityFix ||
+      null
+    );
+  }
+
+  function renderExactList(){
+    const payload = getFallbackPayload();
+    const nav = document.getElementById('haloNavHUD');
+
+    if(!nav || !payload) return;
+    if(!registerPayload(payload)) return;
+
+    let body = nav.querySelector('.halo-nav-body') || nav;
+    let area = nav.querySelector('#haloV22ExactPlaces');
+
+    if(!area){
+      area = document.createElement('div');
+      area.id = 'haloV22ExactPlaces';
+      body.appendChild(area);
+    }
+
+    const gasItems = Object.values(exactPlacesV22).filter(x => x.type === 'gas').slice(0,5);
+    const parkingItems = Object.values(exactPlacesV22).filter(x => x.type === 'parking').slice(0,5);
+
+    function row(item){
+      const p = item.place;
+      const rating = p.rating ? `${esc(p.rating)}★` : '';
+      return `
+        <div class="halo-v22-place-row" data-v22-id="${item.id}">
+          <span class="halo-v22-place-name">${item.type === 'gas' ? '⛽' : 'Ⓟ'} ${esc(p.name || item.type)}</span>
+          <span class="halo-v22-place-address">${esc(p.address || p.formattedAddress || '')}</span>
+          <span class="halo-v22-place-meta">
+            <span>${item.type === 'gas' ? 'GAS' : 'PARK'}</span>
+            <span>${rating}</span>
+          </span>
+        </div>
+      `;
+    }
+
+    area.innerHTML = `
+      <div class="halo-v22-section-title">EXACT GAS STATIONS</div>
+      ${gasItems.map(row).join('') || '<div class="halo-v22-place-row">No gas returned.</div>'}
+      <div class="halo-v22-section-title">EXACT PARKING</div>
+      ${parkingItems.map(row).join('') || '<div class="halo-v22-place-row">No parking returned.</div>'}
+    `;
+
+    disableOldAmbiguousRows(nav, gasItems, parkingItems);
+  }
+
+  function disableOldAmbiguousRows(nav, gasItems, parkingItems){
+    const names = gasItems.concat(parkingItems)
+      .map(item => String(item.place?.name || '').toLowerCase())
+      .filter(Boolean);
+
+    const rows = Array.from(nav.querySelectorAll('.halo-nav-row, .halo-place-clickable, .halo-v17-exact-place, .halo-v19-exact-place-row'));
+
+    rows.forEach(row => {
+      if(row.closest('#haloV22ExactPlaces')) return;
+
+      const text = String(row.textContent || '').toLowerCase();
+
+      // Do not disable route options.
+      if(text.includes('recommended') || text.includes('option')) return;
+
+      if(names.some(name => text.includes(name))){
+        row.classList.add('halo-v22-disabled-old-place');
+        row.onclick = null;
+      }
+    });
+  }
+
+  window.haloV22FocusPlace = function(id){
+    const item = exactPlacesV22[id];
+    const map = getMap();
+    if(!item || !map) return;
+
+    const marker = ensureMarker(id);
+
+    try{
+      if(map.flyTo){
+        map.flyTo([item.lat, item.lng], 16, {animate:true, duration:1.1, easeLinearity:.18});
+      }else{
+        map.setView([item.lat, item.lng], 16, {animate:true});
+      }
+    }catch(e){}
+
+    setTimeout(() => {
+      try{ if(marker) marker.openPopup(); }catch(e){}
+    }, 450);
+  };
+
+  window.haloV22OpenDirections = function(id){
+    const item = exactPlacesV22[id];
+    if(!item) return;
+    window.open(`https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}`, '_blank');
+  };
+
+  window.haloV22SetDestination = function(id){
+    const item = exactPlacesV22[id];
+    if(!item) return;
+
+    const p = item.place;
+    const destination = p.address || p.formattedAddress || `${item.lat},${item.lng}`;
+
+    if(typeof window.haloNavRun === 'function'){
+      window.haloNavRun(destination, 'home');
+    }else if(typeof window.haloRoutePlusCommand === 'function'){
+      window.haloRoutePlusCommand(destination);
+    }
+  };
+
+  // Event delegation beats stale inline onclick handlers.
+  document.addEventListener('click', function(e){
+    const row = e.target.closest && e.target.closest('#haloV22ExactPlaces .halo-v22-place-row[data-v22-id]');
+    if(!row) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    const id = row.dataset.v22Id;
+    window.haloV22FocusPlace(id);
+  }, true);
+
+  function applyV22(){
+    renderExactList();
+  }
+
+  const originalFetch = window.fetch;
+  if(originalFetch && !window.__haloV22FetchWrapped){
+    window.__haloV22FetchWrapped = true;
+
+    window.fetch = async function(){
+      const response = await originalFetch.apply(this, arguments);
+
+      try{
+        const url = String(arguments[0] || '');
+        if(url.includes('/route-plus')){
+          response.clone().json().then(data => {
+            if(data && data.success){
+              latestPayloadV22 = data;
+              window.__haloV22Payload = data;
+              setTimeout(applyV22, 800);
+              setTimeout(applyV22, 1800);
+              setTimeout(applyV22, 2800);
+            }
+          }).catch(()=>{});
+        }
+
+        if(url.includes('/route-intel')){
+          setTimeout(applyV22, 1000);
+          setTimeout(applyV22, 2200);
+        }
+      }catch(err){}
+
+      return response;
+    };
+  }
+
+  const oldOpenMap = window.openHaloAdvancedMap;
+  if(typeof oldOpenMap === 'function' && !window.__haloV22OpenWrapped){
+    window.__haloV22OpenWrapped = true;
+    window.openHaloAdvancedMap = function(){
+      const result = oldOpenMap.apply(this, arguments);
+      setTimeout(applyV22, 1200);
+      return result;
+    };
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => setTimeout(applyV22, 1800));
+  }else{
+    setTimeout(applyV22, 1800);
+  }
+
+  console.log('[HALO V22 EXACT ROW CLICK FIX] loaded');
+})();
+</script>
+
 </body>
 </html>
