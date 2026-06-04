@@ -10304,5 +10304,327 @@ path.halo-transit-route-glow{
 })();
 </script>
 
+
+<!-- HALO V35 PANEL CLOSE OVERRIDE FIX -->
+<style id="halo-v35-panel-close-override-fix">
+/*
+  V35:
+  Older patches force #haloNavHUD and #haloDestinationBrief visible with display:block !important.
+  This uses stronger ID-specific selectors so close/clear actually hides them.
+*/
+
+#haloNavHUD.halo-v35-force-hidden,
+#haloDestinationBrief.halo-v35-force-hidden,
+#haloDestinationIntelCard.halo-v35-force-hidden,
+body #haloAdvancedMapOverlay #haloNavHUD.halo-v35-force-hidden,
+body #haloAdvancedMapOverlay #haloDestinationBrief.halo-v35-force-hidden,
+body #haloAdvancedMapOverlay #haloDestinationIntelCard.halo-v35-force-hidden{
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+  transform:translateX(-99999px) !important;
+  width:0 !important;
+  min-width:0 !important;
+  max-width:0 !important;
+  height:0 !important;
+  min-height:0 !important;
+  max-height:0 !important;
+  overflow:hidden !important;
+}
+
+/* Re-open state when + is pressed */
+#haloNavHUD.halo-v35-visible,
+#haloDestinationBrief.halo-v35-visible,
+#haloDestinationIntelCard.halo-v35-visible{
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  pointer-events:auto !important;
+}
+
+/* Add a small restore pill when panels are closed */
+#haloV35RestorePanels{
+  position:absolute;
+  left:50%;
+  bottom:62px;
+  transform:translateX(-50%);
+  z-index:2200;
+  display:none;
+  gap:8px;
+  align-items:center;
+  border:1px solid rgba(0,234,255,.24);
+  background:rgba(0,10,26,.86);
+  color:#00eaff;
+  border-radius:999px;
+  padding:9px 14px;
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  letter-spacing:1.4px;
+  cursor:pointer;
+  box-shadow:0 0 24px rgba(0,234,255,.14);
+}
+
+#haloV35RestorePanels.active{
+  display:flex;
+}
+</style>
+
+<script id="halo-v35-panel-close-override-fix-js">
+(function(){
+  function getMap(){
+    try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
+  }
+
+  function panels(){
+    return [
+      document.getElementById('haloNavHUD'),
+      document.getElementById('haloDestinationBrief'),
+      document.getElementById('haloDestinationIntelCard')
+    ].filter(Boolean);
+  }
+
+  function invalidate(){
+    const map = getMap();
+    if(map){
+      setTimeout(() => {
+        try{ map.invalidateSize({animate:true}); }catch(e){}
+      }, 150);
+    }
+  }
+
+  function ensureRestoreButton(){
+    let btn = document.getElementById('haloV35RestorePanels');
+    if(btn) return btn;
+
+    const overlay = document.getElementById('haloAdvancedMapOverlay') || document.body;
+    btn = document.createElement('button');
+    btn.id = 'haloV35RestorePanels';
+    btn.type = 'button';
+    btn.textContent = 'RESTORE PANELS';
+    overlay.appendChild(btn);
+
+    btn.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      showPanels();
+    }, true);
+
+    return btn;
+  }
+
+  function showRestore(){
+    ensureRestoreButton().classList.add('active');
+  }
+
+  function hideRestore(){
+    ensureRestoreButton().classList.remove('active');
+  }
+
+  function hardHidePanel(panel){
+    if(!panel) return;
+
+    panel.classList.add('halo-v35-force-hidden');
+    panel.classList.add('halo-v34-force-hidden');
+    panel.classList.add('halo-v31-hidden');
+    panel.classList.add('halo-v30-hidden');
+    panel.classList.add('closed');
+    panel.classList.remove('active');
+    panel.classList.remove('halo-v35-visible');
+
+    panel.setAttribute('aria-hidden','true');
+
+    // Inline styles too, but CSS above is the real win.
+    panel.style.setProperty('display','none','important');
+    panel.style.setProperty('visibility','hidden','important');
+    panel.style.setProperty('opacity','0','important');
+    panel.style.setProperty('pointer-events','none','important');
+    panel.style.setProperty('transform','translateX(-99999px)','important');
+    panel.style.setProperty('width','0','important');
+    panel.style.setProperty('height','0','important');
+    panel.style.setProperty('max-width','0','important');
+    panel.style.setProperty('max-height','0','important');
+    panel.style.setProperty('overflow','hidden','important');
+  }
+
+  function hidePanels(){
+    panels().forEach(hardHidePanel);
+    showRestore();
+    invalidate();
+    console.log('[HALO V35] panels hidden');
+  }
+
+  function showPanels(){
+    panels().forEach(panel => {
+      panel.classList.remove('halo-v35-force-hidden');
+      panel.classList.remove('halo-v34-force-hidden');
+      panel.classList.remove('halo-v31-hidden');
+      panel.classList.remove('halo-v30-hidden');
+      panel.classList.remove('closed');
+      panel.classList.add('active');
+      panel.classList.add('halo-v35-visible');
+      panel.removeAttribute('aria-hidden');
+
+      [
+        'display','visibility','opacity','pointer-events','transform',
+        'width','height','min-width','max-width','min-height','max-height','overflow'
+      ].forEach(prop => panel.style.removeProperty(prop));
+    });
+
+    hideRestore();
+    invalidate();
+    console.log('[HALO V35] panels restored');
+  }
+
+  function clearRouteVisuals(){
+    const map = getMap();
+
+    try{ if(map) map.closePopup(); }catch(e){}
+    document.querySelectorAll('.leaflet-popup-close-button').forEach(btn => {
+      try{ btn.click(); }catch(e){}
+    });
+
+    if(map && typeof L !== 'undefined'){
+      try{
+        map.eachLayer(layer => {
+          if(!layer) return;
+
+          if(layer instanceof L.Polyline && !(layer instanceof L.Polygon)){
+            const opts = layer.options || {};
+            const cls = String(opts.className || '').toLowerCase();
+            const color = String(opts.color || '').toLowerCase();
+            if(cls.includes('route') || cls.includes('halo') || color.includes('00ff') || color.includes('00e') || color.includes('green') || color.includes('cyan') || color.includes('purple')){
+              try{ map.removeLayer(layer); }catch(e){}
+            }
+          }
+
+          if(layer instanceof L.Marker){
+            const icon = layer.getElement && layer.getElement();
+            const html = icon ? String(icon.innerHTML || '').toLowerCase() : '';
+            const cls = icon ? String(icon.className || '').toLowerCase() : '';
+            if(html.includes('gas') || html.includes('parking') || html.includes('halo-v32-marker') || cls.includes('gas') || cls.includes('parking')){
+              try{ map.removeLayer(layer); }catch(e){}
+            }
+          }
+        });
+      }catch(e){}
+    }
+
+    [
+      'currentRoute','activeDestination','routePlusData','haloRoutePlusData',
+      '__haloV32Payload','__haloV31Payload','__haloPolishPayload',
+      '__haloStreetRoutePayload','__haloLastRoutePayloadVisibilityFix'
+    ].forEach(k => {
+      try{ window[k] = null; }catch(e){}
+    });
+  }
+
+  function clearAndHide(){
+    // Run older clear first if available, but don't let it re-show panels afterward.
+    try{
+      if(typeof window.haloClearRouteStateV33 === 'function' && !window.__haloV35CallingOld){
+        window.__haloV35CallingOld = true;
+        window.haloClearRouteStateV33();
+        window.__haloV35CallingOld = false;
+      }
+    }catch(e){
+      window.__haloV35CallingOld = false;
+    }
+
+    clearRouteVisuals();
+    hidePanels();
+
+    // Some older intervals re-open panels after clear. Re-hide after them.
+    setTimeout(hidePanels, 120);
+    setTimeout(hidePanels, 500);
+    setTimeout(hidePanels, 1200);
+  }
+
+  window.haloV35HidePanels = hidePanels;
+  window.haloV35ShowPanels = showPanels;
+  window.haloV35ClearAndHidePanels = clearAndHide;
+
+  function bindTopPanelButtons(){
+    panels().forEach(panel => {
+      const buttons = Array.from(panel.querySelectorAll('button, [role="button"], .halo-v31-btn, .halo-v34-btn, .halo-v33-btn, .halo-v32-btn'));
+      buttons.forEach(btn => {
+        const text = String(btn.textContent || btn.innerText || '').trim();
+        const label = String(btn.getAttribute('title') || btn.getAttribute('aria-label') || '').toLowerCase();
+
+        const isClose = text === '×' || text.toLowerCase() === 'x' || label.includes('close');
+        const isRestore = text === '+' || label.includes('restore') || label.includes('expand');
+
+        if(isClose && btn.dataset.v35CloseBound !== 'true'){
+          btn.dataset.v35CloseBound = 'true';
+          btn.addEventListener('click', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            hardHidePanel(panel);
+            showRestore();
+            invalidate();
+          }, true);
+        }
+
+        if(isRestore && btn.dataset.v35RestoreBound !== 'true'){
+          btn.dataset.v35RestoreBound = 'true';
+          btn.addEventListener('click', e => {
+            e.preventDefault();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            showPanels();
+          }, true);
+        }
+      });
+    });
+  }
+
+  function bindMapClear(){
+    const all = Array.from(document.querySelectorAll('button, .ham-map-control, .ham-control, [role="button"], .leaflet-control *'));
+    all.forEach(el => {
+      const text = String(el.textContent || el.innerText || '').trim().toLowerCase();
+      const id = String(el.id || '').toLowerCase();
+      const cls = String(el.className || '').toLowerCase();
+
+      const isClear = text === 'clear' || id.includes('clear') || cls.includes('clear');
+      if(!isClear || el.dataset.v35ClearBound === 'true') return;
+
+      el.dataset.v35ClearBound = 'true';
+      el.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        clearAndHide();
+      }, true);
+    });
+  }
+
+  function bind(){
+    ensureRestoreButton();
+    bindTopPanelButtons();
+    bindMapClear();
+  }
+
+  const obs = new MutationObserver(bind);
+  obs.observe(document.documentElement, {childList:true, subtree:true});
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => {
+      bind();
+      setTimeout(bind, 500);
+      setTimeout(bind, 1500);
+    });
+  }else{
+    bind();
+    setTimeout(bind, 500);
+    setTimeout(bind, 1500);
+  }
+
+  setInterval(bind, 2000);
+
+  console.log('[HALO V35 PANEL CLOSE OVERRIDE FIX] loaded');
+})();
+</script>
+
 </body>
 </html>
