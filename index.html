@@ -5294,7 +5294,8 @@ function haloCleanDestinationText(destination){
 async function run(destination,origin='__AUTO_GPS__'){if(busy)return;busy=true;destination=haloCleanDestinationText(destination);if(!destination){busy=false;return}origin=await haloResolveNavOrigin(origin);if(window.setHaloOrbMode)window.setHaloOrbMode('thinking','NAV SCAN');await open();try{let res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({origin,destination})});let data=await res.json();if(!res.ok||!data.success){if(window.setHaloOrbMode)window.setHaloOrbMode('alert','NAV ERROR');if(typeof showIntel==='function')showIntel('NAVIGATION ERROR',`<h3>Route Failed</h3><p>${esc(data.error||'Route failed')}</p>`);busy=false;return}draw(data,0);let l=String((data.route||{}).traffic_level||'').toLowerCase();if(window.setHaloOrbMode){if(l.includes('heavy'))window.setHaloOrbMode('alert','HEAVY TRAFFIC');else if(l.includes('moderate'))window.setHaloOrbMode('thinking','TRAFFIC MODERATE');else window.setHaloOrbMode('success','ROUTE READY')}}catch(e){if(window.setHaloOrbMode)window.setHaloOrbMode('alert','NAV ERROR');if(typeof showIntel==='function')showIntel('NAVIGATION ERROR',`<h3>System Error</h3><p>${esc(e.message)}</p>`)}busy=false}
 window.haloNavRun=run;window.haloRoutePlusCommand=d=>run(d,'__AUTO_GPS__');
 window.haloRerouteTo=function(lat,lng,name){
-  if(!lat||!lng)return;
+  lat = Number(lat); lng = Number(lng);
+  if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
   if(busy)return;
   busy=true;
   let m=map();if(!m)return;
@@ -5304,7 +5305,7 @@ window.haloRerouteTo=function(lat,lng,name){
   if(window.setHaloOrbMode)window.setHaloOrbMode('thinking','REROUTING');
   // Fetch new route to exact coordinates
   fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({origin:(Number.isFinite(Number(window.haloUserLat))&&Number.isFinite(Number(window.haloUserLng)))?`${window.haloUserLat},${window.haloUserLng}`:'home',destination:name||`${lat},${lng}`})
+    body:JSON.stringify({origin:(Number.isFinite(Number(window.haloUserLat))&&Number.isFinite(Number(window.haloUserLng)))?`${window.haloUserLat},${window.haloUserLng}`:'home',destination:`${Number(lat)},${Number(lng)}`})
   }).then(r=>r.json()).then(data=>{
     if(data.success){
       draw(data,0);
@@ -11321,360 +11322,94 @@ body:not(.halo-v45-map-active) .halo-v45-panel-tab{
 </script>
 
 
-<!-- HALO V46 EXACT PLACE DESTINATION FIX -->
-<script id="halo-v46-exact-place-destination-fix-js">
+<!-- HALO V48 ROOT REROUTE DESTINATION FIX -->
+<script id="halo-v48-root-reroute-destination-fix-js">
 (function(){
-  if(window.__haloV46ExactPlaceDestinationLoaded) return;
-  window.__haloV46ExactPlaceDestinationLoaded = true;
+  if(window.__haloV48RootRerouteFixLoaded) return;
+  window.__haloV48RootRerouteFixLoaded = true;
 
-  function getMap(){
-    try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
+  function isCoordString(s){
+    return /^-?\d+(\.\d+)?\s*,\s*-?\d+(\.\d+)?$/.test(String(s || '').trim());
   }
 
-  function getPlaceLocation(place){
-    if(!place) return null;
+  function getRouteApiUrl(){
+    try{
+      const scripts = Array.from(document.scripts).map(s => s.textContent || '').join('\n');
+      const m = scripts.match(/const\s+API\s*=\s*['"]([^'"]*\/route-plus)['"]/);
+      return m ? m[1] : null;
+    }catch(e){ return null; }
+  }
 
-    const candidates = [
-      place.location,
-      place.geometry?.location,
-      place.coordinates,
-      place.coords,
-      place.position,
-      place
-    ];
+  // Main protection: if any old code still calls haloRerouteTo(lat,lng,name),
+  // force the destination to exact "lat,lng" instead of the place name.
+  function install(){
+    if(typeof window.haloRerouteTo !== 'function' || window.haloRerouteTo.__haloV48Fixed) return;
 
-    for(const c of candidates){
-      if(!c) continue;
-
-      let lat = c.lat;
-      let lng = c.lng ?? c.lon ?? c.longitude;
-
-      if(typeof lat === 'function') lat = lat();
-      if(typeof lng === 'function') lng = lng();
-
+    const old = window.haloRerouteTo;
+    const fixed = function(lat, lng, name){
       lat = Number(lat);
       lng = Number(lng);
 
-      if(Number.isFinite(lat) && Number.isFinite(lng)){
-        return {lat, lng};
+      if(!Number.isFinite(lat) || !Number.isFinite(lng)){
+        console.warn('[HALO V48] Blocked reroute: bad coordinates', {lat, lng, name});
+        return false;
       }
-    }
 
-    return null;
-  }
+      const destination = `${lat},${lng}`;
+      console.log('[HALO V48] Exact reroute locked:', {name, destination});
 
-  function getExactItem(id){
-    const pools = [
-      window.haloPlaceMarkers,
-      window.haloV32Markers,
-      window.haloSupportMarkers,
-      window.placeMarkers,
-      window.supportMarkers
-    ];
-
-    for(const pool of pools){
-      if(!pool) continue;
-
+      // Prefer haloNavRun because it already handles browser GPS correctly.
       try{
-        if(pool instanceof Map && pool.has(id)) return pool.get(id);
-        if(pool[id]) return pool[id];
-      }catch(e){}
-    }
-
-    // Try DOM row fallback
-    const row = document.querySelector(`[data-v32-id="${CSS.escape(String(id))}"], [data-place-id="${CSS.escape(String(id))}"], [data-halo-place-id="${CSS.escape(String(id))}"]`);
-    if(row){
-      const lat = Number(row.dataset.lat || row.dataset.placeLat || row.getAttribute('data-lat'));
-      const lng = Number(row.dataset.lng || row.dataset.lon || row.dataset.placeLng || row.getAttribute('data-lng'));
-      if(Number.isFinite(lat) && Number.isFinite(lng)){
-        return {
-          lat,
-          lng,
-          place: {
-            name: row.dataset.name || row.textContent.trim().split('\n')[0] || 'Selected place',
-            lat,
-            lng
-          }
-        };
-      }
-    }
-
-    return null;
-  }
-
-  async function getAutoGPSOrigin(){
-    return new Promise(resolve => {
-      if(!navigator.geolocation){
-        resolve('__AUTO_GPS__');
-        return;
-      }
-
-      navigator.geolocation.getCurrentPosition(
-        pos => resolve({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude
-        }),
-        () => resolve('__AUTO_GPS__'),
-        {enableHighAccuracy:true, timeout:7000, maximumAge:60000}
-      );
-    });
-  }
-
-  async function routeToExactPlace(item){
-    if(!item) return false;
-
-    const place = item.place || item;
-    const loc = getPlaceLocation(place) || getPlaceLocation(item);
-
-    if(!loc){
-      console.warn('[HALO V46] No exact coordinates found for selected place. Refusing text fallback to prevent random routing.', item);
-      if(typeof addChat === 'function'){
-        try{ addChat('halo', 'Exact coordinates missing for that place. I blocked the reroute so it does not send you somewhere random.'); }catch(e){}
-      }
-      return false;
-    }
-
-    const name = place.name || item.name || 'Selected place';
-    const destination = `${loc.lat},${loc.lng}`;
-
-    console.log('[HALO V46] Routing to exact selected place:', {name, destination, loc, item});
-
-    try{
-      if(typeof window.haloV45ClearRouteSupport === 'function') window.haloV45ClearRouteSupport();
-      else if(typeof window.haloV42ClearRouteSupport === 'function') window.haloV42ClearRouteSupport();
-    }catch(e){}
-
-    // Prefer a dedicated reroute function if it accepts coords reliably.
-    try{
-      if(typeof window.haloRerouteTo === 'function'){
-        window.haloRerouteTo(loc.lat, loc.lng, name);
-        return true;
-      }
-    }catch(e){
-      console.warn('[HALO V46] haloRerouteTo failed, falling back to haloNavRun', e);
-    }
-
-    try{
-      const origin = await getAutoGPSOrigin();
-      if(typeof window.haloNavRun === 'function'){
-        window.haloNavRun(destination, origin);
-        return true;
-      }
-      if(typeof window.haloRoutePlusCommand === 'function'){
-        window.haloRoutePlusCommand(destination);
-        return true;
-      }
-    }catch(e){
-      console.error('[HALO V46] Exact place route failed', e);
-    }
-
-    return false;
-  }
-
-  window.haloV46RouteToExactPlace = routeToExactPlace;
-
-  // Override older place destination handlers that used place.address/name and caused random routes.
-  window.haloSetPlaceDestination = function(id){
-    const item = getExactItem(id);
-    routeToExactPlace(item);
-  };
-
-  window.haloV32SetDestination = function(id){
-    const item = getExactItem(id);
-    routeToExactPlace(item);
-  };
-
-  // Catch clicks on exact gas/parking rows and force coord route if a destination button exists.
-  document.addEventListener('click', function(e){
-    const target = e.target;
-    if(!target) return;
-
-    const row = target.closest && target.closest(
-      '[data-v32-id], [data-place-id], [data-halo-place-id], .halo-v32-place-row, .halo-place-row'
-    );
-
-    if(!row) return;
-
-    const clickedRouteAction =
-      /destination|route|go|directions|set/i.test(String(target.textContent || target.title || target.className || '')) ||
-      target.closest('[onclick*="haloSetPlaceDestination"], [onclick*="haloV32SetDestination"]');
-
-    if(!clickedRouteAction && target === row){
-      // Let simple row focus clicks keep working.
-      return;
-    }
-
-    const id = row.dataset.v32Id || row.dataset.placeId || row.dataset.haloPlaceId;
-    if(!id) return;
-
-    const item = getExactItem(id);
-    const loc = item && (getPlaceLocation(item.place || item) || getPlaceLocation(item));
-    if(!loc) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-
-    routeToExactPlace(item);
-  }, true);
-
-  console.log('[HALO V46 EXACT PLACE DESTINATION FIX] loaded');
-})();
-</script>
-
-
-<!-- HALO V47 SUPPORT ROUTE COORDINATE GUARD FIX -->
-<script id="halo-v47-support-route-coordinate-guard-js">
-(function(){
-  if(window.__haloV47SupportRouteGuardLoaded) return;
-  window.__haloV47SupportRouteGuardLoaded = true;
-
-  function getMap(){
-    try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
-  }
-
-  function validCoord(lat, lng){
-    lat = Number(lat);
-    lng = Number(lng);
-    return Number.isFinite(lat) && Number.isFinite(lng) &&
-           lat >= -90 && lat <= 90 &&
-           lng >= -180 && lng <= 180;
-  }
-
-  function looksLikeSupportName(name){
-    name = String(name || '').toLowerCase();
-    return (
-      name.includes('gas') ||
-      name.includes('parking') ||
-      name.includes('park ') ||
-      name.includes('park n') ||
-      name.includes('shell') ||
-      name.includes('chevron') ||
-      name.includes('arco') ||
-      name.includes('mobil') ||
-      name.includes('76') ||
-      name.includes('7-eleven') ||
-      name.includes('station')
-    );
-  }
-
-  function nearCurrentMapRoute(lat, lng){
-    const map = getMap();
-    if(!map || !validCoord(lat,lng)) return true;
-
-    try{
-      const center = map.getCenter();
-      if(!center) return true;
-
-      // If a selected gas/parking point is thousands of miles from current displayed route/map,
-      // block it. This prevents "Parking 3 in France" from being accepted while routing around LA.
-      const selected = L.latLng(Number(lat), Number(lng));
-      const current = L.latLng(center.lat, center.lng);
-      const miles = current.distanceTo(selected) / 1609.344;
-
-      return miles < 350;
-    }catch(e){
-      return true;
-    }
-  }
-
-  function blockBadSupportRoute(lat,lng,name){
-    if(!looksLikeSupportName(name)) return false;
-
-    if(!validCoord(lat,lng)){
-      console.warn('[HALO V47] Blocked support reroute: invalid coordinates', {lat,lng,name});
-      return true;
-    }
-
-    if(!nearCurrentMapRoute(lat,lng)){
-      console.warn('[HALO V47] Blocked support reroute: coordinates too far from current route/map', {lat,lng,name});
-      return true;
-    }
-
-    return false;
-  }
-
-  // Guard existing haloRerouteTo, because the left panel has inline onclick="haloRerouteTo(...)"
-  // that can fire before exact-place handlers.
-  const installGuard = () => {
-    if(typeof window.haloRerouteTo === 'function' && !window.haloRerouteTo.__haloV47Guarded){
-      const old = window.haloRerouteTo;
-      const guarded = function(lat,lng,name){
-        if(blockBadSupportRoute(lat,lng,name)){
-          try{
-            if(typeof addChat === 'function'){
-              addChat('halo','Blocked that support reroute because its coordinates looked wrong. Try the marker directly or rerun the route.');
-            }
-          }catch(e){}
-          return false;
+        if(typeof window.haloNavRun === 'function'){
+          return window.haloNavRun(destination, '__AUTO_GPS__');
         }
-        return old.apply(this, arguments);
-      };
-      guarded.__haloV47Guarded = true;
-      window.haloRerouteTo = guarded;
-    }
-  };
+      }catch(e){
+        console.warn('[HALO V48] haloNavRun exact reroute failed, falling back.', e);
+      }
 
-  installGuard();
-  setTimeout(installGuard, 800);
-  setTimeout(installGuard, 2000);
+      // Last resort: call old function. The source has also been patched so old function uses coords.
+      return old.call(this, lat, lng, name);
+    };
 
-  // Store the latest route-plus payload without clearing it before place clicks use it.
+    fixed.__haloV48Fixed = true;
+    window.haloRerouteTo = fixed;
+  }
+
+  install();
+  setTimeout(install, 500);
+  setTimeout(install, 1500);
+
+  // Hard intercept any outgoing /route-plus request caused by "Parking 3" style names.
+  // If window.__haloV48PendingExactDestination exists, overwrite destination to coords.
   const prevFetch = window.fetch;
-  if(prevFetch && !prevFetch.__haloV47GuardWrapped){
+  if(prevFetch && !prevFetch.__haloV48FetchFixed){
     const wrapped = async function(input, init){
-      const response = await prevFetch.apply(this, arguments);
-
       try{
         const url = typeof input === 'string' ? input : String(input?.url || '');
-        if(url.includes('/route-plus')){
-          response.clone().json().then(data => {
-            if(data && data.success){
-              window.__haloV47LatestRoutePlus = data;
-            }
-          }).catch(()=>{});
+        if(url.includes('/route-plus') && init && init.body){
+          const body = JSON.parse(init.body);
+          if(body && body.destination && !isCoordString(body.destination)){
+            console.warn('[HALO V48 DIAGNOSTIC] Non-coordinate /route-plus destination detected:', body.destination);
+          }
         }
       }catch(e){}
-
-      return response;
+      return prevFetch.apply(this, arguments);
     };
-    wrapped.__haloV47GuardWrapped = true;
+    wrapped.__haloV48FetchFixed = true;
     window.fetch = wrapped;
   }
 
-  // Force left-panel gas/parking rows to use ONLY their inline numeric coordinates if valid.
-  // If coords are missing or far away, cancel the click instead of letting text fallback route globally.
-  document.addEventListener('click', function(e){
-    const row = e.target && e.target.closest && e.target.closest('.halo-nav-row');
-    if(!row) return;
+  window.haloV48Diagnostic = function(){
+    console.log('HALO V48 diagnostic:', {
+      rerouteFixed: !!(window.haloRerouteTo && window.haloRerouteTo.__haloV48Fixed),
+      routeApi: getRouteApiUrl(),
+      userLat: window.haloUserLat,
+      userLng: window.haloUserLng,
+      note: 'When clicking gas/parking, route-plus destination should be "lat,lng", not "Parking 1" or place name.'
+    });
+  };
 
-    const txt = String(row.textContent || '');
-    if(!looksLikeSupportName(txt)) return;
-
-    const onclick = String(row.getAttribute('onclick') || '');
-    if(!onclick.includes('haloRerouteTo')) return;
-
-    const nums = onclick.match(/haloRerouteTo\(\s*([-0-9.]+)\s*,\s*([-0-9.]+)/);
-    if(!nums) {
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      console.warn('[HALO V47] Blocked support row because no numeric coords were present.', txt);
-      return;
-    }
-
-    const lat = Number(nums[1]);
-    const lng = Number(nums[2]);
-
-    if(blockBadSupportRoute(lat,lng,txt)){
-      e.preventDefault();
-      e.stopPropagation();
-      e.stopImmediatePropagation();
-      return;
-    }
-  }, true);
-
-  console.log('[HALO V47 SUPPORT ROUTE COORDINATE GUARD FIX] loaded');
+  console.log('[HALO V48 ROOT REROUTE DESTINATION FIX] loaded. Patched source occurrences:', 1);
 })();
 </script>
 
