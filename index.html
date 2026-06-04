@@ -10977,5 +10977,418 @@ body #haloAdvancedMapOverlay #haloDestinationIntelCard.halo-v35-force-hidden{
 })();
 </script>
 
+
+<!-- HALO V42 RIGHT PANEL COLLAPSE + ROUTE SUPPORT CLEANUP FIX -->
+<style id="halo-v42-panel-route-cleanup-fix">
+/*
+  V42:
+  - Adds a real collapse/restore control to the right Destination Brief panel.
+  - Clears old gas + parking markers/lists before every new /route-plus request.
+  - Prevents previous route support locations from sticking around visually.
+*/
+
+#haloDestinationBrief,
+#haloDestinationIntelCard{
+  transition: transform .28s ease, opacity .22s ease, filter .28s ease !important;
+}
+
+#haloDestinationBrief.halo-v42-collapsed,
+#haloDestinationIntelCard.halo-v42-collapsed{
+  transform: translateX(calc(100% + 28px)) !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  filter: blur(2px) !important;
+}
+
+#haloV42RightPanelTab{
+  position: fixed !important;
+  right: 18px !important;
+  top: 50% !important;
+  transform: translateY(-50%) !important;
+  z-index: 999999 !important;
+  width: 42px !important;
+  height: 86px !important;
+  display: none;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 18px 0 0 18px !important;
+  border: 1px solid rgba(0,234,255,.32) !important;
+  border-right: none !important;
+  background: rgba(0,15,34,.88) !important;
+  color: #00eaff !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 20px !important;
+  cursor: pointer !important;
+  box-shadow: 0 0 24px rgba(0,234,255,.18) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+#haloV42RightPanelTab.active{
+  display: flex !important;
+}
+
+.halo-v42-collapse-btn{
+  position: absolute !important;
+  top: 18px !important;
+  right: 54px !important;
+  z-index: 9999 !important;
+  width: 30px !important;
+  height: 30px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(0,234,255,.28) !important;
+  background: rgba(0,18,40,.72) !important;
+  color: #00eaff !important;
+  font-family: 'JetBrains Mono', monospace !important;
+  font-size: 16px !important;
+  line-height: 1 !important;
+  cursor: pointer !important;
+  box-shadow: 0 0 16px rgba(0,234,255,.12) !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.halo-v42-collapse-btn:hover,
+#haloV42RightPanelTab:hover{
+  background: rgba(0,38,72,.92) !important;
+  box-shadow: 0 0 28px rgba(0,234,255,.28) !important;
+}
+
+.halo-v42-support-clearing #haloV32ExactPlaces,
+.halo-v42-support-clearing #haloV20ExactPlaces,
+.halo-v42-support-clearing #haloV22ExactPlaces,
+.halo-v42-support-clearing #haloV23ExactPlaces,
+.halo-v42-support-clearing #haloV25ExactPlaces{
+  opacity: .35 !important;
+}
+</style>
+
+<script id="halo-v42-panel-route-cleanup-fix-js">
+(function(){
+  if(window.__haloV42PanelRouteCleanupLoaded) return;
+  window.__haloV42PanelRouteCleanupLoaded = true;
+
+  let collapsed = false;
+  let lastRouteRequestStamp = 0;
+
+  function getMap(){
+    try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
+  }
+
+  function invalidateMap(){
+    const map = getMap();
+    if(!map) return;
+    setTimeout(() => { try{ map.invalidateSize({animate:true}); }catch(e){} }, 80);
+    setTimeout(() => { try{ map.invalidateSize({animate:true}); }catch(e){} }, 320);
+  }
+
+  function getRightPanel(){
+    return document.getElementById('haloDestinationBrief') || document.getElementById('haloDestinationIntelCard');
+  }
+
+  function ensureRightPanelTab(){
+    let tab = document.getElementById('haloV42RightPanelTab');
+    if(tab) return tab;
+
+    tab = document.createElement('button');
+    tab.id = 'haloV42RightPanelTab';
+    tab.type = 'button';
+    tab.title = 'Restore destination brief';
+    tab.textContent = '‹';
+    tab.addEventListener('click', function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      window.haloV42ToggleRightPanel(false);
+    }, true);
+
+    document.body.appendChild(tab);
+    return tab;
+  }
+
+  function applyRightPanelState(){
+    const panel = getRightPanel();
+    const tab = ensureRightPanelTab();
+
+    if(panel){
+      panel.classList.toggle('halo-v42-collapsed', collapsed);
+    }
+
+    tab.classList.toggle('active', collapsed);
+    invalidateMap();
+  }
+
+  window.haloV42ToggleRightPanel = function(forceOpen){
+    if(forceOpen === false) collapsed = false;
+    else if(forceOpen === true) collapsed = true;
+    else collapsed = !collapsed;
+
+    applyRightPanelState();
+  };
+
+  function injectCollapseButton(){
+    const panel = getRightPanel();
+    if(!panel) return;
+
+    // Make sure the absolute button positions against the panel.
+    try{
+      const pos = getComputedStyle(panel).position;
+      if(pos === 'static') panel.style.position = 'absolute';
+    }catch(e){}
+
+    let btn = panel.querySelector('.halo-v42-collapse-btn');
+    if(!btn){
+      btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'halo-v42-collapse-btn';
+      btn.title = 'Collapse destination brief';
+      btn.textContent = '−';
+      btn.addEventListener('click', function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        e.stopImmediatePropagation();
+        window.haloV42ToggleRightPanel(true);
+      }, true);
+      panel.appendChild(btn);
+    }
+
+    applyRightPanelState();
+  }
+
+  function removeTrackedLayers(value){
+    const map = getMap();
+    if(!value || !map) return;
+
+    try{
+      if(Array.isArray(value)){
+        value.forEach(item => removeTrackedLayers(item));
+        return;
+      }
+
+      if(value instanceof Map){
+        value.forEach(item => removeTrackedLayers(item));
+        value.clear();
+        return;
+      }
+
+      if(typeof value === 'object' && !value._leaflet_id && !value.removeFrom && !value.getLatLng){
+        Object.values(value).forEach(item => removeTrackedLayers(item && (item.marker || item.layer || item)));
+        return;
+      }
+
+      try{ map.removeLayer(value); }catch(e){}
+      try{ value.removeFrom(map); }catch(e){}
+      try{ value.remove(); }catch(e){}
+    }catch(e){}
+  }
+
+  function removeSupportLayersFromMap(){
+    const map = getMap();
+    if(!map || !map.eachLayer) return;
+
+    const remove = [];
+    map.eachLayer(layer => {
+      try{
+        const iconHTML = String(layer._icon?.innerHTML || '');
+        const iconClass = String(layer._icon?.className || '');
+        const pathClass = String(layer._path?.className?.baseVal || layer._path?.className || '');
+        const popup = layer.getPopup ? String(layer.getPopup()?.getContent?.() || '') : '';
+        const tooltip = layer.getTooltip ? String(layer.getTooltip()?.getContent?.() || '') : '';
+        const options = layer.options || {};
+        const optionText = String(options.className || '') + ' ' + String(options.title || '') + ' ' + String(options.alt || '');
+        const text = (iconHTML + ' ' + iconClass + ' ' + pathClass + ' ' + popup + ' ' + tooltip + ' ' + optionText).toLowerCase();
+
+        const looksLikeSupport =
+          text.includes('halo-nav-marker') ||
+          text.includes('halo-v32-marker') ||
+          text.includes('halo-place') ||
+          text.includes('gas') ||
+          text.includes('parking') ||
+          text.includes('arco') ||
+          text.includes('shell') ||
+          text.includes('chevron') ||
+          text.includes('mobil') ||
+          text.includes('76') ||
+          text.includes('7-eleven') ||
+          text.includes('park');
+
+        if(looksLikeSupport) remove.push(layer);
+      }catch(e){}
+    });
+
+    remove.forEach(layer => {
+      try{ map.removeLayer(layer); }catch(e){}
+    });
+  }
+
+  function clearSupportLists(){
+    [
+      'haloV20ExactPlaces',
+      'haloV22ExactPlaces',
+      'haloV23ExactPlaces',
+      'haloV25ExactPlaces',
+      'haloV32ExactPlaces'
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.remove();
+    });
+
+    document.querySelectorAll(
+      '.halo-v32-popup, .halo-place-focused, .leaflet-popup'
+    ).forEach(el => {
+      try{ el.remove(); }catch(e){}
+    });
+  }
+
+  function resetSupportGlobals(){
+    [
+      'haloGasMarkers',
+      'haloParkingMarkers',
+      'haloPlaceMarkers',
+      'haloSupportMarkers',
+      'gasMarkers',
+      'parkingMarkers',
+      'placeMarkers',
+      'supportMarkers',
+      'haloV32Markers'
+    ].forEach(key => {
+      try{
+        removeTrackedLayers(window[key]);
+        if(Array.isArray(window[key])) window[key] = [];
+        else if(window[key] && typeof window[key] === 'object') window[key] = {};
+        else window[key] = null;
+      }catch(e){}
+    });
+
+    [
+      '__haloV32Payload',
+      '__haloV31Payload',
+      '__haloV25Payload',
+      '__haloV23Payload',
+      '__haloPolishPayload',
+      '__haloStreetRoutePayload',
+      '__haloLastRoutePayloadVisibilityFix'
+    ].forEach(key => {
+      try{ window[key] = null; }catch(e){}
+    });
+  }
+
+  function clearDestinationSupportText(){
+    const panel = getRightPanel();
+    if(!panel) return;
+
+    // Only clear the support strip while the new route is loading.
+    const strips = Array.from(panel.querySelectorAll('.halo-weather-strip'));
+    strips.forEach(strip => {
+      const txt = String(strip.textContent || '').toLowerCase();
+      if(txt.includes('support nearby') || txt.includes('gas') || txt.includes('parking')){
+        strip.innerHTML = '<strong>Support nearby:</strong><br>Scanning new route support...';
+      }
+    });
+  }
+
+  window.haloV42ClearRouteSupport = function(){
+    lastRouteRequestStamp = Date.now();
+
+    try{ document.documentElement.classList.add('halo-v42-support-clearing'); }catch(e){}
+    setTimeout(() => {
+      try{ document.documentElement.classList.remove('halo-v42-support-clearing'); }catch(e){}
+    }, 900);
+
+    try{ if(getMap()) getMap().closePopup(); }catch(e){}
+    resetSupportGlobals();
+    removeSupportLayersFromMap();
+    clearSupportLists();
+    clearDestinationSupportText();
+    invalidateMap();
+
+    console.log('[HALO V42] Cleared old gas/parking support for new route');
+  };
+
+  // Wrap route functions so command-based reroutes clear old support immediately.
+  [
+    'haloNavRun',
+    'haloRoutePlusCommand',
+    'haloRerouteTo',
+    'haloV32SetDestination',
+    'haloSetPlaceDestination'
+  ].forEach(fn => {
+    try{
+      if(typeof window[fn] === 'function' && !window[fn].__haloV42Wrapped){
+        const old = window[fn];
+        const wrapped = function(){
+          try{ window.haloV42ClearRouteSupport(); }catch(e){}
+          return old.apply(this, arguments);
+        };
+        wrapped.__haloV42Wrapped = true;
+        window[fn] = wrapped;
+      }
+    }catch(e){}
+  });
+
+  // Wrap fetch LAST. Before every route-plus request, clear old support.
+  const previousFetch = window.fetch;
+  if(previousFetch && !previousFetch.__haloV42Wrapped){
+    const wrappedFetch = async function(input, init){
+      try{
+        const url = typeof input === 'string' ? input : String(input?.url || '');
+        if(url.includes('/route-plus')){
+          window.haloV42ClearRouteSupport();
+        }
+      }catch(e){}
+
+      const response = await previousFetch.apply(this, arguments);
+
+      try{
+        const url = typeof input === 'string' ? input : String(input?.url || '');
+        if(url.includes('/route-plus')){
+          response.clone().json().then(data => {
+            if(data && data.success){
+              // Keep only current route payloads available to older render patches.
+              window.__haloV42LatestRoutePayload = data;
+              setTimeout(() => {
+                injectCollapseButton();
+                invalidateMap();
+              }, 900);
+            }
+          }).catch(()=>{});
+        }
+      }catch(e){}
+
+      return response;
+    };
+    wrappedFetch.__haloV42Wrapped = true;
+    window.fetch = wrappedFetch;
+  }
+
+  // If older code creates the right panel later, keep the control attached.
+  const mo = new MutationObserver(() => {
+    injectCollapseButton();
+
+    // If a new exact list appears after the latest route request, don't touch it.
+    // This observer is only for UI control, not data clearing.
+  });
+
+  try{
+    mo.observe(document.documentElement, {childList:true, subtree:true});
+  }catch(e){}
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => {
+      ensureRightPanelTab();
+      setTimeout(injectCollapseButton, 800);
+      setTimeout(injectCollapseButton, 1800);
+    });
+  }else{
+    ensureRightPanelTab();
+    setTimeout(injectCollapseButton, 800);
+    setTimeout(injectCollapseButton, 1800);
+  }
+
+  setInterval(injectCollapseButton, 2500);
+
+  console.log('[HALO V42 RIGHT PANEL COLLAPSE + ROUTE SUPPORT CLEANUP FIX] loaded');
+})();
+</script>
+
 </body>
 </html>
