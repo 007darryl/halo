@@ -9806,5 +9806,290 @@ path.halo-transit-route-glow{
 })();
 </script>
 
+
+<!-- HALO V33 CLEAR ROUTE STATE FIX -->
+<style id="halo-v33-clear-route-state-fix">
+/*
+  V33:
+  - Bottom-right CLEAR button clears route line, markers, popups, and both route panels.
+  - Does not reload page.
+  - Does not destroy the map.
+*/
+
+.halo-v33-idle-card{
+  padding:16px;
+  border:1px solid rgba(0,234,255,.12);
+  border-radius:14px;
+  background:rgba(0,12,28,.42);
+  color:rgba(235,250,255,.88);
+  font-family:'Space Grotesk',sans-serif;
+  font-size:14px;
+  line-height:1.45;
+}
+
+.halo-v33-idle-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  letter-spacing:1.7px;
+  color:#00eaff;
+  margin-bottom:10px;
+}
+
+.halo-v33-cleared{
+  animation:haloV33Pulse .7s ease-out;
+}
+
+@keyframes haloV33Pulse{
+  0%{box-shadow:0 0 0 rgba(0,234,255,0);}
+  35%{box-shadow:0 0 28px rgba(0,234,255,.22);}
+  100%{box-shadow:0 0 0 rgba(0,234,255,0);}
+}
+</style>
+
+<script id="halo-v33-clear-route-state-fix-js">
+(function(){
+  function getMap(){
+    try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
+  }
+
+  function closePopups(){
+    const map = getMap();
+    try{ if(map) map.closePopup(); }catch(e){}
+    document.querySelectorAll('.leaflet-popup').forEach(p => {
+      try{ p.remove(); }catch(e){}
+    });
+  }
+
+  function removeLayerLike(nameTest){
+    const map = getMap();
+    if(!map || !map.eachLayer) return;
+
+    const toRemove = [];
+    map.eachLayer(layer => {
+      try{
+        const opt = layer.options || {};
+        const cls = String(opt.className || opt.pane || opt.id || '');
+        const popupText = layer.getPopup ? String(layer.getPopup()?.getContent?.() || '') : '';
+        const tooltipText = layer.getTooltip ? String(layer.getTooltip()?.getContent?.() || '') : '';
+        const html = String(layer._icon?.innerHTML || '') + ' ' + String(layer._path?.className?.baseVal || '');
+        const combined = (cls + ' ' + popupText + ' ' + tooltipText + ' ' + html).toLowerCase();
+
+        if(nameTest(combined, layer)){
+          toRemove.push(layer);
+        }
+      }catch(e){}
+    });
+
+    toRemove.forEach(layer => {
+      try{ map.removeLayer(layer); }catch(e){}
+    });
+  }
+
+  function removeRouteLines(){
+    // Remove obvious route polylines without touching tile layers.
+    removeLayerLike((txt, layer) => {
+      const isVector = !!layer._path || (typeof layer.getLatLngs === 'function');
+      if(!isVector) return false;
+      return (
+        txt.includes('route') ||
+        txt.includes('polyline') ||
+        txt.includes('glow') ||
+        txt.includes('traffic') ||
+        txt.includes('transit') ||
+        txt.includes('halo-route')
+      );
+    });
+
+    [
+      'haloRouteLine','haloRouteGlow','haloActiveRoute','haloCurrentRoute','haloTrafficRoute',
+      'haloTransitRoute','haloTransitGlow','activeRouteLine','activeRouteGlow',
+      'routeLine','routeGlow','currentRouteLine','currentRouteGlow'
+    ].forEach(key => {
+      try{
+        const layer = window[key];
+        const map = getMap();
+        if(layer && map){
+          if(Array.isArray(layer)){
+            layer.forEach(l => { try{ map.removeLayer(l); }catch(e){} });
+          }else{
+            try{ map.removeLayer(layer); }catch(e){}
+          }
+        }
+        window[key] = null;
+      }catch(e){}
+    });
+
+    // Remove SVG route paths that may not be tracked.
+    document.querySelectorAll('path[class*="route"], path[class*="glow"], path[class*="traffic"], path[class*="transit"]').forEach(p => {
+      try{ p.remove(); }catch(e){}
+    });
+  }
+
+  function removePlaceMarkers(){
+    removeLayerLike((txt, layer) => {
+      const isMarker = !!layer._icon || typeof layer.getLatLng === 'function';
+      if(!isMarker) return false;
+      return (
+        txt.includes('gas') ||
+        txt.includes('parking') ||
+        txt.includes('arco') ||
+        txt.includes('shell') ||
+        txt.includes('costco') ||
+        txt.includes('chevron') ||
+        txt.includes('mobil') ||
+        txt.includes('park') ||
+        txt.includes('halo-v32-marker') ||
+        txt.includes('halo-v23-marker') ||
+        txt.includes('halo-place')
+      );
+    });
+
+    [
+      'haloGasMarkers','haloParkingMarkers','haloPlaceMarkers','haloSupportMarkers',
+      'gasMarkers','parkingMarkers','placeMarkers','supportMarkers',
+      'haloV32Markers','markers'
+    ].forEach(key => {
+      try{
+        const value = window[key];
+        const map = getMap();
+        if(value && map){
+          if(Array.isArray(value)){
+            value.forEach(layer => { try{ map.removeLayer(layer); }catch(e){} });
+          }else if(typeof value === 'object'){
+            Object.values(value).forEach(entry => {
+              try{
+                const layer = entry && (entry.marker || entry.layer || entry);
+                if(layer) map.removeLayer(layer);
+              }catch(e){}
+            });
+          }
+        }
+        if(Array.isArray(value)) window[key] = [];
+        else if(value && typeof value === 'object') window[key] = {};
+        else window[key] = null;
+      }catch(e){}
+    });
+  }
+
+  function resetGlobals(){
+    [
+      'currentRoute','activeDestination','routePlusData','haloRoutePlusData',
+      'haloActiveRoute','haloCurrentRoute','haloActiveDestination',
+      '__haloV32Payload','__haloV31Payload','__haloV25Payload','__haloV23Payload',
+      '__haloPolishPayload','__haloStreetRoutePayload','__haloLastRoutePayloadVisibilityFix'
+    ].forEach(key => {
+      try{ window[key] = null; }catch(e){}
+    });
+  }
+
+  function clearNavPanel(){
+    const nav = document.getElementById('haloNavHUD');
+    if(!nav) return;
+
+    const body = nav.querySelector('.halo-nav-body') || nav.querySelector('.halo-panel-body') || nav;
+    // Preserve custom top bar if it exists; clear only body content when possible.
+    body.innerHTML = `
+      <div class="halo-v33-idle-card">
+        <div class="halo-v33-idle-label">NAVIGATION INTEL</div>
+        <div>Route cleared.</div>
+      </div>
+    `;
+    nav.classList.add('halo-v33-cleared');
+    setTimeout(()=>nav.classList.remove('halo-v33-cleared'), 800);
+  }
+
+  function clearDestPanel(){
+    const dest = document.getElementById('haloDestinationBrief') || document.getElementById('haloDestinationIntelCard');
+    if(!dest) return;
+
+    const body = dest.querySelector('.halo-dest-body') || dest.querySelector('.halo-dintel-body') || dest.querySelector('.halo-panel-body') || dest;
+    body.innerHTML = `
+      <div class="halo-v33-idle-card">
+        <div class="halo-v33-idle-label">DESTINATION BRIEF</div>
+        <div>Navigation layer standing by.</div>
+      </div>
+    `;
+    dest.classList.add('halo-v33-cleared');
+    setTimeout(()=>dest.classList.remove('halo-v33-cleared'), 800);
+  }
+
+  function clearCommandLine(){
+    const box = document.querySelector('#haloCommandLog, #haloChatLog, .halo-command-log');
+    if(box){
+      try{
+        box.innerHTML = '<div class="halo-msg">Route cleared.</div>';
+      }catch(e){}
+    }
+  }
+
+  function clearRouteState(){
+    closePopups();
+    removeRouteLines();
+    removePlaceMarkers();
+    resetGlobals();
+    clearNavPanel();
+    clearDestPanel();
+    clearCommandLine();
+
+    const map = getMap();
+    if(map){
+      setTimeout(() => {
+        try{ map.invalidateSize({animate:true}); }catch(e){}
+      }, 120);
+    }
+
+    console.log('[HALO V33] Route state cleared');
+  }
+
+  window.haloV33ClearRouteState = clearRouteState;
+
+  function isClearButton(el){
+    if(!el) return false;
+    const text = String(el.textContent || el.value || el.getAttribute('aria-label') || el.title || '').trim().toLowerCase();
+    const id = String(el.id || '').toLowerCase();
+    const cls = String(el.className || '').toLowerCase();
+
+    return (
+      text === 'clear' ||
+      text.includes('clear route') ||
+      id.includes('clear') ||
+      cls.includes('clear')
+    );
+  }
+
+  document.addEventListener('click', function(e){
+    const btn = e.target.closest && e.target.closest('button, .ham-btn, .map-control, [role="button"], div');
+    if(!btn) return;
+
+    if(isClearButton(btn)){
+      const inMap = btn.closest('#haloAdvancedMapOverlay') || btn.closest('.ham-map-panel') || btn.closest('.hgi-map-wrap');
+      if(!inMap) return;
+
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      clearRouteState();
+    }
+  }, true);
+
+  // Patch known clear funcs if they exist, but keep original behavior first.
+  ['clearRoute','clearMapRoute','haloClearRoute','haloClearMap','haloRouteClear'].forEach(fn => {
+    if(typeof window[fn] === 'function' && !window[fn].__haloV33Wrapped){
+      const old = window[fn];
+      const wrapped = function(){
+        let out;
+        try{ out = old.apply(this, arguments); }catch(e){}
+        setTimeout(clearRouteState, 50);
+        return out;
+      };
+      wrapped.__haloV33Wrapped = true;
+      window[fn] = wrapped;
+    }
+  });
+
+  console.log('[HALO V33 CLEAR ROUTE STATE FIX] loaded');
+})();
+</script>
+
 </body>
 </html>
