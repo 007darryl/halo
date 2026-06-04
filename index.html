@@ -5168,5 +5168,1184 @@ console.log('[HALO PERFORMANCE NAV V2] clean system loaded');
 })();
 </script>
 
+
+<!-- HALO NAVIGATION POLISH UPGRADE PACK V1 -->
+<style id="halo-navigation-polish-upgrade-pack-v1">
+/* Animated route energy overlay */
+.halo-route-energy-dot{
+  position:absolute;
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:#eaffff;
+  box-shadow:
+    0 0 10px #fff,
+    0 0 22px #00eaff,
+    0 0 42px #00eaff;
+  pointer-events:none;
+  z-index:930;
+  transform:translate(-50%, -50%);
+  opacity:.95;
+}
+
+/* More premium route lines */
+path.halo-perf-route-main{
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+  filter:
+    drop-shadow(0 0 8px currentColor)
+    drop-shadow(0 0 20px currentColor)
+    drop-shadow(0 0 32px rgba(255,255,255,.28)) !important;
+}
+
+path.halo-perf-route-glow{
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+  filter:
+    blur(1px)
+    drop-shadow(0 0 18px currentColor)
+    drop-shadow(0 0 38px currentColor) !important;
+}
+
+/* Premium destination briefing card */
+#haloDestinationBrief{
+  position:absolute;
+  right:18px;
+  top:82px;
+  z-index:920;
+  width:310px;
+  max-height:42vh;
+  overflow:auto;
+  display:none;
+  border-radius:20px;
+  border:1px solid rgba(0,234,255,.18);
+  background:
+    radial-gradient(circle at top right, rgba(0,234,255,.10), transparent 42%),
+    rgba(0,10,26,.76);
+  backdrop-filter:blur(20px);
+  -webkit-backdrop-filter:blur(20px);
+  box-shadow:0 18px 60px rgba(0,0,0,.42), 0 0 36px rgba(0,234,255,.12);
+}
+
+#haloAdvancedMapOverlay.active #haloDestinationBrief{
+  display:block;
+}
+
+.halo-dest-head{
+  padding:14px 15px 10px;
+  border-bottom:1px solid rgba(0,234,255,.10);
+}
+
+.halo-dest-label{
+  font-family:'JetBrains Mono',monospace;
+  font-size:7px;
+  letter-spacing:2px;
+  color:rgba(0,234,255,.55);
+  margin-bottom:6px;
+}
+
+.halo-dest-title{
+  font-family:'Space Grotesk',sans-serif;
+  font-size:16px;
+  color:#eaffff;
+  font-weight:700;
+}
+
+.halo-dest-body{
+  padding:13px 15px 15px;
+}
+
+.halo-dest-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-bottom:12px;
+}
+
+.halo-dest-stat{
+  padding:9px;
+  border-radius:13px;
+  border:1px solid rgba(0,234,255,.10);
+  background:rgba(0,234,255,.045);
+}
+
+.halo-dest-stat small{
+  display:block;
+  font-family:'JetBrains Mono',monospace;
+  color:rgba(0,234,255,.48);
+  font-size:7px;
+  letter-spacing:1.3px;
+  margin-bottom:5px;
+}
+
+.halo-dest-stat strong{
+  color:#eaffff;
+  font-family:'JetBrains Mono',monospace;
+  font-size:14px;
+}
+
+.halo-weather-strip{
+  padding:10px 11px;
+  border-radius:14px;
+  border:1px solid rgba(0,234,255,.10);
+  background:rgba(0,8,22,.34);
+  color:rgba(230,250,255,.78);
+  font-size:12px;
+  line-height:1.5;
+  margin-bottom:10px;
+}
+
+.halo-traffic-clear{color:#00ff9d!important}
+.halo-traffic-light{color:#ffe83f!important}
+.halo-traffic-moderate{color:#ff9d2e!important}
+.halo-traffic-heavy{color:#ff4545!important}
+
+/* Better Apple Maps style HUD spacing */
+#haloNavHUD{
+  width:335px !important;
+  background:rgba(0,10,26,.68) !important;
+}
+
+#haloNavHUD::-webkit-scrollbar,
+#haloDestinationBrief::-webkit-scrollbar{
+  width:5px;
+}
+#haloNavHUD::-webkit-scrollbar-thumb,
+#haloDestinationBrief::-webkit-scrollbar-thumb{
+  background:rgba(0,234,255,.32);
+  border-radius:999px;
+}
+
+/* Center orb ETA chip */
+#haloOrbEtaChip{
+  position:fixed;
+  left:50%;
+  top:240px;
+  transform:translateX(-50%);
+  z-index:4800;
+  padding:10px 16px;
+  border-radius:999px;
+  border:1px solid rgba(0,234,255,.20);
+  background:rgba(0,10,26,.68);
+  color:#eaffff;
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px;
+  letter-spacing:1.8px;
+  display:none;
+  backdrop-filter:blur(16px);
+  box-shadow:0 0 34px rgba(0,234,255,.12);
+}
+#haloOrbEtaChip.active{
+  display:block;
+}
+
+/* Faster map polish buttons */
+.halo-nav-mini-btn{
+  transition:.18s ease;
+}
+.halo-nav-mini-btn:hover{
+  border-color:rgba(0,234,255,.65);
+  transform:translateY(-1px);
+}
+</style>
+
+<div id="haloOrbEtaChip">ETA READY</div>
+
+<script id="halo-navigation-polish-upgrade-pack-v1-js">
+(function(){
+  let energyTimer = null;
+  let energyDots = [];
+  let lastAnimatedRoute = [];
+  let destinationWeatherCache = {};
+
+  function log(){ try{ console.log('[HALO NAV POLISH]', ...arguments); }catch(e){} }
+
+  function getMap(){
+    try{
+      if(window.haloRealMap) return window.haloRealMap;
+      if(typeof haloRealMap !== 'undefined') return haloRealMap;
+    }catch(e){}
+    return null;
+  }
+
+  function esc(str){
+    return String(str ?? '').replace(/[&<>"']/g, m => ({
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#039;'
+    })[m]);
+  }
+
+  function decodePolyline(encoded){
+    if(!encoded) return [];
+    const points = [];
+    let index = 0, lat = 0, lng = 0;
+
+    while(index < encoded.length){
+      let b, shift = 0, result = 0;
+      do{
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      }while(b >= 0x20);
+      lat += ((result & 1) ? ~(result >> 1) : (result >> 1));
+
+      shift = 0;
+      result = 0;
+      do{
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      }while(b >= 0x20);
+      lng += ((result & 1) ? ~(result >> 1) : (result >> 1));
+
+      points.push([lat / 1e5, lng / 1e5]);
+    }
+
+    return points;
+  }
+
+  function trafficClass(level){
+    const l = String(level || '').toLowerCase();
+    if(l.includes('heavy')) return 'halo-traffic-heavy';
+    if(l.includes('moderate')) return 'halo-traffic-moderate';
+    if(l.includes('light')) return 'halo-traffic-light';
+    return 'halo-traffic-clear';
+  }
+
+  function trafficColor(level){
+    const l = String(level || '').toLowerCase();
+    if(l.includes('heavy')) return '#ff4545';
+    if(l.includes('moderate')) return '#ff9d2e';
+    if(l.includes('light')) return '#ffe83f';
+    return '#00ff9d';
+  }
+
+  function ensureDestinationBrief(){
+    const overlay = document.getElementById('haloAdvancedMapOverlay');
+    if(!overlay) return null;
+    const mapPanel = overlay.querySelector('.ham-map-panel') || overlay;
+
+    let card = document.getElementById('haloDestinationBrief');
+    if(card) return card;
+
+    card = document.createElement('div');
+    card.id = 'haloDestinationBrief';
+    card.innerHTML = `
+      <div class="halo-dest-head">
+        <div class="halo-dest-label">DESTINATION BRIEF</div>
+        <div class="halo-dest-title">Standing by</div>
+      </div>
+      <div class="halo-dest-body">
+        <div class="halo-weather-strip">Awaiting navigation data.</div>
+      </div>
+    `;
+    mapPanel.appendChild(card);
+    return card;
+  }
+
+  function setEtaChip(text, level){
+    const chip = document.getElementById('haloOrbEtaChip');
+    if(!chip) return;
+    chip.textContent = text;
+    chip.className = 'active ' + trafficClass(level);
+    clearTimeout(chip._t);
+    chip._t = setTimeout(()=>chip.classList.remove('active'), 9000);
+  }
+
+  async function getWeatherForLocation(loc){
+    if(!loc) return null;
+    const lat = loc.latitude ?? loc.lat;
+    const lng = loc.longitude ?? loc.lng;
+    if(typeof lat !== 'number' || typeof lng !== 'number') return null;
+
+    const key = `${lat.toFixed(2)},${lng.toFixed(2)}`;
+    if(destinationWeatherCache[key]) return destinationWeatherCache[key];
+
+    try{
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph`;
+      const res = await fetch(url);
+      const data = await res.json();
+      const current = data.current || null;
+      destinationWeatherCache[key] = current;
+      return current;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function weatherIcon(code){
+    code = Number(code);
+    if([0].includes(code)) return '☀️';
+    if([1,2,3].includes(code)) return '⛅';
+    if([45,48].includes(code)) return '🌫️';
+    if([51,53,55,61,63,65,80,81,82].includes(code)) return '🌧️';
+    if([95,96,99].includes(code)) return '⛈️';
+    return '🌤️';
+  }
+
+  async function updateDestinationBrief(payload, routeIndex=0){
+    const card = ensureDestinationBrief();
+    if(!card || !payload) return;
+
+    const routeData = payload.route || {};
+    const routes = routeData.routes || [routeData];
+    const route = routes[routeIndex] || routes[0] || routeData;
+    const gas = payload.gas || [];
+    const parking = payload.parking || [];
+    const loc = route.end_location || routeData.end_location;
+    const weather = await getWeatherForLocation(loc);
+    const tClass = trafficClass(route.traffic_level);
+
+    const weatherHTML = weather
+      ? `${weatherIcon(weather.weather_code)} ${Math.round(weather.temperature_2m)}°F · Wind ${Math.round(weather.wind_speed_10m || 0)} mph`
+      : `Weather layer standing by.`;
+
+    card.innerHTML = `
+      <div class="halo-dest-head">
+        <div class="halo-dest-label">DESTINATION BRIEF</div>
+        <div class="halo-dest-title">${esc(routeData.destination || 'Destination')}</div>
+      </div>
+      <div class="halo-dest-body">
+        <div class="halo-dest-grid">
+          <div class="halo-dest-stat"><small>ETA</small><strong>${esc(route.eta_minutes)}M</strong></div>
+          <div class="halo-dest-stat"><small>DELAY</small><strong class="${tClass}">+${esc(route.delay_minutes || 0)}M</strong></div>
+          <div class="halo-dest-stat"><small>DISTANCE</small><strong>${esc(route.distance_miles)}MI</strong></div>
+          <div class="halo-dest-stat"><small>TRAFFIC</small><strong class="${tClass}">${esc(route.traffic_level)}</strong></div>
+        </div>
+        <div class="halo-weather-strip">
+          <strong>Weather near destination:</strong><br>${esc(weatherHTML)}
+        </div>
+        <div class="halo-weather-strip">
+          <strong>Support nearby:</strong><br>
+          ⛽ ${esc(gas[0]?.name || 'No gas station found')}<br>
+          🅿️ ${esc(parking[0]?.name || 'No parking found')}
+        </div>
+      </div>
+    `;
+
+    setEtaChip(`ETA ${route.eta_minutes}M // ${route.traffic_level}`, route.traffic_level);
+  }
+
+  function clearEnergyDots(){
+    energyDots.forEach(dot => dot.remove());
+    energyDots = [];
+    if(energyTimer){
+      clearInterval(energyTimer);
+      energyTimer = null;
+    }
+  }
+
+  function startRouteEnergy(points){
+    clearEnergyDots();
+
+    const map = getMap();
+    const overlay = document.getElementById('haloAdvancedMapOverlay');
+    if(!map || !overlay || !points.length) return;
+
+    const mapPanel = overlay.querySelector('.ham-map-panel') || overlay;
+    const dotsCount = 4;
+
+    for(let i=0; i<dotsCount; i++){
+      const dot = document.createElement('div');
+      dot.className = 'halo-route-energy-dot';
+      mapPanel.appendChild(dot);
+      energyDots.push(dot);
+    }
+
+    let tick = 0;
+    energyTimer = setInterval(() => {
+      const mapNow = getMap();
+      if(!mapNow) return;
+
+      energyDots.forEach((dot, i) => {
+        const phase = ((tick + i * 24) % 100) / 100;
+        const index = Math.min(points.length - 1, Math.floor(phase * (points.length - 1)));
+        const latlng = points[index];
+        const pt = mapNow.latLngToContainerPoint(latlng);
+        dot.style.left = `${pt.x}px`;
+        dot.style.top = `${pt.y}px`;
+        dot.style.opacity = String(0.35 + (i / energyDots.length) * 0.5);
+      });
+
+      tick = (tick + 2) % 100;
+    }, 80);
+  }
+
+  function refocusRoute(payload, routeIndex=0){
+    const map = getMap();
+    if(!map || !payload || typeof L === 'undefined') return;
+
+    const routeData = payload.route || {};
+    const routes = routeData.routes || [routeData];
+    const route = routes[routeIndex] || routes[0] || routeData;
+    const points = decodePolyline(route.polyline);
+    if(!points.length) return;
+
+    const bounds = L.latLngBounds(points);
+    map.fitBounds(bounds, {
+      paddingTopLeft:[110,90],
+      paddingBottomRight:[90,90],
+      maxZoom:13
+    });
+
+    setTimeout(() => {
+      try{
+        if(map.getZoom() < 10) map.setZoom(10);
+      }catch(e){}
+    }, 350);
+
+    startRouteEnergy(points);
+  }
+
+  // Wrap the clean nav functions to add polish after drawing.
+  const originalSelect = window.haloNavSelectRoute;
+  window.haloNavSelectRoute = function(index){
+    if(typeof originalSelect === 'function') originalSelect(index);
+
+    setTimeout(() => {
+      const payload = window.__haloPolishPayload;
+      if(payload){
+        refocusRoute(payload, index);
+        updateDestinationBrief(payload, index);
+      }
+    }, 350);
+  };
+
+  const originalFocus = window.haloNavFocus;
+  window.haloNavFocus = function(){
+    if(typeof originalFocus === 'function') originalFocus();
+
+    setTimeout(() => {
+      if(window.__haloPolishPayload){
+        refocusRoute(window.__haloPolishPayload, 0);
+      }
+    }, 250);
+  };
+
+  const originalClear = window.haloNavClear;
+  window.haloNavClear = function(){
+    if(typeof originalClear === 'function') originalClear();
+    clearEnergyDots();
+    const card = document.getElementById('haloDestinationBrief');
+    if(card){
+      card.innerHTML = `
+        <div class="halo-dest-head">
+          <div class="halo-dest-label">DESTINATION BRIEF</div>
+          <div class="halo-dest-title">Route cleared</div>
+        </div>
+        <div class="halo-dest-body">
+          <div class="halo-weather-strip">Navigation layer standing by.</div>
+        </div>
+      `;
+    }
+  };
+
+  // Capture successful route-plus responses once and polish after clean nav draws.
+  const originalFetch = window.fetch;
+  if(originalFetch && !window.__haloNavPolishFetchWrapped){
+    window.__haloNavPolishFetchWrapped = true;
+
+    window.fetch = async function(){
+      const response = await originalFetch.apply(this, arguments);
+
+      try{
+        const url = String(arguments[0] || '');
+        if(url.includes('/route-plus')){
+          response.clone().json().then(data => {
+            if(data && data.success && data.route){
+              window.__haloPolishPayload = data;
+              setTimeout(() => {
+                refocusRoute(data, 0);
+                updateDestinationBrief(data, 0);
+              }, 900);
+            }
+          }).catch(()=>{});
+        }
+      }catch(e){}
+
+      return response;
+    };
+  }
+
+  // Enhance shortcut behavior with mission-style destination brief.
+  const shortcutNames = {
+    work:'WORK ROUTE',
+    gym:'GYM ROUTE',
+    lax:'LAX ROUTE',
+    beach:'BEACH ROUTE',
+    dodgers:'DODGERS ROUTE'
+  };
+
+  const originalRun = window.haloNavRun;
+  window.haloNavRun = async function(destination, origin){
+    const result = typeof originalRun === 'function'
+      ? await originalRun(destination, origin || 'home')
+      : null;
+
+    setEtaChip(`${shortcutNames[destination] || 'ROUTE'} // SCANNING`, 'Clear');
+    return result;
+  };
+
+  console.log('[HALO NAV POLISH V1] loaded');
+})();
+</script>
+
+
+<!-- HALO ULTIMATE NAVIGATION EXPERIENCE PACK V1 -->
+<style id="halo-ultimate-navigation-experience-pack-v1">
+/* Mission cinematic status */
+#haloNavMissionStatus{
+  position:absolute;
+  left:50%;
+  top:22px;
+  transform:translateX(-50%);
+  z-index:1250;
+  padding:10px 16px;
+  border-radius:999px;
+  border:1px solid rgba(0,234,255,.28);
+  background:rgba(0,10,26,.78);
+  color:#00eaff;
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  letter-spacing:1.8px;
+  display:none;
+  backdrop-filter:blur(18px);
+  -webkit-backdrop-filter:blur(18px);
+  box-shadow:0 0 32px rgba(0,234,255,.14);
+}
+#haloNavMissionStatus.active{display:block}
+
+/* Energy particles moving along route */
+.halo-route-pulse-dot{
+  position:absolute;
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:#eaffff;
+  box-shadow:0 0 9px #fff,0 0 22px #00eaff,0 0 42px #00eaff;
+  pointer-events:none;
+  z-index:1350;
+  transform:translate(-50%,-50%);
+  opacity:.95;
+}
+
+/* Make route look more alive */
+path.halo-perf-route-main,
+path.halo-ultimate-route-main{
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+  filter:drop-shadow(0 0 8px currentColor) drop-shadow(0 0 22px currentColor) !important;
+}
+
+path.halo-perf-route-glow,
+path.halo-ultimate-route-glow{
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+  filter:blur(1px) drop-shadow(0 0 18px currentColor) !important;
+}
+
+/* Destination Intel card */
+#haloDestinationIntelCard{
+  position:absolute;
+  right:18px;
+  top:78px;
+  z-index:1220;
+  width:315px;
+  max-height:44vh;
+  overflow:auto;
+  display:none;
+  border-radius:20px;
+  border:1px solid rgba(0,234,255,.18);
+  background:
+    radial-gradient(circle at top right, rgba(0,234,255,.12), transparent 42%),
+    rgba(0,10,26,.76);
+  backdrop-filter:blur(22px);
+  -webkit-backdrop-filter:blur(22px);
+  box-shadow:0 18px 70px rgba(0,0,0,.45),0 0 40px rgba(0,234,255,.13);
+}
+#haloAdvancedMapOverlay.active #haloDestinationIntelCard{display:block}
+
+.halo-dintel-head{
+  padding:14px 15px 10px;
+  border-bottom:1px solid rgba(0,234,255,.10);
+}
+.halo-dintel-kicker{
+  font-family:'JetBrains Mono',monospace;
+  font-size:7px;
+  letter-spacing:2px;
+  color:rgba(0,234,255,.55);
+  margin-bottom:6px;
+}
+.halo-dintel-title{
+  font-family:'Space Grotesk',sans-serif;
+  color:#eaffff;
+  font-size:16px;
+  font-weight:700;
+}
+.halo-dintel-body{padding:13px 15px 15px}
+.halo-dintel-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-bottom:12px;
+}
+.halo-dintel-stat{
+  padding:9px;
+  border-radius:13px;
+  border:1px solid rgba(0,234,255,.10);
+  background:rgba(0,234,255,.045);
+}
+.halo-dintel-stat small{
+  display:block;
+  font-family:'JetBrains Mono',monospace;
+  color:rgba(0,234,255,.48);
+  font-size:7px;
+  letter-spacing:1.3px;
+  margin-bottom:5px;
+}
+.halo-dintel-stat strong{
+  color:#eaffff;
+  font-family:'JetBrains Mono',monospace;
+  font-size:14px;
+}
+.halo-dintel-strip{
+  padding:10px 11px;
+  border-radius:14px;
+  border:1px solid rgba(0,234,255,.10);
+  background:rgba(0,8,22,.34);
+  color:rgba(230,250,255,.78);
+  font-size:12px;
+  line-height:1.5;
+  margin-bottom:10px;
+}
+
+/* Map layer buttons */
+#haloMapLayerControls{
+  position:absolute;
+  right:18px;
+  top:18px;
+  z-index:1230;
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  max-width:300px;
+  justify-content:flex-end;
+}
+.halo-map-layer-btn{
+  padding:9px 11px;
+  border-radius:999px;
+  border:1px solid rgba(0,234,255,.18);
+  background:rgba(0,10,26,.72);
+  color:rgba(190,245,255,.78);
+  font-family:'JetBrains Mono',monospace;
+  font-size:7px;
+  letter-spacing:1.3px;
+  cursor:pointer;
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+}
+.halo-map-layer-btn.active,
+.halo-map-layer-btn:hover{
+  color:#00eaff;
+  border-color:rgba(0,234,255,.50);
+  box-shadow:0 0 24px rgba(0,234,255,.14);
+}
+
+/* Weather markers */
+.halo-weather-pin{
+  min-width:48px;
+  padding:7px 9px;
+  border-radius:999px;
+  border:1px solid rgba(0,234,255,.28);
+  background:rgba(0,10,26,.78);
+  color:#eaffff;
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px;
+  letter-spacing:1px;
+  text-align:center;
+  box-shadow:0 0 24px rgba(0,234,255,.16);
+}
+
+/* Globe mode visual overlay */
+#haloGlobeVisualMode{
+  position:absolute;
+  inset:0;
+  z-index:850;
+  display:none;
+  pointer-events:none;
+  background:
+    radial-gradient(circle at center, rgba(0,234,255,.10), transparent 32%),
+    radial-gradient(circle at center, rgba(0,0,0,.08), transparent 60%);
+}
+#haloGlobeVisualMode.active{display:block}
+.halo-globe-core{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:360px;
+  height:360px;
+  transform:translate(-50%,-50%);
+  border-radius:50%;
+  border:1px solid rgba(0,234,255,.24);
+  box-shadow:0 0 80px rgba(0,234,255,.14), inset 0 0 60px rgba(0,234,255,.09);
+  background:
+    radial-gradient(circle at 40% 35%, rgba(160,255,255,.22), transparent 18%),
+    radial-gradient(circle at center, rgba(0,234,255,.10), rgba(0,0,0,.24) 70%);
+  animation:haloGlobePulse 5s ease-in-out infinite;
+}
+.halo-globe-core::before{
+  content:'';
+  position:absolute;
+  inset:40px;
+  border-radius:50%;
+  border:1px dashed rgba(0,234,255,.30);
+  animation:haloGlobeSpin 14s linear infinite;
+}
+.halo-globe-core::after{
+  content:'GLOBAL INTEL';
+  position:absolute;
+  left:50%;
+  bottom:-38px;
+  transform:translateX(-50%);
+  color:#00eaff;
+  font-family:'JetBrains Mono',monospace;
+  font-size:9px;
+  letter-spacing:2.6px;
+}
+@keyframes haloGlobeSpin{to{transform:rotate(360deg)}}
+@keyframes haloGlobePulse{50%{box-shadow:0 0 110px rgba(0,234,255,.22), inset 0 0 75px rgba(0,234,255,.12)}}
+
+/* Fly camera badge */
+#haloFlyCameraBadge{
+  position:absolute;
+  left:50%;
+  bottom:28px;
+  transform:translateX(-50%);
+  z-index:1260;
+  display:none;
+  padding:10px 15px;
+  border-radius:999px;
+  border:1px solid rgba(0,255,157,.28);
+  background:rgba(0,20,24,.78);
+  color:#00ff9d;
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  letter-spacing:1.8px;
+  backdrop-filter:blur(16px);
+  box-shadow:0 0 34px rgba(0,255,157,.16);
+}
+#haloFlyCameraBadge.active{display:block}
+
+.halo-traffic-clear{color:#00ff9d!important}
+.halo-traffic-light{color:#ffe83f!important}
+.halo-traffic-moderate{color:#ff9d2e!important}
+.halo-traffic-heavy{color:#ff4545!important}
+
+@media(max-width:1000px){
+  #haloDestinationIntelCard{width:285px;right:14px;top:70px}
+  #haloMapLayerControls{right:14px;top:14px;max-width:240px}
+  .halo-map-layer-btn{padding:8px 9px}
+}
+</style>
+
+<script id="halo-ultimate-navigation-experience-pack-v1-js">
+(function(){
+  let pulseTimer=null;
+  let pulseDots=[];
+  let weatherLayers=[];
+  let lastPayload=null;
+  let lastRouteIndex=0;
+  let globeMode=false;
+
+  function log(){try{console.log('[HALO ULTIMATE NAV]',...arguments)}catch(e){}}
+  function getMap(){try{return window.haloRealMap||haloRealMap}catch(e){return null}}
+  function esc(s){return String(s??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+  function tClass(l){l=String(l||'').toLowerCase();return l.includes('heavy')?'halo-traffic-heavy':l.includes('moderate')?'halo-traffic-moderate':l.includes('light')?'halo-traffic-light':'halo-traffic-clear'}
+  function tColor(l){l=String(l||'').toLowerCase();return l.includes('heavy')?'#ff4545':l.includes('moderate')?'#ff9d2e':l.includes('light')?'#ffe83f':'#00ff9d'}
+
+  function decodePolyline(e){
+    if(!e)return[];
+    let p=[],i=0,lat=0,lng=0;
+    while(i<e.length){
+      let b,s=0,r=0;
+      do{b=e.charCodeAt(i++)-63;r|=(b&31)<<s;s+=5}while(b>=32);
+      lat+=r&1?~(r>>1):r>>1;
+      s=0;r=0;
+      do{b=e.charCodeAt(i++)-63;r|=(b&31)<<s;s+=5}while(b>=32);
+      lng+=r&1?~(r>>1):r>>1;
+      p.push([lat/1e5,lng/1e5]);
+    }
+    return p;
+  }
+
+  function ensureUI(){
+    const overlay=document.getElementById('haloAdvancedMapOverlay');
+    if(!overlay)return;
+    const panel=overlay.querySelector('.ham-map-panel')||overlay;
+
+    if(!document.getElementById('haloNavMissionStatus')){
+      const el=document.createElement('div');
+      el.id='haloNavMissionStatus';
+      el.textContent='NAVIGATION SYSTEM READY';
+      panel.appendChild(el);
+    }
+
+    if(!document.getElementById('haloDestinationIntelCard')){
+      const card=document.createElement('div');
+      card.id='haloDestinationIntelCard';
+      card.innerHTML='<div class="halo-dintel-head"><div class="halo-dintel-kicker">DESTINATION INTEL</div><div class="halo-dintel-title">Standing by</div></div><div class="halo-dintel-body"><div class="halo-dintel-strip">Awaiting route data.</div></div>';
+      panel.appendChild(card);
+    }
+
+    if(!document.getElementById('haloMapLayerControls')){
+      const c=document.createElement('div');
+      c.id='haloMapLayerControls';
+      c.innerHTML=`
+        <button class="halo-map-layer-btn active" onclick="haloUltimateLayer('traffic')">TRAFFIC</button>
+        <button class="halo-map-layer-btn" onclick="haloUltimateLayer('weather')">WEATHER</button>
+        <button class="halo-map-layer-btn" onclick="haloUltimateLayer('fly')">FLY</button>
+        <button class="halo-map-layer-btn" onclick="haloUltimateLayer('globe')">GLOBE</button>
+      `;
+      panel.appendChild(c);
+    }
+
+    if(!document.getElementById('haloGlobeVisualMode')){
+      const g=document.createElement('div');
+      g.id='haloGlobeVisualMode';
+      g.innerHTML='<div class="halo-globe-core"></div>';
+      panel.appendChild(g);
+    }
+
+    if(!document.getElementById('haloFlyCameraBadge')){
+      const f=document.createElement('div');
+      f.id='haloFlyCameraBadge';
+      f.textContent='CAMERA LOCK';
+      panel.appendChild(f);
+    }
+  }
+
+  function mission(text,timeout=3600){
+    ensureUI();
+    const el=document.getElementById('haloNavMissionStatus');
+    if(!el)return;
+    el.textContent=text;
+    el.classList.add('active');
+    clearTimeout(el._t);
+    el._t=setTimeout(()=>el.classList.remove('active'),timeout);
+  }
+
+  function flyBadge(text,timeout=2600){
+    ensureUI();
+    const el=document.getElementById('haloFlyCameraBadge');
+    if(!el)return;
+    el.textContent=text;
+    el.classList.add('active');
+    clearTimeout(el._t);
+    el._t=setTimeout(()=>el.classList.remove('active'),timeout);
+  }
+
+  function clearPulse(){
+    pulseDots.forEach(d=>d.remove());
+    pulseDots=[];
+    if(pulseTimer){clearInterval(pulseTimer);pulseTimer=null}
+  }
+
+  function startPulse(points){
+    clearPulse();
+    const map=getMap();
+    const overlay=document.getElementById('haloAdvancedMapOverlay');
+    if(!map||!overlay||!points.length)return;
+    const panel=overlay.querySelector('.ham-map-panel')||overlay;
+
+    for(let i=0;i<5;i++){
+      const d=document.createElement('div');
+      d.className='halo-route-pulse-dot';
+      panel.appendChild(d);
+      pulseDots.push(d);
+    }
+
+    let tick=0;
+    pulseTimer=setInterval(()=>{
+      const m=getMap();
+      if(!m)return;
+      pulseDots.forEach((dot,i)=>{
+        const phase=((tick+i*18)%100)/100;
+        const idx=Math.min(points.length-1,Math.floor(phase*(points.length-1)));
+        const pt=m.latLngToContainerPoint(points[idx]);
+        dot.style.left=pt.x+'px';
+        dot.style.top=pt.y+'px';
+        dot.style.opacity=String(.35+(i/pulseDots.length)*.55);
+      });
+      tick=(tick+2)%100;
+    },90);
+  }
+
+  function selectedRoute(payload,idx=0){
+    const rd=payload?.route||{};
+    const rs=rd.routes||[rd];
+    return rs[idx]||rs[0]||rd;
+  }
+
+  function refocus(payload,idx=0){
+    const map=getMap();
+    if(!map||!payload||typeof L==='undefined')return;
+    const route=selectedRoute(payload,idx);
+    const pts=decodePolyline(route.polyline);
+    if(!pts.length)return;
+    const b=L.latLngBounds(pts);
+    map.fitBounds(b,{paddingTopLeft:[120,90],paddingBottomRight:[100,90],maxZoom:13});
+    setTimeout(()=>{try{if(map.getZoom()<10)map.setZoom(10)}catch(e){}},350);
+    startPulse(pts);
+  }
+
+  function wIcon(code){
+    code=Number(code);
+    if(code===0)return'☀️';
+    if([1,2,3].includes(code))return'⛅';
+    if([45,48].includes(code))return'🌫️';
+    if([51,53,55,61,63,65,80,81,82].includes(code))return'🌧️';
+    if([95,96,99].includes(code))return'⛈️';
+    return'🌤️';
+  }
+
+  async function weatherFor(loc){
+    const lat=loc?.latitude??loc?.lat,lng=loc?.longitude??loc?.lng;
+    if(typeof lat!=='number'||typeof lng!=='number')return null;
+    try{
+      const res=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&current=temperature_2m,weather_code,wind_speed_10m&temperature_unit=fahrenheit&wind_speed_unit=mph`);
+      const data=await res.json();
+      return data.current||null;
+    }catch(e){return null}
+  }
+
+  async function updateDestinationIntel(payload,idx=0){
+    ensureUI();
+    const card=document.getElementById('haloDestinationIntelCard');
+    if(!card||!payload)return;
+    const rd=payload.route||{};
+    const route=selectedRoute(payload,idx);
+    const gas=payload.gas||[];
+    const parking=payload.parking||[];
+    const weather=await weatherFor(route.end_location||rd.end_location);
+    const wc=weather?`${wIcon(weather.weather_code)} ${Math.round(weather.temperature_2m)}°F · Wind ${Math.round(weather.wind_speed_10m||0)} mph`:'Weather layer standing by.';
+    const c=tClass(route.traffic_level);
+
+    card.innerHTML=`
+      <div class="halo-dintel-head">
+        <div class="halo-dintel-kicker">DESTINATION INTEL</div>
+        <div class="halo-dintel-title">${esc(rd.destination||'Destination')}</div>
+      </div>
+      <div class="halo-dintel-body">
+        <div class="halo-dintel-grid">
+          <div class="halo-dintel-stat"><small>ETA</small><strong>${esc(route.eta_minutes)}M</strong></div>
+          <div class="halo-dintel-stat"><small>DELAY</small><strong class="${c}">+${esc(route.delay_minutes||0)}M</strong></div>
+          <div class="halo-dintel-stat"><small>DISTANCE</small><strong>${esc(route.distance_miles)}MI</strong></div>
+          <div class="halo-dintel-stat"><small>TRAFFIC</small><strong class="${c}">${esc(route.traffic_level)}</strong></div>
+        </div>
+        <div class="halo-dintel-strip"><strong>Weather near destination:</strong><br>${esc(wc)}</div>
+        <div class="halo-dintel-strip"><strong>Support nearby:</strong><br>⛽ ${esc(gas[0]?.name||'No gas result')}<br>🅿️ ${esc(parking[0]?.name||'No parking result')}</div>
+      </div>`;
+  }
+
+  function clearWeather(){
+    const map=getMap();
+    if(map) weatherLayers.forEach(l=>{try{map.removeLayer(l)}catch(e){}});
+    weatherLayers=[];
+  }
+
+  async function drawWeatherLayer(payload){
+    clearWeather();
+    const map=getMap();
+    if(!map||typeof L==='undefined'||!payload)return;
+    const rd=payload.route||{};
+    const route=selectedRoute(payload,lastRouteIndex);
+    const locs=[route.start_location||rd.start_location,route.end_location||rd.end_location].filter(Boolean);
+
+    for(const loc of locs){
+      const w=await weatherFor(loc);
+      if(!w)continue;
+      const lat=loc.latitude??loc.lat,lng=loc.longitude??loc.lng;
+      const marker=L.marker([lat,lng],{
+        icon:L.divIcon({
+          className:'',
+          html:`<div class="halo-weather-pin">${wIcon(w.weather_code)} ${Math.round(w.temperature_2m)}°</div>`,
+          iconSize:[58,30],
+          iconAnchor:[29,15]
+        })
+      }).addTo(map);
+      weatherLayers.push(marker);
+    }
+  }
+
+  function activateButtons(which){
+    document.querySelectorAll('.halo-map-layer-btn').forEach(b=>b.classList.remove('active'));
+    const btn=[...document.querySelectorAll('.halo-map-layer-btn')].find(b=>b.textContent.toLowerCase().includes(which));
+    if(btn)btn.classList.add('active');
+  }
+
+  window.haloUltimateLayer=function(which){
+    ensureUI();
+    which=String(which||'').toLowerCase();
+
+    if(which==='weather'){
+      activateButtons('weather');
+      mission('WEATHER LAYER ACTIVE');
+      if(lastPayload)drawWeatherLayer(lastPayload);
+    }
+
+    if(which==='traffic'){
+      activateButtons('traffic');
+      mission('TRAFFIC LAYER ACTIVE');
+      clearWeather();
+      if(lastPayload)refocus(lastPayload,lastRouteIndex);
+    }
+
+    if(which==='fly'){
+      activateButtons('fly');
+      window.haloUltimateFlyRoute();
+    }
+
+    if(which==='globe'){
+      const globe=document.getElementById('haloGlobeVisualMode');
+      globeMode=!globeMode;
+      if(globe)globe.classList.toggle('active',globeMode);
+      activateButtons('globe');
+      mission(globeMode?'GLOBE MODE ONLINE':'GLOBE MODE OFFLINE');
+    }
+  };
+
+  window.haloUltimateFlyRoute=function(){
+    const map=getMap();
+    if(!map||!lastPayload)return;
+    const route=selectedRoute(lastPayload,lastRouteIndex);
+    const pts=decodePolyline(route.polyline);
+    if(!pts.length)return;
+
+    mission('SCANNING ROUTE',1600);
+    flyBadge('SCANNING ROUTE',1600);
+
+    setTimeout(()=>{
+      mission('LOCKING TARGET',1600);
+      flyBadge('LOCKING TARGET',1600);
+      try{map.setView(pts[0],11,{animate:true,duration:1.1})}catch(e){}
+    },1000);
+
+    setTimeout(()=>{
+      mission('TRACING ROUTE',1800);
+      flyBadge('TRACING ROUTE',1800);
+      const mid=pts[Math.floor(pts.length*.55)];
+      try{map.setView(mid,12,{animate:true,duration:1.4})}catch(e){}
+    },2300);
+
+    setTimeout(()=>{
+      mission('ROUTE CONFIRMED',2200);
+      flyBadge('ROUTE CONFIRMED',2200);
+      const end=pts[pts.length-1];
+      try{map.setView(end,13,{animate:true,duration:1.2})}catch(e){}
+    },4000);
+  };
+
+  // Wrap route selection.
+  const oldSelect=window.haloNavSelectRoute;
+  window.haloNavSelectRoute=function(index){
+    lastRouteIndex=index||0;
+    if(typeof oldSelect==='function')oldSelect(index);
+    setTimeout(()=>{
+      if(lastPayload){
+        refocus(lastPayload,lastRouteIndex);
+        updateDestinationIntel(lastPayload,lastRouteIndex);
+      }
+    },350);
+  };
+
+  const oldFocus=window.haloNavFocus;
+  window.haloNavFocus=function(){
+    if(typeof oldFocus==='function')oldFocus();
+    setTimeout(()=>{if(lastPayload)refocus(lastPayload,lastRouteIndex)},250);
+  };
+
+  const oldClear=window.haloNavClear;
+  window.haloNavClear=function(){
+    if(typeof oldClear==='function')oldClear();
+    clearPulse();
+    clearWeather();
+    lastPayload=null;
+    const card=document.getElementById('haloDestinationIntelCard');
+    if(card)card.innerHTML='<div class="halo-dintel-head"><div class="halo-dintel-kicker">DESTINATION INTEL</div><div class="halo-dintel-title">Route cleared</div></div><div class="halo-dintel-body"><div class="halo-dintel-strip">Navigation layer standing by.</div></div>';
+  };
+
+  // Capture route-plus and run polish once clean nav finishes drawing.
+  const originalFetch=window.fetch;
+  if(originalFetch&&!window.__haloUltimateNavFetchWrapped){
+    window.__haloUltimateNavFetchWrapped=true;
+    window.fetch=async function(){
+      const response=await originalFetch.apply(this,arguments);
+      try{
+        const url=String(arguments[0]||'');
+        if(url.includes('/route-plus')){
+          response.clone().json().then(data=>{
+            if(data&&data.success&&data.route){
+              lastPayload=data;
+              lastRouteIndex=0;
+              setTimeout(()=>{
+                ensureUI();
+                mission('ROUTE CONFIRMED');
+                refocus(data,0);
+                updateDestinationIntel(data,0);
+              },850);
+            }
+          }).catch(()=>{});
+        }
+      }catch(e){}
+      return response;
+    };
+  }
+
+  // Voice command phrases / typed command extras.
+  function parseUltimateCommand(text){
+    text=String(text||'').trim();
+    const commands=[
+      [/^(?:halo\s+)?(?:fly|scan|camera)\s+(?:route|the route)$/i,()=>window.haloUltimateFlyRoute()],
+      [/^(?:halo\s+)?(?:show|enable|turn on)\s+weather(?:\s+layer)?$/i,()=>window.haloUltimateLayer('weather')],
+      [/^(?:halo\s+)?(?:show|enable|turn on)\s+traffic(?:\s+layer)?$/i,()=>window.haloUltimateLayer('traffic')],
+      [/^(?:halo\s+)?(?:globe|globe mode|global mode)$/i,()=>window.haloUltimateLayer('globe')]
+    ];
+    for(const [re,fn] of commands){
+      if(re.test(text))return fn;
+    }
+    return null;
+  }
+
+  document.addEventListener('keydown',function(e){
+    if(e.key!=='Enter')return;
+    const input=document.getElementById('textInp');
+    if(!input||document.activeElement!==input)return;
+    const fn=parseUltimateCommand(input.value);
+    if(!fn)return;
+    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+    input.value='';
+    fn();
+  },true);
+
+  document.addEventListener('click',function(e){
+    const btn=e.target.closest&&e.target.closest('.send-btn');
+    if(!btn)return;
+    const input=document.getElementById('textInp');
+    if(!input)return;
+    const fn=parseUltimateCommand(input.value);
+    if(!fn)return;
+    e.preventDefault();e.stopPropagation();e.stopImmediatePropagation();
+    input.value='';
+    fn();
+  },true);
+
+  setTimeout(ensureUI,1200);
+  log('loaded');
+})();
+</script>
+
 </body>
 </html>
