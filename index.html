@@ -7754,5 +7754,440 @@ path.halo-transit-route-glow{
 })();
 </script>
 
+
+<!-- HALO LIGHTWEIGHT TRANSIT ICONS V5 -->
+<style id="halo-lightweight-transit-icons-v5">
+/* Lightweight map markers — no emoji, no animation, no DOM observer */
+.halo-lite-transit-marker{
+  height:24px;
+  min-width:34px;
+  padding:0 8px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  border-radius:999px;
+  border:1px solid currentColor;
+  background:rgba(0,10,26,.92);
+  font-family:'JetBrains Mono', monospace;
+  font-size:8px;
+  font-weight:700;
+  letter-spacing:1px;
+  line-height:1;
+  box-shadow:0 0 16px currentColor, 0 0 32px rgba(0,0,0,.38);
+  position:relative;
+}
+
+.halo-lite-transit-marker::after{
+  content:attr(data-step);
+  position:absolute;
+  right:-7px;
+  top:-8px;
+  width:15px;
+  height:15px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.50);
+  background:rgba(0,10,26,.96);
+  color:#eaffff;
+  font-family:'JetBrains Mono', monospace;
+  font-size:7px;
+  letter-spacing:0;
+}
+
+.halo-lite-transit-marker.walk{
+  width:24px;
+  min-width:24px;
+  height:24px;
+  padding:0;
+  border-radius:50%;
+  color:#00eaff;
+  font-size:0;
+  background:
+    radial-gradient(circle, #00eaff 0 4px, rgba(0,234,255,.16) 5px 10px, rgba(0,10,26,.94) 11px);
+}
+
+.halo-lite-transit-marker.bus{
+  color:#bd70ff;
+}
+
+.halo-lite-transit-marker.train{
+  color:#ff9d2e;
+}
+
+.halo-lite-transit-marker.transfer{
+  width:24px;
+  min-width:24px;
+  height:24px;
+  padding:0;
+  border-radius:50%;
+  color:#ffffff;
+  font-size:0;
+  background:
+    radial-gradient(circle, transparent 0 5px, rgba(255,255,255,.88) 6px 7px, rgba(36,12,62,.94) 8px);
+}
+
+.halo-lite-transit-marker.destination{
+  width:28px;
+  min-width:28px;
+  height:28px;
+  padding:0;
+  border-radius:50%;
+  color:#00ff9d;
+  font-size:0;
+  background:
+    radial-gradient(circle, #00ff9d 0 3px, transparent 4px 8px, rgba(0,255,157,.22) 9px 12px, rgba(0,10,26,.94) 13px);
+}
+
+/* Lightweight segment colors */
+.halo-lite-walk-segment{
+  stroke:#00eaff !important;
+  stroke-dasharray:6 12 !important;
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+  filter:drop-shadow(0 0 6px #00eaff) !important;
+}
+
+.halo-lite-bus-segment{
+  stroke:#bd70ff !important;
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+  filter:drop-shadow(0 0 8px #bd70ff) drop-shadow(0 0 16px #bd70ff) !important;
+}
+
+.halo-lite-train-segment{
+  stroke:#ff9d2e !important;
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+  filter:drop-shadow(0 0 8px #ff9d2e) drop-shadow(0 0 16px #ff9d2e) !important;
+}
+
+.halo-lite-transit-legend{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin:10px 0;
+}
+
+.halo-lite-transit-chip{
+  padding:6px 8px;
+  border-radius:999px;
+  border:1px solid rgba(189,112,255,.14);
+  background:rgba(189,112,255,.045);
+  color:rgba(245,237,255,.74);
+  font-family:'JetBrains Mono', monospace;
+  font-size:7px;
+  letter-spacing:1px;
+}
+
+/* Close remains reliable */
+#haloTransitIntelPanel.closed{
+  display:none !important;
+}
+
+#haloTransitIntelPanel .halo-transit-close{
+  pointer-events:auto !important;
+  z-index:30 !important;
+}
+</style>
+
+<script id="halo-lightweight-transit-icons-v5-js">
+(function(){
+  let liteTransitLayers = [];
+  let transitPanelClosed = false;
+
+  function getMap(){
+    try{
+      return window.haloRealMap || haloRealMap;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function esc(str){
+    return String(str ?? '').replace(/[&<>"']/g, m => ({
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#039;'
+    })[m]);
+  }
+
+  function decodePolyline(encoded){
+    if(!encoded) return [];
+    const points = [];
+    let index = 0, lat = 0, lng = 0;
+
+    while(index < encoded.length){
+      let b, shift = 0, result = 0;
+      do{
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      }while(b >= 0x20);
+      lat += ((result & 1) ? ~(result >> 1) : (result >> 1));
+
+      shift = 0;
+      result = 0;
+      do{
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      }while(b >= 0x20);
+      lng += ((result & 1) ? ~(result >> 1) : (result >> 1));
+
+      points.push([lat / 1e5, lng / 1e5]);
+    }
+
+    return points;
+  }
+
+  function clearLiteTransit(){
+    const map = getMap();
+    if(map){
+      liteTransitLayers.forEach(layer => {
+        try{ map.removeLayer(layer); }catch(e){}
+      });
+    }
+    liteTransitLayers = [];
+  }
+
+  function stepKind(step){
+    const mode = String(step.travel_mode || '').toUpperCase();
+    const vehicle = String(step.transit?.vehicle_type || step.transit?.vehicle_name || '').toUpperCase();
+
+    if(mode === 'WALKING') return 'walk';
+    if(vehicle.includes('SUBWAY') || vehicle.includes('TRAIN') || vehicle.includes('RAIL') || vehicle.includes('TRAM')) return 'train';
+    if(mode === 'TRANSIT') return 'bus';
+    return 'bus';
+  }
+
+  function stepLabel(kind){
+    if(kind === 'bus') return 'BUS';
+    if(kind === 'train') return 'TRN';
+    return '';
+  }
+
+  function stepTitle(step){
+    const kind = stepKind(step);
+    if(kind === 'walk') return 'Walk';
+    if(kind === 'train') return step.transit?.line_short_name || step.transit?.line_name || 'Train';
+    return step.transit?.line_short_name || step.transit?.line_name || 'Bus';
+  }
+
+  function markerIcon(kind, stepNumber){
+    return L.divIcon({
+      className:'',
+      html:`<div class="halo-lite-transit-marker ${kind}" data-step="${stepNumber}">${stepLabel(kind)}</div>`,
+      iconSize:null,
+      iconAnchor:[16,12],
+      popupAnchor:[0,-14]
+    });
+  }
+
+  function addMarker(map, point, kind, stepNumber, popup){
+    if(!point || !point.length) return;
+    const marker = L.marker(point, {
+      icon: markerIcon(kind, stepNumber)
+    }).addTo(map);
+
+    if(popup) marker.bindPopup(popup, {className:'ham-popup'});
+    liteTransitLayers.push(marker);
+  }
+
+  function drawLiteTransitIcons(data){
+    const map = getMap();
+    if(!map || typeof L === 'undefined' || !data) return;
+
+    clearLiteTransit();
+
+    const route = (data.routes && data.routes[0]) || data;
+    const steps = route.steps || [];
+    let allPoints = [];
+    let transitCount = 0;
+
+    // Limit markers to prevent freeze on giant transit routes.
+    const maxMarkers = 18;
+    let markerCount = 0;
+
+    steps.forEach((step, idx) => {
+      const points = decodePolyline(step.polyline);
+      if(!points.length) return;
+
+      allPoints = allPoints.concat(points);
+
+      const kind = stepKind(step);
+      const isTransit = kind === 'bus' || kind === 'train';
+
+      const segment = L.polyline(points, {
+        color: kind === 'walk' ? '#00eaff' : kind === 'train' ? '#ff9d2e' : '#bd70ff',
+        weight: kind === 'walk' ? 4 : 7,
+        opacity: kind === 'walk' ? .72 : .9,
+        dashArray: kind === 'walk' ? '6 12' : null,
+        lineCap:'round',
+        lineJoin:'round',
+        interactive:false,
+        className: kind === 'walk'
+          ? 'halo-lite-walk-segment'
+          : kind === 'train'
+            ? 'halo-lite-train-segment'
+            : 'halo-lite-bus-segment'
+      }).addTo(map);
+
+      liteTransitLayers.push(segment);
+
+      if(markerCount >= maxMarkers) return;
+
+      const stepNumber = idx + 1;
+
+      if(kind === 'walk'){
+        markerCount++;
+        addMarker(
+          map,
+          points[0],
+          'walk',
+          stepNumber,
+          `<strong>WALK</strong><br>${esc(step.instruction || 'Walking step')}<br>${esc(step.duration_minutes)} min`
+        );
+      }
+
+      if(isTransit){
+        transitCount++;
+
+        if(transitCount > 1 && markerCount < maxMarkers){
+          markerCount++;
+          addMarker(
+            map,
+            points[0],
+            'transfer',
+            stepNumber,
+            `<strong>TRANSFER</strong><br>Switch to ${esc(stepTitle(step))}<br>${esc(step.transit?.departure_stop || 'Transit stop')}`
+          );
+        }
+
+        if(markerCount < maxMarkers){
+          markerCount++;
+          addMarker(
+            map,
+            points[0],
+            kind,
+            stepNumber,
+            `<strong>${kind === 'train' ? 'TRAIN' : 'BUS'} ${esc(stepTitle(step))}</strong><br>
+            Board: ${esc(step.transit?.departure_stop || 'Stop')}<br>
+            Exit: ${esc(step.transit?.arrival_stop || 'Stop')}`
+          );
+        }
+      }
+    });
+
+    if(allPoints.length && markerCount < maxMarkers){
+      addMarker(
+        map,
+        allPoints[allPoints.length - 1],
+        'destination',
+        steps.length + 1,
+        `<strong>ARRIVE</strong><br>${esc(data.destination || route.end_address || 'Destination')}`
+      );
+    }
+
+    updateLitePanelLegend();
+  }
+
+  function updateLitePanelLegend(){
+    const body = document.getElementById('haloTransitIntelBody');
+    if(!body || body.querySelector('.halo-lite-transit-legend')) return;
+
+    const legend = document.createElement('div');
+    legend.className = 'halo-lite-transit-legend';
+    legend.innerHTML = `
+      <div class="halo-lite-transit-chip">CYAN DOT = WALK</div>
+      <div class="halo-lite-transit-chip">BUS = BUS</div>
+      <div class="halo-lite-transit-chip">TRN = TRAIN</div>
+      <div class="halo-lite-transit-chip">RING = TRANSFER</div>
+    `;
+
+    const firstLine = body.querySelector('.halo-transit-lite-line');
+    if(firstLine && firstLine.nextSibling){
+      body.insertBefore(legend, firstLine.nextSibling);
+    }else{
+      body.appendChild(legend);
+    }
+  }
+
+  function bindClose(){
+    const panel = document.getElementById('haloTransitIntelPanel');
+    if(!panel) return;
+
+    const close = panel.querySelector('.halo-transit-close');
+    if(close && close.dataset.liteCloseBound !== 'true'){
+      close.dataset.liteCloseBound = 'true';
+      close.addEventListener('click', e => {
+        e.preventDefault();
+        e.stopPropagation();
+        transitPanelClosed = true;
+        panel.classList.add('closed');
+        panel.classList.remove('active');
+      }, true);
+    }
+  }
+
+  const originalFetch = window.fetch;
+  if(originalFetch && !window.__haloLiteTransitFetchWrapped){
+    window.__haloLiteTransitFetchWrapped = true;
+
+    window.fetch = async function(){
+      const response = await originalFetch.apply(this, arguments);
+
+      try{
+        const url = String(arguments[0] || '');
+        if(url.includes('/transit-intel')){
+          transitPanelClosed = false;
+          response.clone().json().then(data => {
+            if(data && data.success){
+              setTimeout(() => {
+                bindClose();
+                drawLiteTransitIcons(data);
+
+                const panel = document.getElementById('haloTransitIntelPanel');
+                if(panel && !transitPanelClosed){
+                  panel.classList.remove('closed');
+                  panel.classList.add('active');
+                }
+              }, 500);
+            }
+          }).catch(()=>{});
+        }
+      }catch(e){}
+
+      return response;
+    };
+  }
+
+  const oldCloseTransitPanel = window.haloCloseTransitPanel;
+  window.haloCloseTransitPanel = function(){
+    transitPanelClosed = true;
+    const panel = document.getElementById('haloTransitIntelPanel');
+    if(panel){
+      panel.classList.add('closed');
+      panel.classList.remove('active');
+    }
+    if(typeof oldCloseTransitPanel === 'function'){
+      try{ oldCloseTransitPanel(); }catch(e){}
+    }
+  };
+
+  window.haloClearLiteTransitIcons = clearLiteTransit;
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => setTimeout(bindClose, 1200));
+  }else{
+    setTimeout(bindClose, 1200);
+  }
+
+  console.log('[HALO LIGHTWEIGHT TRANSIT ICONS V5] loaded');
+})();
+</script>
+
 </body>
 </html>
