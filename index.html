@@ -9982,5 +9982,375 @@ path.halo-transit-route-glow{
 })();
 </script>
 
+
+<!-- HALO ROUTE SIDE COLUMNS + COLLAPSIBLE PANELS V12 -->
+<style id="halo-route-side-columns-collapsible-v12">
+/*
+  Final route layout:
+  GLOBAL BRIEFING | NAV INTEL | MAP | DESTINATION BRIEF | ACTIVE FEEDS
+*/
+
+#haloNavHUD{
+  position:absolute !important;
+  left:250px !important;
+  top:78px !important;
+  bottom:18px !important;
+  width:260px !important;
+  height:auto !important;
+  max-height:none !important;
+  z-index:1280 !important;
+  border-radius:22px !important;
+  overflow:hidden !important;
+  pointer-events:auto !important;
+  transform:none !important;
+}
+
+#haloDestinationBrief,
+#haloDestinationIntelCard{
+  position:absolute !important;
+  right:316px !important;
+  top:78px !important;
+  bottom:18px !important;
+  width:268px !important;
+  height:auto !important;
+  max-height:none !important;
+  z-index:1270 !important;
+  border-radius:22px !important;
+  overflow:hidden !important;
+  pointer-events:auto !important;
+  transform:none !important;
+}
+
+/* Keep existing side panels visible */
+#haloCleanLeftPanel,
+#haloSystemBriefingPanel{
+  left:18px !important;
+  width:214px !important;
+}
+
+#haloCleanRightPanel,
+#haloActiveFeedsPanel{
+  right:18px !important;
+  width:282px !important;
+}
+
+/* Shrink the map only when nav/destination columns exist */
+#haloAdvancedMapOverlay.active .ham-map-panel,
+#haloAdvancedMapOverlay.active .hgi-map-wrap{
+  margin-left:528px !important;
+  margin-right:604px !important;
+  width:auto !important;
+}
+
+/* Route controls move above map safely */
+#haloCleanMapToggles,
+#haloMapLayerControls{
+  right:604px !important;
+}
+
+/* Panel body scrolling */
+#haloNavHUD .halo-nav-body,
+#haloDestinationBrief .halo-dest-body,
+#haloDestinationIntelCard .halo-dintel-body,
+#haloDestinationBrief > div:not(.halo-route-collapse-bar),
+#haloDestinationIntelCard > div:not(.halo-route-collapse-bar){
+  max-height:calc(100% - 62px) !important;
+  overflow:auto !important;
+  padding-right:10px !important;
+}
+
+/* Collapse bar */
+.halo-route-collapse-bar{
+  height:42px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:0 12px;
+  border-bottom:1px solid rgba(0,234,255,.11);
+  background:rgba(0,10,26,.78);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  cursor:default;
+  position:sticky;
+  top:0;
+  z-index:40;
+}
+
+.halo-route-collapse-title{
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  letter-spacing:1.8px;
+  color:#00eaff;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.halo-route-collapse-actions{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+.halo-route-collapse-btn{
+  width:28px;
+  height:28px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  border:1px solid rgba(0,234,255,.22);
+  background:rgba(0,234,255,.055);
+  color:#00eaff;
+  font-family:'JetBrains Mono',monospace;
+  font-size:11px;
+  cursor:pointer;
+}
+
+.halo-route-collapse-btn:hover{
+  border-color:rgba(0,234,255,.56);
+  box-shadow:0 0 18px rgba(0,234,255,.16);
+}
+
+/* Collapsed panels become small tabs */
+#haloNavHUD.halo-route-collapsed,
+#haloDestinationBrief.halo-route-collapsed,
+#haloDestinationIntelCard.halo-route-collapsed{
+  bottom:auto !important;
+  height:46px !important;
+  min-height:46px !important;
+  overflow:hidden !important;
+}
+
+#haloNavHUD.halo-route-collapsed .halo-nav-body,
+#haloDestinationBrief.halo-route-collapsed .halo-dest-body,
+#haloDestinationIntelCard.halo-route-collapsed .halo-dintel-body,
+#haloDestinationBrief.halo-route-collapsed > *:not(.halo-route-collapse-bar),
+#haloDestinationIntelCard.halo-route-collapsed > *:not(.halo-route-collapse-bar),
+#haloNavHUD.halo-route-collapsed > *:not(.halo-route-collapse-bar){
+  display:none !important;
+}
+
+/* Close state */
+.halo-route-hidden{
+  display:none !important;
+}
+
+/* Prevent old draggable styles from fighting side-column layout */
+#haloNavHUD[style],
+#haloDestinationBrief[style],
+#haloDestinationIntelCard[style]{
+  transform:none !important;
+}
+
+/* Map smoothing after resize */
+.leaflet-map-pane{
+  transition:transform .38s cubic-bezier(.2,.85,.2,1) !important;
+}
+
+/* Smaller layout fallbacks */
+@media(max-width:1500px){
+  #haloCleanLeftPanel,
+  #haloSystemBriefingPanel{
+    width:198px !important;
+  }
+
+  #haloNavHUD{
+    left:226px !important;
+    width:236px !important;
+  }
+
+  #haloDestinationBrief,
+  #haloDestinationIntelCard{
+    right:276px !important;
+    width:238px !important;
+  }
+
+  #haloCleanRightPanel,
+  #haloActiveFeedsPanel{
+    width:245px !important;
+  }
+
+  #haloAdvancedMapOverlay.active .ham-map-panel,
+  #haloAdvancedMapOverlay.active .hgi-map-wrap{
+    margin-left:476px !important;
+    margin-right:530px !important;
+  }
+
+  #haloCleanMapToggles,
+  #haloMapLayerControls{
+    right:530px !important;
+  }
+}
+
+@media(max-width:1180px){
+  #haloNavHUD{
+    left:18px !important;
+    top:auto !important;
+    bottom:18px !important;
+    width:300px !important;
+    max-height:35vh !important;
+  }
+
+  #haloDestinationBrief,
+  #haloDestinationIntelCard{
+    right:18px !important;
+    top:auto !important;
+    bottom:18px !important;
+    width:300px !important;
+    max-height:35vh !important;
+  }
+
+  #haloCleanLeftPanel,
+  #haloSystemBriefingPanel,
+  #haloCleanRightPanel,
+  #haloActiveFeedsPanel{
+    display:none !important;
+  }
+
+  #haloAdvancedMapOverlay.active .ham-map-panel,
+  #haloAdvancedMapOverlay.active .hgi-map-wrap{
+    margin-left:14px !important;
+    margin-right:14px !important;
+  }
+
+  #haloCleanMapToggles,
+  #haloMapLayerControls{
+    right:16px !important;
+  }
+}
+</style>
+
+<script id="halo-route-side-columns-collapsible-v12-js">
+(function(){
+  function getMap(){
+    try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
+  }
+
+  function invalidateSoon(){
+    const map = getMap();
+    if(map){
+      setTimeout(() => {
+        try{ map.invalidateSize({animate:true}); }catch(e){}
+      }, 220);
+    }
+  }
+
+  function panelTitle(panel){
+    if(!panel) return 'PANEL';
+    if(panel.id === 'haloNavHUD') return 'NAVIGATION INTEL';
+    if(panel.id === 'haloDestinationBrief' || panel.id === 'haloDestinationIntelCard') return 'DESTINATION BRIEF';
+    return 'INTEL PANEL';
+  }
+
+  function addCollapseBar(panel){
+    if(!panel || panel.dataset.v12CollapseReady === 'true') return;
+    panel.dataset.v12CollapseReady = 'true';
+
+    // Remove old floating close buttons added by earlier patches inside these panels.
+    panel.querySelectorAll(':scope > .halo-panel-close-x').forEach(btn => btn.remove());
+
+    const bar = document.createElement('div');
+    bar.className = 'halo-route-collapse-bar';
+    bar.innerHTML = `
+      <div class="halo-route-collapse-title">${panelTitle(panel)}</div>
+      <div class="halo-route-collapse-actions">
+        <button class="halo-route-collapse-btn" title="Collapse" data-action="collapse">−</button>
+        <button class="halo-route-collapse-btn" title="Close" data-action="close">×</button>
+      </div>
+    `;
+
+    panel.insertBefore(bar, panel.firstChild);
+
+    bar.querySelector('[data-action="collapse"]').addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      panel.classList.toggle('halo-route-collapsed');
+      e.currentTarget.textContent = panel.classList.contains('halo-route-collapsed') ? '+' : '−';
+      e.currentTarget.title = panel.classList.contains('halo-route-collapsed') ? 'Expand' : 'Collapse';
+      invalidateSoon();
+    });
+
+    bar.querySelector('[data-action="close"]').addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      panel.classList.add('halo-route-hidden');
+      panel.classList.add('closed');
+      panel.classList.remove('active');
+      invalidateSoon();
+    });
+  }
+
+  function resetSideColumnPosition(panel){
+    if(!panel) return;
+
+    // Clear old drag positioning caused by earlier versions.
+    panel.style.left = '';
+    panel.style.top = '';
+    panel.style.right = '';
+    panel.style.bottom = '';
+    panel.style.width = '';
+    panel.style.height = '';
+    panel.style.position = '';
+    panel.style.zIndex = '';
+  }
+
+  function enhanceRoutePanels(){
+    const nav = document.getElementById('haloNavHUD');
+    const dest = document.getElementById('haloDestinationBrief') || document.getElementById('haloDestinationIntelCard');
+
+    [nav, dest].forEach(panel => {
+      if(!panel) return;
+      resetSideColumnPosition(panel);
+      addCollapseBar(panel);
+      panel.classList.remove('halo-route-hidden');
+    });
+
+    invalidateSoon();
+  }
+
+  // If panels are recreated by route renderers, reapply side layout.
+  const originalFetch = window.fetch;
+  if(originalFetch && !window.__haloV12RoutePanelFetchWrapped){
+    window.__haloV12RoutePanelFetchWrapped = true;
+
+    window.fetch = async function(){
+      const response = await originalFetch.apply(this, arguments);
+
+      try{
+        const url = String(arguments[0] || '');
+        if(url.includes('/route-plus') || url.includes('/route-intel') || url.includes('/transit-intel')){
+          setTimeout(enhanceRoutePanels, 500);
+          setTimeout(enhanceRoutePanels, 1200);
+        }
+      }catch(e){}
+
+      return response;
+    };
+  }
+
+  const oldOpenMap = window.openHaloAdvancedMap;
+  if(typeof oldOpenMap === 'function' && !window.__haloV12OpenWrapped){
+    window.__haloV12OpenWrapped = true;
+    window.openHaloAdvancedMap = function(){
+      const result = oldOpenMap.apply(this, arguments);
+      setTimeout(enhanceRoutePanels, 600);
+      return result;
+    };
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => setTimeout(enhanceRoutePanels, 1300));
+  }else{
+    setTimeout(enhanceRoutePanels, 1300);
+  }
+
+  // Low frequency only, keeps newly generated panels corrected.
+  setInterval(enhanceRoutePanels, 2500);
+
+  console.log('[HALO V12 ROUTE SIDE COLUMNS + COLLAPSIBLE PANELS] loaded');
+})();
+</script>
+
 </body>
 </html>
