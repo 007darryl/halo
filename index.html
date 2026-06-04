@@ -8955,18 +8955,24 @@ path.halo-transit-route-glow{
 
 
 
-<!-- HALO V38 PERFORMANCE RESET -->
-<style id="halo-v38-performance-reset">
+
+
+
+<!-- HALO V39 CLEAN UI REBUILD -->
+<style id="halo-v39-clean-ui-rebuild">
 /*
-  V38 Performance Reset:
-  - Removes stacked patch behavior.
-  - Keeps map, routing, gas/parking lists, and panels.
-  - No MutationObserver loops.
-  - No repeated setInterval layout fixing.
-  - One clear handler, one panel close handler, lightweight shadows.
+  V39 CLEAN UI REBUILD:
+  - Keeps the working map + route engine.
+  - Deletes visual briefing/event/feed systems.
+  - Keeps only:
+    map
+    route line/markers
+    Navigation Intel
+    Destination Brief
+    HALO Chat
+    Focus / Zoom / Clear
 */
 
-/* Hide unwanted side shells */
 #haloCleanLeftPanel,
 #haloSystemBriefingPanel,
 #haloCleanRightPanel,
@@ -8976,25 +8982,40 @@ path.halo-transit-route-glow{
 #haloFeedsPanel,
 #haloLeftBriefingPanel,
 #haloRightFeedsPanel,
+#haloAdvancedMapOverlay .ham-left,
+#haloAdvancedMapOverlay .ham-right,
+#haloAdvancedMapOverlay .ham-bottom,
 .global-briefing,
 .active-feeds,
 .system-overview,
 .live-channels,
+.active-events,
+.priority-alerts,
+.mission-objectives,
+.quick-directives,
+.omkeer-operations,
+.latest-intelligence,
 [class*="global-briefing"],
 [class*="active-feeds"],
 [class*="system-overview"],
-[class*="live-channels"]{
+[class*="live-channels"],
+[class*="active-events"],
+[class*="priority-alerts"],
+[class*="mission-objectives"],
+[class*="quick-directives"],
+[class*="omkeer-operations"],
+[class*="latest-intelligence"]{
   display:none !important;
   visibility:hidden !important;
   opacity:0 !important;
   pointer-events:none !important;
 }
 
-/* Full map stage */
+/* Make the map the main hero */
 #haloAdvancedMapOverlay .ham-body{
   display:block !important;
   position:absolute !important;
-  inset:76px 14px 14px 14px !important;
+  inset:76px 16px 16px 16px !important;
   padding:0 !important;
   margin:0 !important;
   overflow:hidden !important;
@@ -9015,6 +9036,7 @@ path.halo-transit-route-glow{
   transform:none !important;
   overflow:hidden !important;
   z-index:20 !important;
+  border-radius:24px !important;
 }
 
 #haloRealWorldMap,
@@ -9030,38 +9052,40 @@ path.halo-transit-route-glow{
   max-height:none !important;
 }
 
-/* Floating panels */
+/* Clean tactical dock panels */
 #haloNavHUD{
   position:absolute !important;
-  left:24px !important;
+  left:26px !important;
   top:96px !important;
-  bottom:24px !important;
-  width:340px !important;
-  max-width:340px !important;
-  min-width:340px !important;
+  bottom:26px !important;
+  width:330px !important;
+  max-width:330px !important;
+  min-width:330px !important;
   z-index:1500 !important;
   display:block !important;
   visibility:visible !important;
   opacity:1 !important;
   overflow:hidden !important;
   transform:none !important;
+  margin:0 !important;
 }
 
 #haloDestinationBrief,
 #haloDestinationIntelCard{
   position:absolute !important;
-  right:24px !important;
+  right:26px !important;
   top:96px !important;
-  bottom:24px !important;
-  width:340px !important;
-  max-width:340px !important;
-  min-width:340px !important;
+  bottom:26px !important;
+  width:330px !important;
+  max-width:330px !important;
+  min-width:330px !important;
   z-index:1500 !important;
   display:block !important;
   visibility:visible !important;
   opacity:1 !important;
   overflow:hidden !important;
   transform:none !important;
+  margin:0 !important;
 }
 
 #haloNavHUD .halo-nav-body,
@@ -9071,18 +9095,27 @@ path.halo-transit-route-glow{
   overflow:auto !important;
 }
 
-/* Hide panels cleanly */
-#haloNavHUD.halo-v38-hidden,
-#haloDestinationBrief.halo-v38-hidden,
-#haloDestinationIntelCard.halo-v38-hidden{
+#haloNavHUD.halo-v39-hidden,
+#haloDestinationBrief.halo-v39-hidden,
+#haloDestinationIntelCard.halo-v39-hidden{
   display:none !important;
   visibility:hidden !important;
   opacity:0 !important;
   pointer-events:none !important;
 }
 
-/* Control bar */
-.halo-v38-bar{
+/* Remove old patch bars */
+#haloNavHUD > [class*="halo-v"]:not(.halo-v39-bar),
+#haloDestinationBrief > [class*="halo-v"]:not(.halo-v39-bar),
+#haloDestinationIntelCard > [class*="halo-v"]:not(.halo-v39-bar),
+#haloNavHUD > .halo-panel-close-x,
+#haloDestinationBrief > .halo-panel-close-x,
+#haloDestinationIntelCard > .halo-panel-close-x{
+  display:none !important;
+}
+
+/* V39 control bar */
+.halo-v39-bar{
   height:38px;
   min-height:38px;
   display:flex;
@@ -9090,7 +9123,7 @@ path.halo-transit-route-glow{
   justify-content:space-between;
   gap:8px;
   padding:0 10px;
-  border-bottom:1px solid rgba(0,234,255,.12);
+  border-bottom:1px solid rgba(0,234,255,.14);
   background:rgba(0,10,26,.88);
   backdrop-filter:blur(10px);
   -webkit-backdrop-filter:blur(10px);
@@ -9099,23 +9132,23 @@ path.halo-transit-route-glow{
   z-index:100;
 }
 
-.halo-v38-title{
+.halo-v39-title{
   font-family:'JetBrains Mono',monospace;
   font-size:8px;
-  letter-spacing:1.5px;
+  letter-spacing:1.6px;
   color:#00eaff;
   white-space:nowrap;
   overflow:hidden;
   text-overflow:ellipsis;
 }
 
-.halo-v38-actions{
+.halo-v39-actions{
   display:flex;
   gap:6px;
   flex-shrink:0;
 }
 
-.halo-v38-btn{
+.halo-v39-btn{
   width:24px;
   height:24px;
   display:grid;
@@ -9129,26 +9162,26 @@ path.halo-transit-route-glow{
   cursor:pointer;
 }
 
-.halo-v38-collapsed{
+.halo-v39-collapsed{
   height:42px !important;
   max-height:42px !important;
   min-height:42px !important;
   overflow:hidden !important;
 }
 
-.halo-v38-collapsed > *:not(.halo-v38-bar){
+.halo-v39-collapsed > *:not(.halo-v39-bar){
   display:none !important;
 }
 
-#haloV38RestorePanels{
+#haloV39RestorePanels{
   position:absolute;
   left:50%;
-  bottom:62px;
+  bottom:64px;
   transform:translateX(-50%);
   z-index:2200;
   display:none;
   border:1px solid rgba(0,234,255,.24);
-  background:rgba(0,10,26,.86);
+  background:rgba(0,10,26,.88);
   color:#00eaff;
   border-radius:999px;
   padding:9px 14px;
@@ -9158,11 +9191,27 @@ path.halo-transit-route-glow{
   cursor:pointer;
 }
 
-#haloV38RestorePanels.active{
+#haloV39RestorePanels.active{
   display:block;
 }
 
-/* Lighter visual effects for speed */
+/* Keep map controls visible */
+#haloAdvancedMapOverlay .ham-layer-controls,
+#haloAdvancedMapOverlay [class*="layer-control"]{
+  z-index:1400 !important;
+}
+
+/* Chat button */
+#haloMapChatBtn,
+.halo-map-chat-btn{
+  position:absolute !important;
+  left:50% !important;
+  bottom:18px !important;
+  transform:translateX(-50%) !important;
+  z-index:1600 !important;
+}
+
+/* Reduce GPU-heavy effects */
 .leaflet-marker-icon,
 .leaflet-interactive{
   filter:none !important;
@@ -9174,7 +9223,7 @@ path.halo-transit-route-glow{
   box-shadow:0 0 10px currentColor !important;
 }
 
-/* Remove failed exact lists */
+/* Hide failed exact lists */
 #haloV20ExactPlaces,
 #haloV22ExactPlaces,
 #haloV25ExactPlaces{
@@ -9187,30 +9236,52 @@ path.halo-transit-route-glow{
   #haloDestinationIntelCard{
     display:none !important;
   }
+
+  #haloAdvancedMapOverlay .ham-body{
+    inset:72px 10px 10px 10px !important;
+  }
 }
 </style>
 
-<script id="halo-v38-performance-reset-js">
+<script id="halo-v39-clean-ui-rebuild-js">
 (function(){
   const state = {
-    bound:false,
-    latestRoutePayload:null,
-    clearInProgress:false
+    initialized:false,
+    clearBusy:false
   };
 
-  function map(){
+  function getMap(){
     try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
   }
 
-  function overlay(){
+  function getOverlay(){
     return document.getElementById('haloAdvancedMapOverlay') || document.body;
   }
 
   function invalidate(){
-    const m = map();
+    const m = getMap();
     if(!m) return;
     requestAnimationFrame(() => {
       try{ m.invalidateSize({animate:false}); }catch(e){}
+    });
+  }
+
+  function hideDeletedSystems(){
+    [
+      'haloCleanLeftPanel','haloSystemBriefingPanel','haloCleanRightPanel','haloActiveFeedsPanel',
+      'haloGlobalBriefingPanel','haloBriefingPanel','haloFeedsPanel',
+      'haloLeftBriefingPanel','haloRightFeedsPanel'
+    ].forEach(id => {
+      const el = document.getElementById(id);
+      if(!el) return;
+      el.remove();
+    });
+
+    document.querySelectorAll(
+      '.global-briefing,.active-feeds,.system-overview,.live-channels,.active-events,.priority-alerts,.mission-objectives,.quick-directives,.omkeer-operations,.latest-intelligence'
+    ).forEach(el => {
+      if(el.id === 'haloNavHUD' || el.id === 'haloDestinationBrief' || el.id === 'haloDestinationIntelCard') return;
+      el.remove();
     });
   }
 
@@ -9222,14 +9293,14 @@ path.halo-transit-route-glow{
   }
 
   function ensureRestoreButton(){
-    let btn = document.getElementById('haloV38RestorePanels');
+    let btn = document.getElementById('haloV39RestorePanels');
     if(btn) return btn;
 
     btn = document.createElement('button');
-    btn.id = 'haloV38RestorePanels';
+    btn.id = 'haloV39RestorePanels';
     btn.type = 'button';
     btn.textContent = 'RESTORE PANELS';
-    overlay().appendChild(btn);
+    getOverlay().appendChild(btn);
     btn.addEventListener('click', showPanels, true);
     return btn;
   }
@@ -9238,32 +9309,33 @@ path.halo-transit-route-glow{
     return panel && panel.id === 'haloNavHUD' ? 'NAVIGATION INTEL' : 'DESTINATION BRIEF';
   }
 
-  function addBar(panel){
-    if(!panel || panel.dataset.v38Ready === 'true') return;
-    panel.dataset.v38Ready = 'true';
+  function addPanelBar(panel){
+    if(!panel || panel.dataset.v39Ready === 'true') return;
+    panel.dataset.v39Ready = 'true';
 
-    panel.querySelectorAll(':scope > .halo-v38-bar').forEach(x => x.remove());
+    panel.querySelectorAll(':scope > .halo-v39-bar').forEach(x => x.remove());
 
     const bar = document.createElement('div');
-    bar.className = 'halo-v38-bar';
+    bar.className = 'halo-v39-bar';
     bar.innerHTML = `
-      <div class="halo-v38-title">${panelTitle(panel)}</div>
-      <div class="halo-v38-actions">
-        <button class="halo-v38-btn" data-v38-collapse title="Collapse">−</button>
-        <button class="halo-v38-btn" data-v38-close title="Close">×</button>
+      <div class="halo-v39-title">${panelTitle(panel)}</div>
+      <div class="halo-v39-actions">
+        <button class="halo-v39-btn" data-v39-collapse title="Collapse">−</button>
+        <button class="halo-v39-btn" data-v39-close title="Close">×</button>
       </div>
     `;
+
     panel.insertBefore(bar, panel.firstChild);
 
-    bar.querySelector('[data-v38-collapse]').addEventListener('click', e => {
+    bar.querySelector('[data-v39-collapse]').addEventListener('click', e => {
       e.preventDefault();
       e.stopPropagation();
-      panel.classList.toggle('halo-v38-collapsed');
-      e.currentTarget.textContent = panel.classList.contains('halo-v38-collapsed') ? '+' : '−';
+      panel.classList.toggle('halo-v39-collapsed');
+      e.currentTarget.textContent = panel.classList.contains('halo-v39-collapsed') ? '+' : '−';
       invalidate();
     }, true);
 
-    bar.querySelector('[data-v38-close]').addEventListener('click', e => {
+    bar.querySelector('[data-v39-close]').addEventListener('click', e => {
       e.preventDefault();
       e.stopPropagation();
       hidePanel(panel);
@@ -9272,7 +9344,7 @@ path.halo-transit-route-glow{
 
   function hidePanel(panel){
     if(!panel) return;
-    panel.classList.add('halo-v38-hidden');
+    panel.classList.add('halo-v39-hidden');
     panel.classList.add('closed');
     panel.classList.remove('active');
     ensureRestoreButton().classList.add('active');
@@ -9285,74 +9357,57 @@ path.halo-transit-route-glow{
 
   function showPanels(){
     panels().forEach(panel => {
-      panel.classList.remove('halo-v38-hidden','closed');
+      panel.classList.remove('halo-v39-hidden','closed');
       panel.classList.add('active');
-      panel.style.removeProperty('display');
-      panel.style.removeProperty('visibility');
-      panel.style.removeProperty('opacity');
-      panel.style.removeProperty('pointer-events');
     });
     ensureRestoreButton().classList.remove('active');
     invalidate();
   }
 
-  function hideOldShells(){
-    [
-      'haloCleanLeftPanel','haloSystemBriefingPanel','haloCleanRightPanel','haloActiveFeedsPanel',
-      'haloGlobalBriefingPanel','haloBriefingPanel','haloFeedsPanel',
-      'haloLeftBriefingPanel','haloRightFeedsPanel'
-    ].forEach(id => {
-      const el = document.getElementById(id);
-      if(!el) return;
-      el.style.display = 'none';
-      el.style.visibility = 'hidden';
-      el.style.opacity = '0';
-      el.style.pointerEvents = 'none';
-    });
-  }
-
-  function removeLayer(m, layer){
+  function removeLayer(map, layer){
     try{
-      if(m && layer && m.hasLayer && m.hasLayer(layer)) m.removeLayer(layer);
-      else if(m && layer) m.removeLayer(layer);
+      if(map && layer && map.hasLayer && map.hasLayer(layer)) map.removeLayer(layer);
+      else if(map && layer) map.removeLayer(layer);
     }catch(e){}
   }
 
-  function isTileLayer(layer){
-    return typeof L !== 'undefined' && layer instanceof L.TileLayer;
-  }
+  function clearRoute(){
+    if(state.clearBusy) return;
+    state.clearBusy = true;
 
-  function clearRouteVisuals(){
-    const m = map();
-    if(!m || typeof L === 'undefined') return;
+    const m = getMap();
+    if(m && typeof L !== 'undefined'){
+      try{ m.closePopup(); }catch(e){}
 
-    try{ m.closePopup(); }catch(e){}
+      const remove = [];
+      try{
+        m.eachLayer(layer => {
+          if(!layer) return;
+          if(layer instanceof L.TileLayer) return;
 
-    const toRemove = [];
-    m.eachLayer(layer => {
-      if(!layer || isTileLayer(layer)) return;
+          if(layer instanceof L.Polyline) remove.push(layer);
 
-      if(layer instanceof L.Polyline) toRemove.push(layer);
+          if(layer instanceof L.Marker){
+            const el = layer.getElement && layer.getElement();
+            const html = el ? String(el.innerHTML || '').toLowerCase() : '';
+            const cls = el ? String(el.className || '').toLowerCase() : '';
+            const title = String(layer.options?.title || '').toLowerCase();
 
-      if(layer instanceof L.Marker){
-        const el = layer.getElement && layer.getElement();
-        const html = el ? String(el.innerHTML || '').toLowerCase() : '';
-        const cls = el ? String(el.className || '').toLowerCase() : '';
-        const title = String(layer.options?.title || '').toLowerCase();
-        if(
-          html.includes('halo') || html.includes('gas') || html.includes('parking') ||
-          cls.includes('halo') || cls.includes('gas') || cls.includes('parking') ||
-          title.includes('arco') || title.includes('shell') || title.includes('costco') ||
-          title.includes('gas') || title.includes('parking')
-        ){
-          toRemove.push(layer);
-        }
-      }
-    });
-    toRemove.forEach(layer => removeLayer(m, layer));
-  }
+            if(
+              html.includes('halo') || html.includes('gas') || html.includes('parking') ||
+              cls.includes('halo') || cls.includes('gas') || cls.includes('parking') ||
+              title.includes('arco') || title.includes('shell') || title.includes('costco') ||
+              title.includes('gas') || title.includes('parking')
+            ){
+              remove.push(layer);
+            }
+          }
+        });
 
-  function clearWindowRefs(){
+        remove.forEach(layer => removeLayer(m, layer));
+      }catch(e){}
+    }
+
     [
       'currentRoute','activeDestination','routePlusData','haloRoutePlusData',
       '__haloV32Payload','__haloV31Payload','__haloPolishPayload',
@@ -9362,41 +9417,25 @@ path.halo-transit-route-glow{
       'haloRouteLine','haloRoutePolyline','currentRoutePolyline','routePolyline',
       'activeRoutePolyline','haloGasMarkers','haloParkingMarkers','gasMarkers','parkingMarkers'
     ].forEach(k => {
-      try{
-        const val = window[k];
-        if(val && typeof val === 'object' && map()){
-          if(Array.isArray(val)) val.forEach(x => removeLayer(map(), x));
-          else if(val.remove) val.remove();
-        }
-        window[k] = null;
-      }catch(e){}
+      try{ window[k] = null; }catch(e){}
     });
-  }
 
-  function clearRoute(){
-    if(state.clearInProgress) return;
-    state.clearInProgress = true;
-
-    clearRouteVisuals();
-    clearWindowRefs();
     hidePanels();
 
     setTimeout(() => {
-      clearRouteVisuals();
-      clearWindowRefs();
-      state.clearInProgress = false;
+      state.clearBusy = false;
       invalidate();
-    }, 250);
+    }, 200);
   }
 
-  function bindClearOnce(){
+  function bindClear(){
     document.addEventListener('click', e => {
-      const el = e.target.closest && e.target.closest('button, .ham-map-control, .ham-control, [role="button"]');
-      if(!el) return;
+      const target = e.target.closest && e.target.closest('button, .ham-map-control, .ham-control, [role="button"]');
+      if(!target) return;
 
-      const text = String(el.textContent || el.innerText || '').trim().toLowerCase();
-      const id = String(el.id || '').toLowerCase();
-      const cls = String(el.className || '').toLowerCase();
+      const text = String(target.textContent || target.innerText || '').trim().toLowerCase();
+      const id = String(target.id || '').toLowerCase();
+      const cls = String(target.className || '').toLowerCase();
 
       if(text === 'clear' || id.includes('clear') || cls.includes('clear')){
         e.preventDefault();
@@ -9407,62 +9446,48 @@ path.halo-transit-route-glow{
   }
 
   function init(){
-    if(state.bound) return;
-    state.bound = true;
+    if(state.initialized) return;
+    
+      state.initialized = true;
 
-    hideOldShells();
-    ensureRestoreButton();
+      hideDeletedSystems();
+      ensureRestoreButton();
 
-    panels().forEach(panel => {
-      if(panel.parentElement !== overlay()) overlay().appendChild(panel);
+      panels().forEach(panel => {
+        if(panel.parentElement !== getOverlay()) getOverlay().appendChild(panel);
 
-      panel.classList.remove(
-        'halo-v35-force-hidden','halo-v34-force-hidden',
-        'halo-v31-hidden','halo-v30-hidden','closed'
-      );
+        panel.classList.remove(
+          'halo-v35-force-hidden','halo-v34-force-hidden',
+          'halo-v31-hidden','halo-v30-hidden','closed'
+        );
 
-      addBar(panel);
-    });
+        addPanelBar(panel);
+      });
 
-    bindClearOnce();
-    invalidate();
-    setTimeout(invalidate, 500);
+      bindClear();
+      invalidate();
+      setTimeout(invalidate, 500);
+    }
+
+    const oldOpen = window.openHaloAdvancedMap;
+    if(typeof oldOpen === 'function' && !window.__haloV39OpenWrapped){
+      window.__haloV39OpenWrapped = true;
+      window.openHaloAdvancedMap = function(){
+        const out = oldOpen.apply(this, arguments);
+        setTimeout(init, 100);
+        return out;
+      };
+    }
+
+    if(document.readyState === 'loading'){
+      document.addEventListener('DOMContentLoaded', init);
+    }else{
+      init();
+    }
+
+    console.log('[HALO V39 CLEAN UI REBUILD] loaded');
+
   }
-
-  const oldOpen = window.openHaloAdvancedMap;
-  if(typeof oldOpen === 'function' && !window.__haloV38OpenWrapped){
-    window.__haloV38OpenWrapped = true;
-    window.openHaloAdvancedMap = function(){
-      const out = oldOpen.apply(this, arguments);
-      setTimeout(init, 100);
-      return out;
-    };
-  }
-
-  const oldFetch = window.fetch;
-  if(oldFetch && !window.__haloV38FetchWrapped){
-    window.__haloV38FetchWrapped = true;
-    window.fetch = async function(){
-      const response = await oldFetch.apply(this, arguments);
-      try{
-        const url = String(arguments[0] || '');
-        if(url.includes('/route-plus')){
-          response.clone().json().then(data => {
-            state.latestRoutePayload = data;
-          }).catch(()=>{});
-        }
-      }catch(e){}
-      return response;
-    };
-  }
-
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', init);
-  }else{
-    init();
-  }
-
-  console.log('[HALO V38 PERFORMANCE RESET] loaded');
 })();
 </script>
 
