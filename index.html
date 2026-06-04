@@ -1462,6 +1462,30 @@ async function askHalo(text){
     return;
   }
 
+  // ── ROUTE COMMAND INTERCEPTOR ──
+  const routeMatch = lowerText.match(/^(?:halo\s+)?(?:route|navigate|directions?|take me|get me|go)(?:\s+to)?\s+(.+)$/i);
+  if(routeMatch){
+    console.log('ROUTE COMMAND TRIGGERED');
+    const destination = routeMatch[1].trim();
+    console.log('Routing to:', destination);
+    addChat('user', text);
+    history.push({role:'user', content:text});
+    const msg = `Calculating route to ${destination}. Opening navigation...`;
+    addChat('halo', msg);
+    speakText(`Routing to ${destination}.`);
+    // Open map and run route
+    if(typeof openHaloAdvancedMap === 'function') openHaloAdvancedMap();
+    setTimeout(()=>{
+      if(typeof window.haloNavRun === 'function'){
+        window.haloNavRun(destination, 'home');
+      } else {
+        addChat('halo', 'Navigation system not ready. Please open the map first.');
+      }
+    }, 600);
+    history.push({role:'assistant', content:msg});
+    return;
+  }
+
   const socialCmd=text.toLowerCase();
   if(socialCmd.includes('instagram')&&(socialCmd.includes('analytic')||socialCmd.includes('stat')||socialCmd.includes('show'))){showSocialAnalytics('instagram');addChat('halo','Pulling Instagram analytics, Commander.');speakText('Pulling Instagram analytics now.');return;}
   if(socialCmd.includes('tiktok')&&(socialCmd.includes('analytic')||socialCmd.includes('stat')||socialCmd.includes('show'))){showSocialAnalytics('tiktok');addChat('halo','TikTok analytics on display.');speakText('TikTok analytics on display.');return;}
