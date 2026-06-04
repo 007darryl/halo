@@ -1,47 +1,374 @@
-
-<!-- HALO HOTFIX V14 -->
-<style>
-/* Restore map to full size */
-#haloNavHUD,
-#haloDestinationBrief,
-#haloDestinationIntelCard{
-    position:absolute !important;
-    width:320px !important;
-    max-width:320px !important;
-    z-index:1200 !important;
+<!-- HALO LAYOUT HOTFIX V14 - RESTORE MAP + SAFE FLOATING PANELS -->
+<style id="halo-layout-hotfix-v14">
+/* Undo broken forced 5-column layout */
+#haloAdvancedMapOverlay.active .ham-map-panel,
+#haloAdvancedMapOverlay.active .hgi-map-wrap{
+  position:absolute !important;
+  left:250px !important;
+  right:250px !important;
+  top:78px !important;
+  bottom:18px !important;
+  width:auto !important;
+  height:auto !important;
+  margin:0 !important;
+  transform:none !important;
 }
 
-/* Navigation panel left side of map */
+/* Restore map sizing */
+#haloRealMap,
+#haloMap,
+#haloLeafletMap,
+#haloAdvancedMapOverlay .leaflet-container{
+  width:100% !important;
+  height:100% !important;
+}
+
+/* Keep main side panels in their normal spots */
+#haloCleanLeftPanel,
+#haloSystemBriefingPanel{
+  left:18px !important;
+  top:78px !important;
+  bottom:18px !important;
+  width:214px !important;
+  right:auto !important;
+}
+
+#haloCleanRightPanel,
+#haloActiveFeedsPanel{
+  right:18px !important;
+  top:78px !important;
+  bottom:18px !important;
+  width:214px !important;
+  left:auto !important;
+}
+
+/* Safe floating route panels */
 #haloNavHUD{
-    left:20px !important;
-    bottom:20px !important;
-    top:auto !important;
-    height:320px !important;
+  position:absolute !important;
+  left:270px !important;
+  bottom:26px !important;
+  top:auto !important;
+  right:auto !important;
+  width:320px !important;
+  max-width:320px !important;
+  height:340px !important;
+  max-height:40vh !important;
+  z-index:1350 !important;
+  transform:none !important;
+  margin:0 !important;
+  overflow:hidden !important;
 }
 
-/* Destination panel right side of map */
 #haloDestinationBrief,
 #haloDestinationIntelCard{
-    right:20px !important;
-    top:80px !important;
-    height:320px !important;
+  position:absolute !important;
+  right:270px !important;
+  top:90px !important;
+  left:auto !important;
+  bottom:auto !important;
+  width:320px !important;
+  max-width:320px !important;
+  height:340px !important;
+  max-height:42vh !important;
+  z-index:1340 !important;
+  transform:none !important;
+  margin:0 !important;
+  overflow:hidden !important;
 }
 
-/* Restore map */
-.ham-map-panel,
-.hgi-map-wrap{
-    left:0 !important;
-    right:0 !important;
-    width:100% !important;
-    margin:0 !important;
+/* Collapsed state */
+.halo-hotfix-collapsed{
+  height:44px !important;
+  max-height:44px !important;
+  overflow:hidden !important;
 }
 
-/* Closable panels */
-.halo-close-btn{
-    position:absolute;
-    top:8px;
-    right:8px;
-    cursor:pointer;
-    z-index:9999;
+.halo-hotfix-collapsed > *:not(.halo-hotfix-bar){
+  display:none !important;
+}
+
+.halo-hotfix-hidden{
+  display:none !important;
+}
+
+/* Hotfix control bar */
+.halo-hotfix-bar{
+  height:38px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:0 10px;
+  border-bottom:1px solid rgba(0,234,255,.12);
+  background:rgba(0,10,26,.86);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+  position:sticky;
+  top:0;
+  z-index:80;
+  cursor:move;
+}
+
+.halo-hotfix-title{
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  letter-spacing:1.5px;
+  color:#00eaff;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.halo-hotfix-actions{
+  display:flex;
+  gap:6px;
+}
+
+.halo-hotfix-btn{
+  width:26px;
+  height:26px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  border:1px solid rgba(0,234,255,.22);
+  background:rgba(0,234,255,.055);
+  color:#00eaff;
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  cursor:pointer;
+}
+
+.halo-hotfix-btn:hover{
+  border-color:rgba(0,234,255,.56);
+  box-shadow:0 0 16px rgba(0,234,255,.16);
+}
+
+/* Hide previous broken layout controls */
+#haloNavHUD > .halo-v13-panel-bar,
+#haloDestinationBrief > .halo-v13-panel-bar,
+#haloDestinationIntelCard > .halo-v13-panel-bar,
+#haloNavHUD > .halo-route-collapse-bar,
+#haloDestinationBrief > .halo-route-collapse-bar,
+#haloDestinationIntelCard > .halo-route-collapse-bar,
+#haloNavHUD > .halo-panel-close-x,
+#haloDestinationBrief > .halo-panel-close-x,
+#haloDestinationIntelCard > .halo-panel-close-x{
+  display:none !important;
+}
+
+/* Keep top controls clear */
+#haloCleanMapToggles,
+#haloMapLayerControls{
+  right:270px !important;
+  top:18px !important;
+}
+
+/* Smooth movement */
+.leaflet-map-pane{
+  transition:transform .35s cubic-bezier(.2,.85,.2,1) !important;
+}
+
+@media(max-width:1100px){
+  #haloAdvancedMapOverlay.active .ham-map-panel,
+  #haloAdvancedMapOverlay.active .hgi-map-wrap{
+    left:14px !important;
+    right:14px !important;
+  }
+
+  #haloCleanLeftPanel,
+  #haloSystemBriefingPanel,
+  #haloCleanRightPanel,
+  #haloActiveFeedsPanel{
+    display:none !important;
+  }
+
+  #haloNavHUD{
+    left:18px !important;
+    bottom:18px !important;
+  }
+
+  #haloDestinationBrief,
+  #haloDestinationIntelCard{
+    right:18px !important;
+    top:90px !important;
+  }
 }
 </style>
+
+<script id="halo-layout-hotfix-v14-js">
+(function(){
+  function getMap(){
+    try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
+  }
+
+  function invalidateMap(){
+    const map = getMap();
+    if(map){
+      setTimeout(() => {
+        try{ map.invalidateSize({animate:true}); }catch(e){}
+      }, 220);
+    }
+  }
+
+  function titleFor(panel){
+    if(!panel) return 'PANEL';
+    if(panel.id === 'haloNavHUD') return 'NAVIGATION INTEL';
+    if(panel.id === 'haloTransitIntelPanel') return 'TRANSIT INTEL';
+    return 'DESTINATION BRIEF';
+  }
+
+  function makeDraggable(panel, bar){
+    if(!panel || !bar || panel.dataset.hotfixDragReady === 'true') return;
+    panel.dataset.hotfixDragReady = 'true';
+
+    let dragging = false;
+    let startX = 0;
+    let startY = 0;
+    let startLeft = 0;
+    let startTop = 0;
+
+    bar.addEventListener('mousedown', e => {
+      if(e.target.closest('button,input,a,textarea,select')) return;
+
+      const rect = panel.getBoundingClientRect();
+      const parent = (panel.offsetParent || document.body).getBoundingClientRect();
+
+      dragging = true;
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeft = rect.left - parent.left;
+      startTop = rect.top - parent.top;
+
+      panel.style.left = startLeft + 'px';
+      panel.style.top = startTop + 'px';
+      panel.style.right = 'auto';
+      panel.style.bottom = 'auto';
+      panel.style.position = 'absolute';
+      panel.style.zIndex = '1600';
+
+      document.body.style.userSelect = 'none';
+      e.preventDefault();
+      e.stopPropagation();
+    }, true);
+
+    document.addEventListener('mousemove', e => {
+      if(!dragging) return;
+
+      const parent = (panel.offsetParent || document.body).getBoundingClientRect();
+      const rect = panel.getBoundingClientRect();
+
+      let x = startLeft + (e.clientX - startX);
+      let y = startTop + (e.clientY - startY);
+
+      x = Math.max(8, Math.min(parent.width - rect.width - 8, x));
+      y = Math.max(8, Math.min(parent.height - rect.height - 8, y));
+
+      panel.style.left = x + 'px';
+      panel.style.top = y + 'px';
+    }, true);
+
+    document.addEventListener('mouseup', () => {
+      if(!dragging) return;
+      dragging = false;
+      document.body.style.userSelect = '';
+    }, true);
+  }
+
+  function addHotfixBar(panel){
+    if(!panel || panel.dataset.hotfixBarReady === 'true') return;
+    panel.dataset.hotfixBarReady = 'true';
+
+    panel.querySelectorAll(':scope > .halo-hotfix-bar').forEach(el => el.remove());
+
+    const bar = document.createElement('div');
+    bar.className = 'halo-hotfix-bar';
+    bar.innerHTML = `
+      <div class="halo-hotfix-title">${titleFor(panel)}</div>
+      <div class="halo-hotfix-actions">
+        <button class="halo-hotfix-btn" data-action="collapse" title="Collapse">−</button>
+        <button class="halo-hotfix-btn" data-action="close" title="Close">×</button>
+      </div>
+    `;
+
+    panel.insertBefore(bar, panel.firstChild);
+
+    bar.querySelector('[data-action="collapse"]').addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      panel.classList.toggle('halo-hotfix-collapsed');
+      e.currentTarget.textContent = panel.classList.contains('halo-hotfix-collapsed') ? '+' : '−';
+      invalidateMap();
+    }, true);
+
+    bar.querySelector('[data-action="close"]').addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      panel.classList.add('halo-hotfix-hidden');
+      panel.classList.add('closed');
+      panel.classList.remove('active');
+      invalidateMap();
+    }, true);
+
+    makeDraggable(panel, bar);
+  }
+
+  function applyHotfix(){
+    ['haloNavHUD','haloDestinationBrief','haloDestinationIntelCard','haloTransitIntelPanel'].forEach(id => {
+      const panel = document.getElementById(id);
+      if(!panel) return;
+
+      panel.classList.remove('halo-v13-collapsed','halo-v13-hidden','halo-route-collapsed','halo-route-hidden');
+      addHotfixBar(panel);
+    });
+
+    invalidateMap();
+  }
+
+  const originalFetch = window.fetch;
+  if(originalFetch && !window.__haloHotfixV14FetchWrapped){
+    window.__haloHotfixV14FetchWrapped = true;
+
+    window.fetch = async function(){
+      const response = await originalFetch.apply(this, arguments);
+
+      try{
+        const url = String(arguments[0] || '');
+        if(url.includes('/route-plus') || url.includes('/route-intel') || url.includes('/transit-intel')){
+          setTimeout(() => {
+            ['haloNavHUD','haloDestinationBrief','haloDestinationIntelCard','haloTransitIntelPanel'].forEach(id => {
+              const p = document.getElementById(id);
+              if(p) p.classList.remove('halo-hotfix-hidden','halo-hotfix-collapsed');
+            });
+            applyHotfix();
+          }, 650);
+          setTimeout(applyHotfix, 1500);
+        }
+      }catch(e){}
+
+      return response;
+    };
+  }
+
+  const oldOpenMap = window.openHaloAdvancedMap;
+  if(typeof oldOpenMap === 'function' && !window.__haloHotfixV14OpenWrapped){
+    window.__haloHotfixV14OpenWrapped = true;
+    window.openHaloAdvancedMap = function(){
+      const result = oldOpenMap.apply(this, arguments);
+      setTimeout(applyHotfix, 700);
+      return result;
+    };
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => setTimeout(applyHotfix, 1400));
+  }else{
+    setTimeout(applyHotfix, 1400);
+  }
+
+  setInterval(applyHotfix, 3000);
+
+  console.log('[HALO LAYOUT HOTFIX V14] loaded');
+})();
+</script>
