@@ -8930,5 +8930,406 @@ path.halo-transit-route-glow{
 })();
 </script>
 
+
+<!-- HALO REROUTE + MOVABLE CLOSABLE PANELS FIX V9 -->
+<style id="halo-reroute-movable-closable-panels-v9">
+/* Make floating panels draggable and visually movable */
+.halo-draggable-panel{
+  cursor:default !important;
+}
+
+.halo-draggable-handle{
+  cursor:move !important;
+  user-select:none !important;
+}
+
+.halo-panel-close-x{
+  width:28px;
+  height:28px;
+  border-radius:50%;
+  border:1px solid rgba(0,234,255,.22);
+  background:rgba(0,234,255,.055);
+  color:#00eaff;
+  display:grid;
+  place-items:center;
+  font-family:'JetBrains Mono',monospace;
+  font-size:12px;
+  cursor:pointer;
+  position:absolute;
+  right:8px;
+  top:8px;
+  z-index:50;
+}
+
+.halo-panel-close-x:hover{
+  border-color:rgba(0,234,255,.58);
+  box-shadow:0 0 18px rgba(0,234,255,.16);
+}
+
+.halo-panel-closed{
+  display:none !important;
+}
+
+/* Keep panels from selecting text while dragging */
+#haloNavHUD,
+#haloDestinationBrief,
+#haloDestinationIntelCard,
+#haloTransitIntelPanel{
+  pointer-events:auto !important;
+}
+
+/* Slightly cleaner popup controls */
+.halo-place-popup-btn{
+  white-space:nowrap;
+}
+
+.halo-reroute-status{
+  position:absolute;
+  left:50%;
+  top:18px;
+  transform:translateX(-50%);
+  z-index:1550;
+  display:none;
+  padding:10px 15px;
+  border-radius:999px;
+  border:1px solid rgba(0,255,157,.26);
+  background:rgba(0,10,26,.78);
+  color:#00ff9d;
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  letter-spacing:1.6px;
+  backdrop-filter:blur(18px);
+  box-shadow:0 0 30px rgba(0,255,157,.14);
+}
+
+.halo-reroute-status.active{
+  display:block;
+}
+
+/* Force Leaflet popup button clicks to work cleanly */
+.leaflet-popup-content button{
+  pointer-events:auto !important;
+}
+</style>
+
+<script id="halo-reroute-movable-closable-panels-v9-js">
+(function(){
+  let lastPlaceDestination = null;
+  let lastRouteRequestId = 0;
+
+  function getMap(){
+    try{
+      return window.haloRealMap || haloRealMap;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function esc(str){
+    return String(str ?? '').replace(/[&<>"']/g, m => ({
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#039;'
+    })[m]);
+  }
+
+  function status(text){
+    const overlay = document.getElementById('haloAdvancedMapOverlay');
+    if(!overlay) return;
+
+    let el = document.getElementById('haloRerouteStatus');
+    if(!el){
+      el = document.createElement('div');
+      el.id = 'haloRerouteStatus';
+      el.className = 'halo-reroute-status';
+      overlay.appendChild(el);
+    }
+
+    el.textContent = text;
+    el.classList.add('active');
+    clearTimeout(el._t);
+    el._t = setTimeout(()=>el.classList.remove('active'), 2600);
+  }
+
+  function getPlaceLocation(place){
+    const loc = place?.location || {};
+    const lat = loc.latitude ?? loc.lat;
+    const lng = loc.longitude ?? loc.lng;
+    if(typeof lat !== 'number' || typeof lng !== 'number') return null;
+    return {lat,lng};
+  }
+
+  function clearRouteForReroute(){
+    try{
+      if(typeof window.haloNavClear === 'function') window.haloNavClear();
+    }catch(e){}
+
+    const map = getMap();
+    if(!map) return;
+
+    // Remove common HALO route layers while keeping the tile layer and marker base.
+    try{
+      map.eachLayer(layer => {
+        if(!layer) return;
+
+        const cls = layer.options?.className || '';
+        const isRouteLayer =
+          cls.includes('route') ||
+          cls.includes('halo-perf-route') ||
+          cls.includes('halo-ultimate-route') ||
+          cls.includes('halo-lite') ||
+          cls.includes('halo-transit') ||
+          layer.options?.haloStreetLayer ||
+          layer.options?.haloVisibilityFixRoute ||
+          layer.options?.haloRouteLayer ||
+          layer.options?.haloRoutePlusLayer;
+
+        if(isRouteLayer){
+          try{ map.removeLayer(layer); }catch(e){}
+        }
+      });
+    }catch(e){}
+  }
+
+  async function forceRouteToPlace(id){
+    const entry = window.haloPlaceMarkers && window.haloPlaceMarkers[id];
+    if(!entry) {
+      status('PLACE NOT FOUND');
+      return;
+    }
+
+    const place = entry.place || {};
+    const loc = getPlaceLocation(place);
+    const destination = loc ? `${loc.lat},${loc.lng}` : (place.address || place.name);
+
+    if(!destination){
+      status('NO DESTINATION DATA');
+      return;
+    }
+
+    lastPlaceDestination = {
+      id,
+      name: place.name || entry.type || 'Selected place',
+      destination
+    };
+
+    const requestId = ++lastRouteRequestId;
+
+    status(`REROUTING // ${String(lastPlaceDestination.name).toUpperCase()}`);
+
+    clearRouteForReroute();
+
+    // Close current place popup so it doesn't look like nothing changed.
+    try{
+      const map = getMap();
+      if(map) map.closePopup();
+    }catch(e){}
+
+    // Prefer HALO's route-plus command system.
+    try{
+      if(typeof window.haloNavRun === 'function'){
+        await window.haloNavRun(destination, 'home');
+      }else if(typeof window.haloRoutePlusCommand === 'function'){
+        await window.haloRoutePlusCommand(destination);
+      }else{
+        throw new Error('No HALO route function found');
+      }
+    }catch(error){
+      console.error('HALO place reroute failed:', error);
+      status('REROUTE FAILED');
+      return;
+    }
+
+    // After route draws, refocus map. This helps when old code finishes late.
+    setTimeout(() => {
+      if(requestId !== lastRouteRequestId) return;
+
+      try{
+        const map = getMap();
+        if(map && loc){
+          if(map.flyTo){
+            map.flyTo([loc.lat, loc.lng], 15, {animate:true, duration:1.1, easeLinearity:.18});
+          }else{
+            map.setView([loc.lat, loc.lng], 15, {animate:true});
+          }
+        }
+      }catch(e){}
+
+      status(`ROUTE UPDATED // ${String(lastPlaceDestination.name).toUpperCase()}`);
+    }, 1200);
+  }
+
+  // Override previous Set Destination behavior.
+  window.haloSetPlaceDestination = function(id){
+    forceRouteToPlace(id);
+  };
+
+  // Make panels closable.
+  function ensureCloseButton(panel, label){
+    if(!panel || panel.dataset.v9CloseReady === 'true') return;
+    panel.dataset.v9CloseReady = 'true';
+
+    if(getComputedStyle(panel).position === 'static'){
+      panel.style.position = 'absolute';
+    }
+
+    const close = document.createElement('button');
+    close.className = 'halo-panel-close-x';
+    close.textContent = '×';
+    close.title = `Close ${label || 'panel'}`;
+    close.addEventListener('click', e => {
+      e.preventDefault();
+      e.stopPropagation();
+      panel.classList.add('halo-panel-closed');
+      panel.classList.add('closed');
+      panel.classList.remove('active');
+    }, true);
+
+    panel.appendChild(close);
+  }
+
+  function makeDraggable(panel, handleSelector){
+    if(!panel || panel.dataset.v9DragReady === 'true') return;
+    panel.dataset.v9DragReady = 'true';
+    panel.classList.add('halo-draggable-panel');
+
+    const handle = panel.querySelector(handleSelector) || panel.firstElementChild || panel;
+    handle.classList.add('halo-draggable-handle');
+
+    let dragging = false;
+    let startX = 0;
+    let startY = 0;
+    let startLeft = 0;
+    let startTop = 0;
+
+    function getPanelRect(){
+      const rect = panel.getBoundingClientRect();
+      const parent = (panel.offsetParent || document.body).getBoundingClientRect();
+      return {rect, parent};
+    }
+
+    handle.addEventListener('mousedown', e => {
+      // Don't drag when clicking buttons/inputs/links.
+      if(e.target.closest('button,input,textarea,select,a')) return;
+
+      dragging = true;
+      const {rect, parent} = getPanelRect();
+
+      startX = e.clientX;
+      startY = e.clientY;
+      startLeft = rect.left - parent.left;
+      startTop = rect.top - parent.top;
+
+      panel.style.left = startLeft + 'px';
+      panel.style.top = startTop + 'px';
+      panel.style.right = 'auto';
+      panel.style.bottom = 'auto';
+      panel.style.position = 'absolute';
+      panel.style.zIndex = '1600';
+
+      document.body.style.userSelect = 'none';
+
+      e.preventDefault();
+      e.stopPropagation();
+    }, true);
+
+    document.addEventListener('mousemove', e => {
+      if(!dragging) return;
+
+      const parent = (panel.offsetParent || document.body).getBoundingClientRect();
+      const rect = panel.getBoundingClientRect();
+
+      let nextLeft = startLeft + (e.clientX - startX);
+      let nextTop = startTop + (e.clientY - startY);
+
+      const minLeft = 8;
+      const minTop = 8;
+      const maxLeft = parent.width - rect.width - 8;
+      const maxTop = parent.height - rect.height - 8;
+
+      nextLeft = Math.max(minLeft, Math.min(maxLeft, nextLeft));
+      nextTop = Math.max(minTop, Math.min(maxTop, nextTop));
+
+      panel.style.left = nextLeft + 'px';
+      panel.style.top = nextTop + 'px';
+    }, true);
+
+    document.addEventListener('mouseup', () => {
+      if(!dragging) return;
+      dragging = false;
+      document.body.style.userSelect = '';
+    }, true);
+  }
+
+  function enhancePanels(){
+    const panels = [
+      {id:'haloNavHUD', label:'Navigation Intel', handle:'.halo-nav-head'},
+      {id:'haloDestinationBrief', label:'Destination Brief', handle:'.halo-dest-head'},
+      {id:'haloDestinationIntelCard', label:'Destination Intel', handle:'.halo-dintel-head'},
+      {id:'haloTransitIntelPanel', label:'Transit Intel', handle:'.halo-transit-head'}
+    ];
+
+    panels.forEach(({id,label,handle}) => {
+      const panel = document.getElementById(id);
+      if(!panel) return;
+
+      ensureCloseButton(panel, label);
+      makeDraggable(panel, handle);
+    });
+  }
+
+  // Re-open closed panels on a new route/transit request so user still sees new info.
+  const originalFetch = window.fetch;
+  if(originalFetch && !window.__haloRerouteMovableFetchWrapped){
+    window.__haloRerouteMovableFetchWrapped = true;
+
+    window.fetch = async function(){
+      const response = await originalFetch.apply(this, arguments);
+
+      try{
+        const url = String(arguments[0] || '');
+
+        if(url.includes('/route-plus') || url.includes('/route-intel') || url.includes('/transit-intel')){
+          setTimeout(() => {
+            ['haloNavHUD','haloDestinationBrief','haloDestinationIntelCard','haloTransitIntelPanel'].forEach(id => {
+              const p = document.getElementById(id);
+              if(p && (url.includes('/route') || id === 'haloTransitIntelPanel')){
+                p.classList.remove('halo-panel-closed');
+              }
+            });
+            enhancePanels();
+          }, 900);
+        }
+      }catch(e){}
+
+      return response;
+    };
+  }
+
+  const oldOpenMap = window.openHaloAdvancedMap;
+  if(typeof oldOpenMap === 'function' && !window.__haloV9OpenWrapped){
+    window.__haloV9OpenWrapped = true;
+    window.openHaloAdvancedMap = function(){
+      const result = oldOpenMap.apply(this, arguments);
+      setTimeout(enhancePanels, 600);
+      return result;
+    };
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => setTimeout(enhancePanels, 1300));
+  }else{
+    setTimeout(enhancePanels, 1300);
+  }
+
+  // Low-frequency check only; not an expensive observer.
+  setInterval(enhancePanels, 2500);
+
+  console.log('[HALO REROUTE + MOVABLE/CLOSABLE PANELS V9] loaded');
+})();
+</script>
+
 </body>
 </html>
