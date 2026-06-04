@@ -7554,5 +7554,559 @@ path.halo-transit-route-glow{
 })();
 </script>
 
+
+<!-- HALO TRANSIT STEP MARKERS + ANIMATED VEHICLE UPGRADE V1 -->
+<style id="halo-transit-step-markers-animated-vehicle-v1">
+/* Mode specific transit segment styling */
+path.halo-transit-walk-segment{
+  stroke:#00eaff !important;
+  stroke-dasharray:6 12 !important;
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+  filter:drop-shadow(0 0 7px #00eaff) drop-shadow(0 0 16px #00eaff) !important;
+}
+
+path.halo-transit-bus-segment{
+  stroke:#bd70ff !important;
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+  filter:drop-shadow(0 0 9px #bd70ff) drop-shadow(0 0 22px #bd70ff) !important;
+}
+
+path.halo-transit-train-segment{
+  stroke:#ff9d2e !important;
+  stroke-linecap:round !important;
+  stroke-linejoin:round !important;
+  filter:drop-shadow(0 0 9px #ff9d2e) drop-shadow(0 0 22px #ff9d2e) !important;
+}
+
+/* Step icon markers */
+.halo-transit-step-icon{
+  width:34px;
+  height:34px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.75);
+  background:rgba(0,10,26,.90);
+  font-size:16px;
+  box-shadow:0 0 26px currentColor,0 0 50px rgba(0,234,255,.13);
+}
+
+.halo-transit-step-icon.walk{
+  color:#00eaff;
+}
+
+.halo-transit-step-icon.bus{
+  color:#bd70ff;
+}
+
+.halo-transit-step-icon.train{
+  color:#ff9d2e;
+}
+
+.halo-transit-step-icon.transfer{
+  color:#ffffff;
+  background:rgba(80,20,120,.90);
+}
+
+.halo-transit-step-icon.destination{
+  color:#00ff9d;
+}
+
+/* Small numbered route order badge */
+.halo-transit-step-icon::after{
+  content:attr(data-step);
+  position:absolute;
+  right:-5px;
+  top:-5px;
+  width:16px;
+  height:16px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.65);
+  background:rgba(0,10,26,.95);
+  color:#eaffff;
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+}
+
+/* Animated vehicle */
+#haloTransitVehicle{
+  position:absolute;
+  z-index:1450;
+  width:36px;
+  height:36px;
+  display:none;
+  place-items:center;
+  border-radius:50%;
+  transform:translate(-50%,-50%);
+  border:1px solid rgba(255,255,255,.75);
+  background:rgba(30,10,52,.92);
+  color:#d9b4ff;
+  font-size:18px;
+  pointer-events:none;
+  box-shadow:0 0 26px #bd70ff,0 0 56px rgba(189,112,255,.32);
+}
+
+#haloTransitVehicle.active{
+  display:grid;
+}
+
+/* Enhanced timeline */
+.halo-transit-timeline{
+  display:grid;
+  gap:8px;
+  margin-top:10px;
+}
+
+.halo-transit-timeline-row{
+  display:grid;
+  grid-template-columns:36px 1fr auto;
+  gap:9px;
+  align-items:start;
+  padding:9px 10px;
+  border-radius:14px;
+  border:1px solid rgba(189,112,255,.10);
+  background:rgba(0,8,22,.34);
+  color:rgba(245,237,255,.80);
+}
+
+.halo-transit-timeline-icon{
+  width:28px;
+  height:28px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.45);
+  background:rgba(16,8,32,.78);
+}
+
+.halo-transit-timeline-main strong{
+  color:#f5edff;
+  font-size:12px;
+}
+
+.halo-transit-timeline-main span{
+  display:block;
+  font-size:11px;
+  color:rgba(245,237,255,.65);
+  line-height:1.35;
+  margin-top:3px;
+}
+
+.halo-transit-timeline-time{
+  font-family:'JetBrains Mono',monospace;
+  font-size:8px;
+  letter-spacing:1px;
+  color:#bd70ff;
+  white-space:nowrap;
+}
+
+/* Legend */
+.halo-transit-legend{
+  display:flex;
+  gap:7px;
+  flex-wrap:wrap;
+  margin:10px 0;
+}
+
+.halo-transit-legend-chip{
+  padding:6px 8px;
+  border-radius:999px;
+  border:1px solid rgba(189,112,255,.14);
+  background:rgba(189,112,255,.045);
+  color:rgba(245,237,255,.74);
+  font-family:'JetBrains Mono',monospace;
+  font-size:7px;
+  letter-spacing:1px;
+}
+</style>
+
+<script id="halo-transit-step-markers-animated-vehicle-v1-js">
+(function(){
+  let detailedTransitLayers = [];
+  let vehicleTimer = null;
+  let vehiclePath = [];
+  let lastDetailedTransitPayload = null;
+
+  function log(){ try{ console.log('[HALO TRANSIT DETAIL]', ...arguments); }catch(e){} }
+
+  function getMap(){
+    try{
+      return window.haloRealMap || haloRealMap;
+    }catch(e){
+      return null;
+    }
+  }
+
+  function esc(str){
+    return String(str ?? '').replace(/[&<>"']/g, m => ({
+      '&':'&amp;',
+      '<':'&lt;',
+      '>':'&gt;',
+      '"':'&quot;',
+      "'":'&#039;'
+    })[m]);
+  }
+
+  function decodePolyline(encoded){
+    if(!encoded) return [];
+    let points = [];
+    let index = 0, lat = 0, lng = 0;
+
+    while(index < encoded.length){
+      let b, shift = 0, result = 0;
+      do{
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      }while(b >= 0x20);
+      lat += ((result & 1) ? ~(result >> 1) : (result >> 1));
+
+      shift = 0;
+      result = 0;
+      do{
+        b = encoded.charCodeAt(index++) - 63;
+        result |= (b & 0x1f) << shift;
+        shift += 5;
+      }while(b >= 0x20);
+      lng += ((result & 1) ? ~(result >> 1) : (result >> 1));
+
+      points.push([lat / 1e5, lng / 1e5]);
+    }
+
+    return points;
+  }
+
+  function stepKind(step){
+    const mode = String(step.travel_mode || '').toUpperCase();
+    const vehicle = String(step.transit?.vehicle_type || step.transit?.vehicle_name || '').toUpperCase();
+
+    if(mode === 'WALKING') return 'walk';
+    if(vehicle.includes('SUBWAY') || vehicle.includes('TRAIN') || vehicle.includes('RAIL') || vehicle.includes('TRAM')) return 'train';
+    if(mode === 'TRANSIT') return 'bus';
+    return 'bus';
+  }
+
+  function stepEmoji(kind){
+    if(kind === 'walk') return '🚶';
+    if(kind === 'train') return '🚆';
+    if(kind === 'transfer') return '🔄';
+    if(kind === 'destination') return '🏁';
+    return '🚌';
+  }
+
+  function stepTitle(step, index){
+    const kind = stepKind(step);
+    if(kind === 'walk') return 'Walk';
+    if(kind === 'train') return step.transit?.line_short_name || step.transit?.line_name || 'Train';
+    return step.transit?.line_short_name || step.transit?.line_name || 'Bus';
+  }
+
+  function stepSubtitle(step){
+    const kind = stepKind(step);
+    if(kind === 'walk') return step.instruction || 'Walk to next stop';
+
+    const t = step.transit || {};
+    const from = t.departure_stop || 'Departure stop';
+    const to = t.arrival_stop || 'Arrival stop';
+    const headsign = t.headsign ? ` · toward ${t.headsign}` : '';
+    return `${from} → ${to}${headsign}`;
+  }
+
+  function clearDetailedTransit(){
+    const map = getMap();
+    if(map){
+      detailedTransitLayers.forEach(layer => {
+        try{ map.removeLayer(layer); }catch(e){}
+      });
+    }
+    detailedTransitLayers = [];
+    stopTransitVehicle();
+  }
+
+  function ensureVehicle(){
+    const overlay = document.getElementById('haloAdvancedMapOverlay');
+    if(!overlay) return null;
+    const panel = overlay.querySelector('.ham-map-panel') || overlay;
+
+    let vehicle = document.getElementById('haloTransitVehicle');
+    if(vehicle) return vehicle;
+
+    vehicle = document.createElement('div');
+    vehicle.id = 'haloTransitVehicle';
+    vehicle.textContent = '🚌';
+    panel.appendChild(vehicle);
+    return vehicle;
+  }
+
+  function stopTransitVehicle(){
+    if(vehicleTimer){
+      clearInterval(vehicleTimer);
+      vehicleTimer = null;
+    }
+    const vehicle = document.getElementById('haloTransitVehicle');
+    if(vehicle) vehicle.classList.remove('active');
+  }
+
+  function startTransitVehicle(points, emoji='🚌'){
+    stopTransitVehicle();
+
+    const map = getMap();
+    const vehicle = ensureVehicle();
+    if(!map || !vehicle || !points.length) return;
+
+    vehiclePath = points;
+    vehicle.textContent = emoji;
+    vehicle.classList.add('active');
+
+    let tick = 0;
+    vehicleTimer = setInterval(() => {
+      const mapNow = getMap();
+      if(!mapNow || !vehiclePath.length) return;
+
+      const phase = (tick % 100) / 100;
+      const index = Math.min(vehiclePath.length - 1, Math.floor(phase * (vehiclePath.length - 1)));
+      const latlng = vehiclePath[index];
+      const pt = mapNow.latLngToContainerPoint(latlng);
+
+      vehicle.style.left = `${pt.x}px`;
+      vehicle.style.top = `${pt.y}px`;
+
+      tick += 1.35;
+    }, 75);
+  }
+
+  function iconFor(kind, stepNumber){
+    const emoji = stepEmoji(kind);
+    return L.divIcon({
+      className:'',
+      html:`<div class="halo-transit-step-icon ${kind}" data-step="${stepNumber}">${emoji}</div>`,
+      iconSize:[34,34],
+      iconAnchor:[17,17],
+      popupAnchor:[0,-18]
+    });
+  }
+
+  function addStepMarker(map, point, kind, stepNumber, popup){
+    if(!point || !point.length) return;
+    const marker = L.marker(point, {
+      icon: iconFor(kind, stepNumber)
+    }).addTo(map);
+
+    if(popup) marker.bindPopup(popup, {className:'ham-popup'});
+    detailedTransitLayers.push(marker);
+  }
+
+  function drawDetailedTransit(payload, routeIndex=0){
+    const map = getMap();
+    if(!map || typeof L === 'undefined' || !payload) return;
+
+    clearDetailedTransit();
+    lastDetailedTransitPayload = payload;
+
+    const routes = payload.routes || [payload];
+    const route = routes[routeIndex] || routes[0] || payload;
+    const steps = route.steps || [];
+
+    let allPoints = [];
+    let transitVehiclePoints = [];
+    let previousWasTransit = false;
+    let transitCount = 0;
+
+    steps.forEach((step, idx) => {
+      const pts = decodePolyline(step.polyline);
+      if(!pts.length) return;
+
+      const kind = stepKind(step);
+      const isTransit = kind === 'bus' || kind === 'train';
+
+      allPoints = allPoints.concat(pts);
+      if(isTransit) transitVehiclePoints = transitVehiclePoints.concat(pts);
+
+      const segment = L.polyline(pts, {
+        color: kind === 'walk' ? '#00eaff' : kind === 'train' ? '#ff9d2e' : '#bd70ff',
+        weight: kind === 'walk' ? 5 : 8,
+        opacity: kind === 'walk' ? .82 : .95,
+        dashArray: kind === 'walk' ? '7 12' : null,
+        lineCap:'round',
+        lineJoin:'round',
+        interactive:false,
+        className: kind === 'walk'
+          ? 'halo-transit-walk-segment'
+          : kind === 'train'
+            ? 'halo-transit-train-segment'
+            : 'halo-transit-bus-segment'
+      }).addTo(map);
+      detailedTransitLayers.push(segment);
+
+      const stepNumber = idx + 1;
+      const first = pts[0];
+      const last = pts[pts.length - 1];
+
+      // Walking marker at the beginning of walking portions.
+      if(kind === 'walk'){
+        addStepMarker(
+          map,
+          first,
+          'walk',
+          stepNumber,
+          `<strong>🚶 Walk</strong><br>${esc(step.instruction || 'Walking step')}<br>${esc(step.duration_minutes)} min · ${esc(step.distance_miles)} mi`
+        );
+      }
+
+      // Bus/train marker at each transit boarding point.
+      if(isTransit){
+        transitCount += 1;
+
+        if(previousWasTransit || transitCount > 1){
+          addStepMarker(
+            map,
+            first,
+            'transfer',
+            stepNumber,
+            `<strong>🔄 Transfer</strong><br>Switch to ${esc(stepTitle(step, idx))}<br>${esc(step.transit?.departure_stop || 'Transit stop')}`
+          );
+        }
+
+        addStepMarker(
+          map,
+          first,
+          kind,
+          stepNumber,
+          `<strong>${stepEmoji(kind)} ${esc(stepTitle(step, idx))}</strong><br>
+          Board: ${esc(step.transit?.departure_stop || 'Stop')}<br>
+          Exit: ${esc(step.transit?.arrival_stop || 'Stop')}<br>
+          ${step.transit?.departure_time ? 'Depart: ' + esc(step.transit.departure_time) + '<br>' : ''}
+          ${step.transit?.arrival_time ? 'Arrive: ' + esc(step.transit.arrival_time) + '<br>' : ''}
+          ${step.transit?.num_stops ? esc(step.transit.num_stops) + ' stops' : ''}`
+        );
+      }
+
+      previousWasTransit = isTransit;
+    });
+
+    // Destination marker
+    if(allPoints.length){
+      addStepMarker(
+        map,
+        allPoints[allPoints.length - 1],
+        'destination',
+        steps.length + 1,
+        `<strong>🏁 Arrive</strong><br>${esc(payload.destination || route.end_address || 'Destination')}`
+      );
+
+      map.fitBounds(L.latLngBounds(allPoints), {
+        paddingTopLeft:[90,90],
+        paddingBottomRight:[90,90],
+        maxZoom:13
+      });
+    }
+
+    startTransitVehicle(transitVehiclePoints.length ? transitVehiclePoints : allPoints, transitVehiclePoints.length ? '🚌' : '🚶');
+    updateDetailedTransitTimeline(payload, routeIndex);
+
+    log('Detailed transit drawn', steps.length, 'steps');
+  }
+
+  function updateDetailedTransitTimeline(payload, routeIndex=0){
+    const panel = document.getElementById('haloTransitIntelPanel');
+    const body = document.getElementById('haloTransitIntelBody');
+    if(!panel || !body || !payload) return;
+
+    panel.classList.add('active');
+
+    const routes = payload.routes || [payload];
+    const route = routes[routeIndex] || routes[0] || payload;
+    const steps = route.steps || [];
+    const lines = route.transit_lines || [];
+    const transfers = Math.max(lines.length - 1, 0);
+
+    const timelineRows = steps.map((step, idx) => {
+      const kind = stepKind(step);
+      const title = stepTitle(step, idx);
+      const subtitle = stepSubtitle(step);
+      const time = step.transit?.departure_time || `${step.duration_minutes}M`;
+
+      return `
+        <div class="halo-transit-timeline-row">
+          <div class="halo-transit-timeline-icon">${stepEmoji(kind)}</div>
+          <div class="halo-transit-timeline-main">
+            <strong>${esc(title)}</strong>
+            <span>${esc(subtitle)}</span>
+          </div>
+          <div class="halo-transit-timeline-time">${esc(time)}</div>
+        </div>
+      `;
+    }).join('');
+
+    body.innerHTML = `
+      <div class="halo-transit-grid">
+        <div class="halo-transit-stat"><small>TOTAL</small><strong>${esc(route.total_duration_minutes)}M</strong></div>
+        <div class="halo-transit-stat"><small>WALK</small><strong>${esc(route.walking_minutes || 0)}M</strong></div>
+        <div class="halo-transit-stat"><small>TRANSFERS</small><strong>${esc(transfers)}</strong></div>
+        <div class="halo-transit-stat"><small>ARRIVAL</small><strong>${esc(route.arrival_time || '—')}</strong></div>
+      </div>
+
+      <div class="halo-transit-step">
+        <strong>${esc(payload.origin || route.start_address || 'Origin')}</strong><br>
+        to ${esc(payload.destination || route.end_address || 'Destination')}
+      </div>
+
+      <div class="halo-transit-legend">
+        <div class="halo-transit-legend-chip">🚶 WALK</div>
+        <div class="halo-transit-legend-chip">🚌 BUS</div>
+        <div class="halo-transit-legend-chip">🚆 TRAIN</div>
+        <div class="halo-transit-legend-chip">🔄 TRANSFER</div>
+      </div>
+
+      <div class="halo-transit-timeline">
+        ${timelineRows || '<div class="halo-transit-step">No step details found.</div>'}
+      </div>
+    `;
+  }
+
+  // Capture transit-intel responses and redraw with full detail after base transit draws.
+  const originalFetch = window.fetch;
+  if(originalFetch && !window.__haloTransitDetailFetchWrapped){
+    window.__haloTransitDetailFetchWrapped = true;
+
+    window.fetch = async function(){
+      const response = await originalFetch.apply(this, arguments);
+
+      try{
+        const url = String(arguments[0] || '');
+        if(url.includes('/transit-intel')){
+          response.clone().json().then(data => {
+            if(data && data.success && data.routes){
+              setTimeout(() => {
+                drawDetailedTransit(data, 0);
+              }, 650);
+            }
+          }).catch(()=>{});
+        }
+      }catch(e){}
+
+      return response;
+    };
+  }
+
+  // Override close to stop animation too.
+  const oldCloseTransitPanel = window.haloCloseTransitPanel;
+  window.haloCloseTransitPanel = function(){
+    if(typeof oldCloseTransitPanel === 'function') oldCloseTransitPanel();
+    stopTransitVehicle();
+  };
+
+  // Public helpers.
+  window.haloDrawDetailedTransit = drawDetailedTransit;
+  window.haloClearDetailedTransit = clearDetailedTransit;
+
+  console.log('[HALO TRANSIT STEP MARKERS] loaded');
+})();
+</script>
+
 </body>
 </html>
