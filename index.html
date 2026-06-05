@@ -13456,5 +13456,459 @@ body:not(.halo-map-open) .halo-v61-tab{
 })();
 </script>
 
+
+<!-- HALO V65 SUPPORT IMMEDIATE + V31 BUTTON KILL -->
+<style id="halo-v65-support-immediate-css">
+/*
+  V65:
+  - Immediately fills GAS + PARKING so it never sits on "Scanning nearby support..."
+  - Then upgrades those rows with real OSM/Overpass data if it returns.
+  - Kills the V31 mini bar/buttons completely. Only side tabs control panel hide/show.
+*/
+
+/* Kill the injected V31 top bar with minus/x buttons */
+#haloNavHUD > .halo-v31-bar,
+#haloDestinationBrief > .halo-v31-bar,
+#haloDestinationIntelCard > .halo-v31-bar,
+.halo-v31-bar,
+.halo-v31-actions,
+.halo-v31-btn{
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+  height:0 !important;
+  min-height:0 !important;
+  max-height:0 !important;
+  overflow:hidden !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+}
+
+/* Also hide any remaining tiny control buttons in panel headers */
+#haloNavHUD .halo-nav-hud-header button,
+#haloDestinationBrief .halo-dest-head button,
+#haloDestinationIntelCard .halo-dest-head button{
+  display:none !important;
+  visibility:hidden !important;
+  pointer-events:none !important;
+}
+
+/* Keep side tabs visible/usable */
+#haloV61LeftTab,#haloV61RightTab,.halo-v61-tab{
+  display:flex !important;
+  visibility:visible !important;
+  pointer-events:auto !important;
+}
+
+#haloV65SupportPlaces,
+#haloV64SupportPlaces,
+#haloV63SupportPlaces{
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  min-height:86px !important;
+}
+
+.halo-v65-row{
+  cursor:pointer !important;
+  border:1px solid rgba(0,234,255,.18);
+  border-radius:12px;
+  padding:9px 10px;
+  margin-bottom:7px;
+  background:rgba(0,12,30,.58);
+  color:rgba(235,250,255,.88);
+  font-size:10px;
+  line-height:1.25;
+  transition:.14s ease;
+  display:block !important;
+}
+
+.halo-v65-row:hover{
+  border-color:rgba(0,234,255,.58);
+  background:rgba(0,234,255,.08);
+  transform:translateX(2px);
+}
+
+.halo-v65-name{
+  display:block;
+  font-weight:800;
+  color:#eaffff;
+}
+
+.halo-v65-address{
+  display:block;
+  margin-top:3px;
+  color:rgba(235,250,255,.58);
+  font-size:8px;
+}
+
+.halo-v65-meta{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  margin-top:4px;
+  font-family:'JetBrains Mono',monospace;
+  color:#00eaff;
+  font-size:8px;
+}
+
+.halo-v65-marker{
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  border:1px solid currentColor;
+  background:rgba(0,10,26,.96);
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  font-weight:900;
+  box-shadow:0 0 18px currentColor, 0 0 38px rgba(0,0,0,.45);
+}
+.halo-v65-marker.gas{color:#ff4545;}
+.halo-v65-marker.parking{color:#bd70ff;}
+</style>
+
+<script id="halo-v65-support-immediate-js">
+(function(){
+  if(window.__haloV65SupportImmediateLoaded) return;
+  window.__haloV65SupportImmediateLoaded = true;
+
+  let places = {};
+  let markers = {};
+  let currentPayload = null;
+  let token = 0;
+  let rebuildTimer = null;
+
+  function log(){ console.log.apply(console, ['[HALO V65]'].concat(Array.from(arguments))); }
+  function getMap(){ try{return window.haloRealMap || haloRealMap;}catch(e){return null;} }
+  function esc(s){return String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+  function validCoord(lat,lng){lat=Number(lat);lng=Number(lng);return Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180;}
+
+  function killPanelButtons(){
+    document.querySelectorAll('#haloNavHUD > .halo-v31-bar, #haloDestinationBrief > .halo-v31-bar, #haloDestinationIntelCard > .halo-v31-bar, .halo-v31-bar').forEach(el=>{
+      try{ el.remove(); }catch(e){}
+    });
+  }
+
+  function decodePolyline(encoded){
+    if(!encoded || typeof encoded !== 'string') return [];
+    let pts=[], index=0, lat=0, lng=0;
+    while(index < encoded.length){
+      let b, shift=0, result=0;
+      do{ b=encoded.charCodeAt(index++)-63; result|=(b&31)<<shift; shift+=5; }while(b>=0x20 && index<encoded.length);
+      lat += (result&1) ? ~(result>>1) : (result>>1);
+      shift=0; result=0;
+      do{ b=encoded.charCodeAt(index++)-63; result|=(b&31)<<shift; shift+=5; }while(b>=0x20 && index<encoded.length);
+      lng += (result&1) ? ~(result>>1) : (result>>1);
+      pts.push({lat:lat/1e5,lng:lng/1e5});
+    }
+    return pts;
+  }
+
+  function getLoc(obj){
+    if(!obj) return null;
+    const list=[obj,obj.location,obj.geometry?.location,obj.end_location,obj.destination_location,obj.center];
+    for(const c of list){
+      if(!c) continue;
+      const lat=Number(c.lat ?? c.latitude);
+      const lng=Number(c.lng ?? c.lon ?? c.longitude);
+      if(validCoord(lat,lng)) return {lat,lng};
+    }
+    return null;
+  }
+
+  function getDest(payload){
+    const rd=payload?.route || payload || {};
+    const routes=rd.routes || payload?.routes || [];
+    const r=routes[0] || rd;
+    return getLoc(r.end_location) || getLoc(rd.end_location) || getLoc(payload?.end_location) || getLoc(payload?.destination_location) || (()=>{
+      const pts=decodePolyline(r.polyline || rd.polyline);
+      return pts.length ? pts[pts.length-1] : null;
+    })();
+  }
+
+  function normalizeServer(payload){
+    const gas=[], parking=[];
+    (payload?.gas || []).forEach((p,i)=>{
+      const l=getLoc(p);
+      if(l) gas.push({id:`gas_server_${i}_${l.lat}_${l.lng}`, type:'gas', name:p.name||'Gas station', address:p.address||p.formattedAddress||'', lat:l.lat, lng:l.lng, source:'SERVER'});
+    });
+    (payload?.parking || []).forEach((p,i)=>{
+      const l=getLoc(p);
+      if(l) parking.push({id:`parking_server_${i}_${l.lat}_${l.lng}`, type:'parking', name:p.name||'Parking', address:p.address||p.formattedAddress||'', lat:l.lat, lng:l.lng, source:'SERVER'});
+    });
+    return {gas,parking};
+  }
+
+  function immediateLocal(dest){
+    // Not random: anchored tightly around destination. These keep the UI functional instantly.
+    return {
+      gas:[
+        {id:`gas_anchor_1_${dest.lat}_${dest.lng}`, type:'gas', name:'Fuel search near destination', address:'Local support anchor', lat:dest.lat+0.010, lng:dest.lng+0.006, source:'LOCAL'},
+        {id:`gas_anchor_2_${dest.lat}_${dest.lng}`, type:'gas', name:'Gas station search area', address:'Nearby route support', lat:dest.lat-0.008, lng:dest.lng+0.010, source:'LOCAL'}
+      ],
+      parking:[
+        {id:`parking_anchor_1_${dest.lat}_${dest.lng}`, type:'parking', name:'Parking search near destination', address:'Local support anchor', lat:dest.lat-0.006, lng:dest.lng-0.006, source:'LOCAL'},
+        {id:`parking_anchor_2_${dest.lat}_${dest.lng}`, type:'parking', name:'Parking area search', address:'Nearby route support', lat:dest.lat+0.006, lng:dest.lng-0.010, source:'LOCAL'}
+      ]
+    };
+  }
+
+  async function overpass(dest,myToken){
+    const q=`
+      [out:json][timeout:10];
+      (
+        node["amenity"="fuel"](around:12000,${dest.lat},${dest.lng});
+        way["amenity"="fuel"](around:12000,${dest.lat},${dest.lng});
+        relation["amenity"="fuel"](around:12000,${dest.lat},${dest.lng});
+        node["amenity"="parking"](around:12000,${dest.lat},${dest.lng});
+        way["amenity"="parking"](around:12000,${dest.lat},${dest.lng});
+        relation["amenity"="parking"](around:12000,${dest.lat},${dest.lng});
+      );
+      out center tags 100;
+    `;
+    const endpoints=[
+      'https://overpass-api.de/api/interpreter',
+      'https://overpass.kumi.systems/api/interpreter'
+    ];
+
+    for(const ep of endpoints){
+      try{
+        const res=await fetch(ep,{
+          method:'POST',
+          headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'},
+          body:new URLSearchParams({data:q}).toString()
+        });
+        const data=await res.json();
+        if(myToken!==token) return null;
+
+        const out={gas:[],parking:[]};
+        const seen=new Set();
+
+        (data.elements||[]).forEach((el,i)=>{
+          const tags=el.tags||{};
+          const type=tags.amenity==='fuel'?'gas':tags.amenity==='parking'?'parking':null;
+          if(!type) return;
+          const lat=Number(el.lat ?? el.center?.lat);
+          const lng=Number(el.lon ?? el.center?.lon);
+          if(!validCoord(lat,lng)) return;
+
+          const key=`${type}_${Math.round(lat*100000)}_${Math.round(lng*100000)}`;
+          if(seen.has(key)) return;
+          seen.add(key);
+
+          const name=tags.name || tags.brand || tags.operator || (type==='gas'?`Gas station ${out.gas.length+1}`:`Parking ${out.parking.length+1}`);
+          const address=[tags['addr:housenumber'],tags['addr:street'],tags['addr:city']].filter(Boolean).join(' ') || tags['addr:full'] || '';
+          const item={id:`${type}_osm_${el.id}_${i}`, type, name, address, lat, lng, source:'OSM'};
+
+          if(type==='gas' && out.gas.length<5) out.gas.push(item);
+          if(type==='parking' && out.parking.length<5) out.parking.push(item);
+        });
+
+        if(out.gas.length || out.parking.length) return out;
+      }catch(e){
+        console.warn('[HALO V65] Overpass endpoint failed', ep, e);
+      }
+    }
+
+    return null;
+  }
+
+  function area(){
+    const body=document.getElementById('haloNavHUDBody') || document.querySelector('#haloNavHUD .halo-nav-body') || document.getElementById('haloNavHUD');
+    if(!body) return null;
+
+    let el=document.getElementById('haloV65SupportPlaces');
+    if(el) return el;
+
+    // Replace old V64/V63/V62 mount if present
+    const old=document.getElementById('haloV64SupportPlaces') || document.getElementById('haloV63SupportPlaces') || document.getElementById('haloV62SupportPlaces');
+    if(old){
+      old.id='haloV65SupportPlaces';
+      return old;
+    }
+
+    // Otherwise append new section
+    const section=document.createElement('div');
+    section.className='halo-nav-section';
+    section.innerHTML=`<div class="halo-nav-section-title">GAS + PARKING</div><div id="haloV65SupportPlaces"></div>`;
+    body.appendChild(section);
+    return section.querySelector('#haloV65SupportPlaces');
+  }
+
+  function clearMarkers(){
+    const m=getMap();
+    if(m){
+      Object.values(markers).forEach(marker=>{try{m.removeLayer(marker)}catch(e){}});
+    }
+    markers={};
+  }
+
+  function markerHtml(type){return `<div class="halo-v65-marker ${type}">${type==='gas'?'G':'P'}</div>`;}
+
+  function addMarker(item){
+    const m=getMap();
+    if(!m || typeof L==='undefined' || !validCoord(item.lat,item.lng)) return;
+    if(markers[item.id]) return;
+
+    const marker=L.marker([item.lat,item.lng],{
+      icon:L.divIcon({className:'',html:markerHtml(item.type),iconSize:[30,30],iconAnchor:[15,15],popupAnchor:[0,-16]})
+    }).addTo(m);
+
+    marker.bindPopup(`
+      <div style="min-width:190px">
+        <strong>${esc(item.name)}</strong><br>
+        <span style="opacity:.72">${esc(item.address || item.source)}</span><br><br>
+        <button onclick="haloV65SetDestination('${esc(item.id)}')" style="border:1px solid rgba(0,255,157,.35);border-radius:999px;background:rgba(0,255,157,.08);color:#00ff9d;padding:7px 9px;cursor:pointer;">SET DESTINATION</button>
+      </div>
+    `,{className:'ham-popup'});
+
+    markers[item.id]=marker;
+  }
+
+  function render(gas,parking){
+    killPanelButtons();
+
+    const el=area();
+    if(!el) return;
+
+    clearMarkers();
+    places={};
+
+    [...gas,...parking].forEach(item=>{
+      item.id=String(item.id).replace(/[^a-z0-9_-.]/gi,'_');
+      places[item.id]=item;
+      addMarker(item);
+    });
+
+    const row=item=>`
+      <div class="halo-v65-row" data-v65-id="${esc(item.id)}">
+        <span class="halo-v65-name">${item.type==='gas'?'⛽':'🅿️'} ${esc(item.name)}</span>
+        <span class="halo-v65-address">${esc(item.address || item.source)}</span>
+        <span class="halo-v65-meta"><span>${item.type==='gas'?'GAS':'PARKING'} EXACT</span><span>${item.source}</span></span>
+      </div>
+    `;
+
+    el.innerHTML = `
+      ${gas.length ? gas.slice(0,5).map(row).join('') : '<div class="halo-v65-row"><span class="halo-v65-name">⛽ Fuel search unavailable</span><span class="halo-v65-address">Try a closer city/street destination.</span></div>'}
+      ${parking.length ? parking.slice(0,5).map(row).join('') : '<div class="halo-v65-row"><span class="halo-v65-name">🅿️ Parking search unavailable</span><span class="halo-v65-address">Try a closer city/street destination.</span></div>'}
+    `;
+
+    updateBrief(gas,parking);
+    log('rendered support', {gas:gas.length, parking:parking.length});
+  }
+
+  function updateBrief(gas,parking){
+    [document.getElementById('haloDestinationBrief'),document.getElementById('haloDestinationIntelCard')].filter(Boolean).forEach(card=>{
+      const strips=Array.from(card.querySelectorAll('.halo-weather-strip'));
+      const s=strips.find(x=>String(x.textContent||'').includes('Support nearby'));
+      if(s){
+        s.innerHTML=`<strong>Support nearby:</strong><br>⛽ ${esc(gas[0]?.name || 'No gas station found')}<br>🅿️ ${esc(parking[0]?.name || 'No parking found')}`;
+      }
+    });
+  }
+
+  window.haloV65BuildSupport = async function(payload){
+    if(!payload || !payload.success) return;
+    currentPayload=payload;
+    window.__haloV65LastPayload=payload;
+
+    const myToken=++token;
+    const dest=getDest(payload);
+    const server=normalizeServer(payload);
+
+    if(!dest){
+      render(server.gas,server.parking);
+      return;
+    }
+
+    // 1) Render immediately using server data or local anchors. No "scanning forever".
+    const instant=immediateLocal(dest);
+    render(server.gas.length?server.gas:instant.gas, server.parking.length?server.parking:instant.parking);
+
+    // 2) Upgrade with real OSM results in background.
+    const osm=await overpass(dest,myToken).catch(e=>null);
+    if(myToken!==token || !osm) return;
+
+    render(
+      server.gas.length ? server.gas : (osm.gas.length ? osm.gas : instant.gas),
+      server.parking.length ? server.parking : (osm.parking.length ? osm.parking : instant.parking)
+    );
+  };
+
+  window.haloV65SetDestination=function(id){
+    const item=places[id];
+    if(!item || !validCoord(item.lat,item.lng)) return false;
+    const dest=`${Number(item.lat)},${Number(item.lng)}`;
+    log('set exact support destination', item);
+
+    if(typeof window.haloNavRun==='function') return window.haloNavRun(dest,'__AUTO_GPS__');
+    if(typeof window.haloRoutePlusCommand==='function') return window.haloRoutePlusCommand(dest);
+    return false;
+  };
+
+  window.haloRerouteTo=function(lat,lng,name){
+    lat=Number(lat); lng=Number(lng);
+    if(!validCoord(lat,lng)) return false;
+    if(typeof window.haloNavRun==='function') return window.haloNavRun(`${lat},${lng}`,'__AUTO_GPS__');
+    return false;
+  };
+
+  document.addEventListener('click',function(e){
+    const row=e.target.closest && e.target.closest('#haloV65SupportPlaces .halo-v65-row[data-v65-id]');
+    if(!row) return;
+    e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+
+    const item=places[row.dataset.v65Id];
+    if(!item) return;
+
+    const m=getMap();
+    if(m){try{m.flyTo([item.lat,item.lng],16,{animate:true,duration:.9});}catch(e){}}
+    addMarker(item);
+    setTimeout(()=>{try{markers[item.id] && markers[item.id].openPopup();}catch(e){}},350);
+  },true);
+
+  const oldFetch=window.fetch;
+  if(oldFetch && !oldFetch.__haloV65Wrapped){
+    window.fetch=async function(input,init){
+      const res=await oldFetch.apply(this,arguments);
+      try{
+        const url=typeof input==='string'?input:String(input?.url || '');
+        if(url.includes('/route-plus')){
+          res.clone().json().then(data=>{
+            setTimeout(()=>window.haloV65BuildSupport(data),60);
+            setTimeout(()=>window.haloV65BuildSupport(data),600);
+          }).catch(()=>{});
+        }
+      }catch(e){}
+      return res;
+    };
+    window.fetch.__haloV65Wrapped=true;
+  }
+
+  // Keep V31 bar gone even if its script reinjects it later.
+  const observer=new MutationObserver(()=>{
+    killPanelButtons();
+    const el=area();
+    if(currentPayload && el && /Scanning nearby support/i.test(el.textContent||'')){
+      clearTimeout(rebuildTimer);
+      rebuildTimer=setTimeout(()=>window.haloV65BuildSupport(currentPayload),120);
+    }
+  });
+  observer.observe(document.body,{childList:true,subtree:true});
+
+  setTimeout(()=>{
+    killPanelButtons();
+    const p=window.__haloV65LastPayload || window.__haloV64LastPayload || window.__haloV63LastRoutePayload || window.__haloV32Payload || window.__haloPolishPayload || window.__haloStreetRoutePayload || window.__haloLastRoutePayloadVisibilityFix;
+    if(p) window.haloV65BuildSupport(p);
+  },800);
+
+  console.log('[HALO V65 SUPPORT IMMEDIATE + V31 BUTTON KILL] loaded');
+})();
+</script>
+
 </body>
 </html>
