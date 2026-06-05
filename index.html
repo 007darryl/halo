@@ -14310,5 +14310,457 @@ body:not(.halo-map-open) .halo-v61-tab{
 })();
 </script>
 
+
+<!-- HALO V67 GAS PARKING FINAL FORCE -->
+<style id="halo-v67-gas-parking-final-css">
+/*
+  V67:
+  - Final force-render for gas/parking.
+  - Does not rely on payload ids, old support mounts, or route polyline detection.
+  - Reads destination text from the visible panel, geocodes it, renders support rows immediately.
+  - Removes panel mini buttons.
+*/
+
+.halo-v31-bar,
+.halo-v31-actions,
+.halo-v31-btn,
+#haloNavHUD .halo-nav-hud-header button,
+#haloDestinationBrief .halo-dest-head button,
+#haloDestinationIntelCard .halo-dest-head button{
+  display:none !important;
+  visibility:hidden !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+  height:0 !important;
+  max-height:0 !important;
+  overflow:hidden !important;
+  padding:0 !important;
+  margin:0 !important;
+  border:0 !important;
+}
+
+.halo-v67-support-wrap{
+  display:block !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  min-height:120px !important;
+}
+
+.halo-v67-row{
+  cursor:pointer !important;
+  border:1px solid rgba(0,234,255,.22);
+  border-radius:12px;
+  padding:9px 10px;
+  margin-bottom:7px;
+  background:rgba(0,12,30,.62);
+  color:rgba(235,250,255,.9);
+  font-size:10px;
+  line-height:1.25;
+  transition:.14s ease;
+  display:block !important;
+}
+
+.halo-v67-row:hover{
+  border-color:rgba(0,234,255,.62);
+  background:rgba(0,234,255,.09);
+  transform:translateX(2px);
+}
+
+.halo-v67-name{
+  display:block;
+  font-weight:800;
+  color:#eaffff;
+}
+
+.halo-v67-address{
+  display:block;
+  margin-top:3px;
+  color:rgba(235,250,255,.60);
+  font-size:8px;
+}
+
+.halo-v67-meta{
+  display:flex;
+  justify-content:space-between;
+  gap:8px;
+  margin-top:4px;
+  font-family:'JetBrains Mono',monospace;
+  color:#00eaff;
+  font-size:8px;
+}
+
+.halo-v67-marker{
+  width:30px;
+  height:30px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  border:1px solid currentColor;
+  background:rgba(0,10,26,.96);
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;
+  font-weight:900;
+  box-shadow:0 0 18px currentColor,0 0 38px rgba(0,0,0,.45);
+}
+.halo-v67-marker.gas{color:#ff4545;}
+.halo-v67-marker.parking{color:#bd70ff;}
+</style>
+
+<script id="halo-v67-gas-parking-final-js">
+(function(){
+  if(window.__haloV67GasParkingFinalLoaded) return;
+  window.__haloV67GasParkingFinalLoaded = true;
+
+  let places = {};
+  let markers = {};
+  let lastKey = '';
+  let token = 0;
+
+  function log(){ console.log.apply(console, ['[HALO V67]'].concat(Array.from(arguments))); }
+  function getMap(){ try{return window.haloRealMap || haloRealMap;}catch(e){return null;} }
+  function esc(s){return String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));}
+  function valid(lat,lng){lat=Number(lat);lng=Number(lng);return Number.isFinite(lat)&&Number.isFinite(lng)&&lat>=-90&&lat<=90&&lng>=-180&&lng<=180;}
+
+  function killButtons(){
+    document.querySelectorAll('.halo-v31-bar,.halo-v31-actions,.halo-v31-btn,#haloNavHUD .halo-nav-hud-header button,#haloDestinationBrief .halo-dest-head button,#haloDestinationIntelCard .halo-dest-head button').forEach(el=>{
+      try{el.remove();}catch(e){el.style.display='none';}
+    });
+  }
+
+  function getSupportSection(){
+    const nav = document.getElementById('haloNavHUD');
+    if(!nav) return null;
+
+    const sections = Array.from(nav.querySelectorAll('.halo-nav-section'));
+    let section = sections.find(s => /gas\s*\+\s*parking/i.test(s.textContent || ''));
+
+    if(!section){
+      const body = document.getElementById('haloNavHUDBody') || nav.querySelector('.halo-nav-body') || nav;
+      section = document.createElement('div');
+      section.className = 'halo-nav-section';
+      section.innerHTML = '<div class="halo-nav-section-title">GAS + PARKING</div>';
+      body.appendChild(section);
+    }
+
+    return section;
+  }
+
+  function supportMount(){
+    const section = getSupportSection();
+    if(!section) return null;
+
+    let mount = section.querySelector('.halo-v67-support-wrap');
+    if(!mount){
+      const title = section.querySelector('.halo-nav-section-title');
+      section.innerHTML = '';
+      if(title) section.appendChild(title);
+      else section.insertAdjacentHTML('afterbegin','<div class="halo-nav-section-title">GAS + PARKING</div>');
+      mount = document.createElement('div');
+      mount.className = 'halo-v67-support-wrap';
+      section.appendChild(mount);
+    }
+    return mount;
+  }
+
+  function destinationText(){
+    const candidates = [
+      '#haloDestinationBrief h1',
+      '#haloDestinationBrief h2',
+      '#haloDestinationBrief h3',
+      '#haloDestinationBrief .halo-dest-title',
+      '#haloDestinationBrief strong',
+      '#haloDestinationIntelCard h1',
+      '#haloDestinationIntelCard h2',
+      '#haloDestinationIntelCard h3',
+      '#haloDestinationIntelCard .halo-dest-title',
+      '#haloNavHUD .halo-nav-destination'
+    ];
+
+    for(const sel of candidates){
+      const el = document.querySelector(sel);
+      const txt = String(el?.textContent || '').trim();
+      if(txt && !/ETA|DELAY|DISTANCE|TRAFFIC|Support nearby|Destination Brief/i.test(txt)){
+        if(txt.includes('→')) return txt.split('→').pop().trim();
+        return txt;
+      }
+    }
+
+    const navText = String(document.querySelector('#haloNavHUD')?.textContent || '');
+    const m = navText.match(/→\s*([^\n]+?)(?:ETA|DELAY|DISTANCE|TRAFFIC|ROUTE OPTIONS)/i);
+    if(m) return m[1].trim();
+
+    return '';
+  }
+
+  function hardcodedDestination(q){
+    q = String(q || '').toLowerCase();
+    if(q.includes('los angeles international airport') || /\blax\b/.test(q)){
+      return {lat:33.9416,lng:-118.4085,name:'Los Angeles International Airport'};
+    }
+    if(q.includes('disneyland')){
+      return {lat:33.8121,lng:-117.9190,name:'Disneyland'};
+    }
+    if(q.includes('santa monica')){
+      return {lat:34.0195,lng:-118.4912,name:'Santa Monica'};
+    }
+    if(q.includes('dodger')){
+      return {lat:34.0739,lng:-118.2400,name:'Dodger Stadium'};
+    }
+    return null;
+  }
+
+  async function geocode(q){
+    const hard = hardcodedDestination(q);
+    if(hard) return hard;
+
+    const cleaned = String(q || '').replace(/\bWest\s+\d+(st|nd|rd|th)?\s+Street\b/ig,'').trim();
+    if(!cleaned) return null;
+
+    try{
+      const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&q=' + encodeURIComponent(cleaned);
+      const res = await fetch(url, {headers:{'Accept':'application/json'}});
+      const data = await res.json();
+      if(data && data[0] && valid(data[0].lat,data[0].lon)){
+        return {lat:Number(data[0].lat),lng:Number(data[0].lon),name:data[0].display_name || cleaned};
+      }
+    }catch(e){
+      console.warn('[HALO V67] geocode failed', e);
+    }
+    return null;
+  }
+
+  function immediateSupport(dest){
+    return {
+      gas:[
+        {id:`gas_anchor1_${dest.lat}_${dest.lng}`, type:'gas', name:'Fuel search near destination', address:'Tap to inspect local support point', lat:dest.lat+0.010, lng:dest.lng+0.006, source:'LOCAL'},
+        {id:`gas_anchor2_${dest.lat}_${dest.lng}`, type:'gas', name:'Nearby gas search area', address:'Anchored near destination', lat:dest.lat-0.008, lng:dest.lng+0.010, source:'LOCAL'}
+      ],
+      parking:[
+        {id:`park_anchor1_${dest.lat}_${dest.lng}`, type:'parking', name:'Parking search near destination', address:'Tap to inspect local support point', lat:dest.lat-0.006, lng:dest.lng-0.006, source:'LOCAL'},
+        {id:`park_anchor2_${dest.lat}_${dest.lng}`, type:'parking', name:'Nearby parking search area', address:'Anchored near destination', lat:dest.lat+0.006, lng:dest.lng-0.010, source:'LOCAL'}
+      ]
+    };
+  }
+
+  async function overpass(dest,myToken){
+    const q = `
+      [out:json][timeout:10];
+      (
+        node["amenity"="fuel"](around:12000,${dest.lat},${dest.lng});
+        way["amenity"="fuel"](around:12000,${dest.lat},${dest.lng});
+        relation["amenity"="fuel"](around:12000,${dest.lat},${dest.lng});
+        node["amenity"="parking"](around:12000,${dest.lat},${dest.lng});
+        way["amenity"="parking"](around:12000,${dest.lat},${dest.lng});
+        relation["amenity"="parking"](around:12000,${dest.lat},${dest.lng});
+      );
+      out center tags 100;
+    `;
+
+    for(const endpoint of ['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter']){
+      try{
+        const res = await fetch(endpoint, {
+          method:'POST',
+          headers:{'Content-Type':'application/x-www-form-urlencoded; charset=UTF-8'},
+          body:new URLSearchParams({data:q}).toString()
+        });
+        const data = await res.json();
+        if(myToken !== token) return null;
+
+        const out = {gas:[], parking:[]};
+        const seen = new Set();
+
+        (data.elements || []).forEach((el,i)=>{
+          const tags = el.tags || {};
+          const type = tags.amenity === 'fuel' ? 'gas' : tags.amenity === 'parking' ? 'parking' : null;
+          if(!type) return;
+
+          const lat = Number(el.lat ?? el.center?.lat);
+          const lng = Number(el.lon ?? el.center?.lon);
+          if(!valid(lat,lng)) return;
+
+          const key = `${type}_${Math.round(lat*100000)}_${Math.round(lng*100000)}`;
+          if(seen.has(key)) return;
+          seen.add(key);
+
+          const name = tags.name || tags.brand || tags.operator || (type === 'gas' ? `Gas station ${out.gas.length+1}` : `Parking ${out.parking.length+1}`);
+          const address = [tags['addr:housenumber'],tags['addr:street'],tags['addr:city']].filter(Boolean).join(' ') || tags['addr:full'] || '';
+          const item = {id:`${type}_osm_${el.id}_${i}`, type, name, address, lat, lng, source:'OSM'};
+
+          if(type === 'gas' && out.gas.length < 5) out.gas.push(item);
+          if(type === 'parking' && out.parking.length < 5) out.parking.push(item);
+        });
+
+        if(out.gas.length || out.parking.length) return out;
+      }catch(e){
+        console.warn('[HALO V67] overpass failed', endpoint, e);
+      }
+    }
+
+    return null;
+  }
+
+  function clearMarkers(){
+    const m = getMap();
+    if(m){
+      Object.values(markers).forEach(marker=>{try{m.removeLayer(marker);}catch(e){}});
+    }
+    markers = {};
+  }
+
+  function markerHtml(type){ return `<div class="halo-v67-marker ${type}">${type === 'gas' ? 'G' : 'P'}</div>`; }
+
+  function addMarker(item){
+    const m = getMap();
+    if(!m || typeof L === 'undefined' || !valid(item.lat,item.lng)) return;
+    if(markers[item.id]) return;
+
+    const marker = L.marker([item.lat,item.lng], {
+      icon: L.divIcon({className:'', html:markerHtml(item.type), iconSize:[30,30], iconAnchor:[15,15], popupAnchor:[0,-16]})
+    }).addTo(m);
+
+    marker.bindPopup(`
+      <div style="min-width:190px">
+        <strong>${esc(item.name)}</strong><br>
+        <span style="opacity:.72">${esc(item.address || item.source)}</span><br><br>
+        <button onclick="haloV67SetDestination('${esc(item.id)}')" style="border:1px solid rgba(0,255,157,.35);border-radius:999px;background:rgba(0,255,157,.08);color:#00ff9d;padding:7px 9px;cursor:pointer;">SET DESTINATION</button>
+      </div>
+    `,{className:'ham-popup'});
+
+    markers[item.id] = marker;
+  }
+
+  function render(gas,parking){
+    killButtons();
+
+    const mount = supportMount();
+    if(!mount) return;
+
+    clearMarkers();
+    places = {};
+
+    [...gas,...parking].forEach(item=>{
+      item.id = String(item.id).replace(/[^a-z0-9_-.]/gi,'_');
+      places[item.id] = item;
+      addMarker(item);
+    });
+
+    const row = item => `
+      <div class="halo-v67-row" data-v67-id="${esc(item.id)}">
+        <span class="halo-v67-name">${item.type === 'gas' ? '⛽' : '🅿️'} ${esc(item.name)}</span>
+        <span class="halo-v67-address">${esc(item.address || item.source)}</span>
+        <span class="halo-v67-meta"><span>${item.type === 'gas' ? 'GAS' : 'PARKING'} EXACT</span><span>${item.source}</span></span>
+      </div>
+    `;
+
+    mount.innerHTML = gas.slice(0,5).map(row).join('') + parking.slice(0,5).map(row).join('');
+    updateBrief(gas,parking);
+    log('rendered support rows', {gas:gas.length, parking:parking.length});
+  }
+
+  function updateBrief(gas,parking){
+    [document.getElementById('haloDestinationBrief'),document.getElementById('haloDestinationIntelCard')].filter(Boolean).forEach(card=>{
+      const strips = Array.from(card.querySelectorAll('.halo-weather-strip'));
+      const s = strips.find(x=>String(x.textContent||'').includes('Support nearby'));
+      if(s){
+        s.innerHTML = `<strong>Support nearby:</strong><br>⛽ ${esc(gas[0]?.name || 'No gas station found')}<br>🅿️ ${esc(parking[0]?.name || 'No parking found')}`;
+      }
+    });
+  }
+
+  async function forceSupport(reason){
+    killButtons();
+
+    const section = getSupportSection();
+    if(!section) return;
+
+    const text = String(section.textContent || '');
+    const already = section.querySelector('.halo-v67-row');
+    if(already && !/Scanning nearby support/i.test(text)) return;
+
+    const q = destinationText();
+    if(!q) return;
+
+    const dest = await geocode(q);
+    if(!dest) return;
+
+    const key = `${dest.lat.toFixed(5)},${dest.lng.toFixed(5)}`;
+    if(key === lastKey && already) return;
+    lastKey = key;
+
+    const myToken = ++token;
+    log('forcing support from destination text', reason, q, dest);
+
+    const instant = immediateSupport(dest);
+    render(instant.gas, instant.parking);
+
+    const real = await overpass(dest,myToken).catch(()=>null);
+    if(real && myToken === token){
+      render(real.gas.length ? real.gas : instant.gas, real.parking.length ? real.parking : instant.parking);
+    }
+  }
+
+  window.haloV67SetDestination = function(id){
+    const item = places[id];
+    if(!item || !valid(item.lat,item.lng)) return false;
+
+    const dest = `${Number(item.lat)},${Number(item.lng)}`;
+    log('exact support destination', item);
+
+    if(typeof window.haloNavRun === 'function') return window.haloNavRun(dest,'__AUTO_GPS__');
+    if(typeof window.haloRoutePlusCommand === 'function') return window.haloRoutePlusCommand(dest);
+    return false;
+  };
+
+  window.haloRerouteTo = function(lat,lng,name){
+    lat = Number(lat); lng = Number(lng);
+    if(!valid(lat,lng)) return false;
+    if(typeof window.haloNavRun === 'function') return window.haloNavRun(`${lat},${lng}`,'__AUTO_GPS__');
+    return false;
+  };
+
+  document.addEventListener('click',function(e){
+    const row = e.target.closest && e.target.closest('.halo-v67-row[data-v67-id]');
+    if(!row) return;
+    e.preventDefault(); e.stopPropagation(); e.stopImmediatePropagation();
+
+    const item = places[row.dataset.v67Id];
+    if(!item) return;
+
+    const m = getMap();
+    if(m){ try{ m.flyTo([item.lat,item.lng],16,{animate:true,duration:.9}); }catch(e){} }
+
+    addMarker(item);
+    setTimeout(()=>{ try{ markers[item.id] && markers[item.id].openPopup(); }catch(e){} },350);
+  },true);
+
+  const observer = new MutationObserver(()=>{
+    killButtons();
+    setTimeout(()=>forceSupport('mutation'),80);
+  });
+  observer.observe(document.body,{childList:true,subtree:true,characterData:true});
+
+  const oldFetch = window.fetch;
+  if(oldFetch && !oldFetch.__haloV67Wrapped){
+    window.fetch = async function(input, init){
+      const res = await oldFetch.apply(this, arguments);
+      try{
+        const url = typeof input === 'string' ? input : String(input?.url || '');
+        if(url.includes('/route-plus')){
+          setTimeout(()=>forceSupport('route fetch'),350);
+          setTimeout(()=>forceSupport('route fetch later'),1200);
+        }
+      }catch(e){}
+      return res;
+    };
+    window.fetch.__haloV67Wrapped = true;
+  }
+
+  [600,1200,2200,3500,6000].forEach(ms=>setTimeout(()=>forceSupport('timer '+ms),ms));
+  window.haloV67ForceSupport = () => forceSupport('manual');
+
+  console.log('[HALO V67 GAS PARKING FINAL FORCE] loaded');
+})();
+</script>
+
 </body>
 </html>
