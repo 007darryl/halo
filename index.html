@@ -5294,8 +5294,7 @@ function haloCleanDestinationText(destination){
 async function run(destination,origin='__AUTO_GPS__'){if(busy)return;busy=true;destination=haloCleanDestinationText(destination);if(!destination){busy=false;return}origin=await haloResolveNavOrigin(origin);if(window.setHaloOrbMode)window.setHaloOrbMode('thinking','NAV SCAN');await open();try{let res=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({origin,destination})});let data=await res.json();if(!res.ok||!data.success){if(window.setHaloOrbMode)window.setHaloOrbMode('alert','NAV ERROR');if(typeof showIntel==='function')showIntel('NAVIGATION ERROR',`<h3>Route Failed</h3><p>${esc(data.error||'Route failed')}</p>`);busy=false;return}draw(data,0);let l=String((data.route||{}).traffic_level||'').toLowerCase();if(window.setHaloOrbMode){if(l.includes('heavy'))window.setHaloOrbMode('alert','HEAVY TRAFFIC');else if(l.includes('moderate'))window.setHaloOrbMode('thinking','TRAFFIC MODERATE');else window.setHaloOrbMode('success','ROUTE READY')}}catch(e){if(window.setHaloOrbMode)window.setHaloOrbMode('alert','NAV ERROR');if(typeof showIntel==='function')showIntel('NAVIGATION ERROR',`<h3>System Error</h3><p>${esc(e.message)}</p>`)}busy=false}
 window.haloNavRun=run;window.haloRoutePlusCommand=d=>run(d,'__AUTO_GPS__');
 window.haloRerouteTo=function(lat,lng,name){
-  lat = Number(lat); lng = Number(lng);
-  if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
+  if(!lat||!lng)return;
   if(busy)return;
   busy=true;
   let m=map();if(!m)return;
@@ -5305,7 +5304,7 @@ window.haloRerouteTo=function(lat,lng,name){
   if(window.setHaloOrbMode)window.setHaloOrbMode('thinking','REROUTING');
   // Fetch new route to exact coordinates
   fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({origin:(Number.isFinite(Number(window.haloUserLat))&&Number.isFinite(Number(window.haloUserLng)))?`${window.haloUserLat},${window.haloUserLng}`:'home',destination:`${Number(lat)},${Number(lng)}`})
+    body:JSON.stringify({origin:(Number.isFinite(Number(window.haloUserLat))&&Number.isFinite(Number(window.haloUserLng)))?`${window.haloUserLat},${window.haloUserLng}`:'home',destination:name||`${lat},${lng}`})
   }).then(r=>r.json()).then(data=>{
     if(data.success){
       draw(data,0);
@@ -10979,350 +10978,23 @@ body #haloAdvancedMapOverlay #haloDestinationIntelCard.halo-v35-force-hidden{
 </script>
 
 
-<!-- HALO V49 CLEAN STABLE PANELS + EXACT REROUTE FIX -->
-<style id="halo-v49-clean-stable-panels">
-/*
-  V49 clean stable:
-  - Built from cleaner HALO_fixed base, not stacked patches.
-  - No MutationObserver.
-  - No setInterval.
-  - No repeated fetch wrapping loops.
-  - Left/right panels use simple body classes.
-  - Gas/parking set destination uses exact lat,lng.
-*/
-
-body.halo-left-collapsed #haloNavHUD{
-  transform: translateX(calc(-100% - 38px)) !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-body.halo-right-collapsed #haloDestinationBrief,
-body.halo-right-collapsed #haloDestinationIntelCard{
-  transform: translateX(calc(100% + 38px)) !important;
-  opacity: 0 !important;
-  pointer-events: none !important;
-}
-
-#haloNavHUD,
-#haloDestinationBrief,
-#haloDestinationIntelCard{
-  transition: transform .22s ease, opacity .18s ease !important;
-}
-
-.halo-v49-tab{
-  position: fixed !important;
-  top: 50% !important;
-  transform: translateY(-50%) !important;
-  z-index: 999999 !important;
-  width: 42px !important;
-  height: 88px !important;
-  border: 1px solid rgba(0,234,255,.36) !important;
-  background: rgba(0,18,40,.9) !important;
-  color: #00eaff !important;
-  font-family: 'JetBrains Mono', monospace !important;
-  font-size: 24px !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  cursor: pointer !important;
-  box-shadow: 0 0 22px rgba(0,234,255,.18) !important;
-  backdrop-filter: blur(10px) !important;
-}
-
-#haloV49LeftTab{
-  left: 8px !important;
-  border-left: none !important;
-  border-radius: 0 18px 18px 0 !important;
-}
-
-#haloV49RightTab{
-  right: 8px !important;
-  border-right: none !important;
-  border-radius: 18px 0 0 18px !important;
-}
-
-body:not(.halo-map-open) .halo-v49-tab{
-  display:none !important;
-}
-</style>
-
-<script id="halo-v49-clean-stable-panels-js">
-(function(){
-  if(window.__haloV49CleanStableLoaded) return;
-  window.__haloV49CleanStableLoaded = true;
-
-  let activeRouteToken = 0;
-
-  function getMap(){
-    try{return window.haloRealMap || haloRealMap;}catch(e){return null;}
-  }
-
-  function invalidateMap(){
-    const map = getMap();
-    if(!map) return;
-    setTimeout(() => { try{ map.invalidateSize({animate:true}); }catch(e){} }, 120);
-  }
-
-  function updateTabs(){
-    const overlay = document.getElementById('haloAdvancedMapOverlay');
-    const open = !overlay || overlay.classList.contains('active') || getComputedStyle(overlay).display !== 'none';
-    document.body.classList.toggle('halo-map-open', open);
-
-    const left = document.getElementById('haloV49LeftTab');
-    const right = document.getElementById('haloV49RightTab');
-
-    if(left) left.textContent = document.body.classList.contains('halo-left-collapsed') ? '›' : '‹';
-    if(right) right.textContent = document.body.classList.contains('halo-right-collapsed') ? '‹' : '›';
-  }
-
-  function ensureTabs(){
-    if(!document.getElementById('haloV49LeftTab')){
-      const left = document.createElement('button');
-      left.id = 'haloV49LeftTab';
-      left.className = 'halo-v49-tab';
-      left.type = 'button';
-      left.title = 'Hide / show Navigation Intel';
-      left.textContent = '‹';
-      left.onclick = function(e){
-        e.preventDefault();
-        e.stopPropagation();
-        document.body.classList.toggle('halo-left-collapsed');
-        updateTabs();
-        invalidateMap();
-      };
-      document.body.appendChild(left);
-    }
-
-    if(!document.getElementById('haloV49RightTab')){
-      const right = document.createElement('button');
-      right.id = 'haloV49RightTab';
-      right.className = 'halo-v49-tab';
-      right.type = 'button';
-      right.title = 'Hide / show Destination Brief';
-      right.textContent = '›';
-      right.onclick = function(e){
-        e.preventDefault();
-        e.stopPropagation();
-        document.body.classList.toggle('halo-right-collapsed');
-        updateTabs();
-        invalidateMap();
-      };
-      document.body.appendChild(right);
-    }
-
-    updateTabs();
-  }
-
-  function removeSupportLists(){
-    [
-      'haloV20ExactPlaces',
-      'haloV22ExactPlaces',
-      'haloV23ExactPlaces',
-      'haloV25ExactPlaces',
-      'haloV32ExactPlaces'
-    ].forEach(id => {
-      const el = document.getElementById(id);
-      if(el) el.remove();
-    });
-  }
-
-  function clearSupportOnly(){
-    removeSupportLists();
-
-    try{
-      const map = getMap();
-      if(map && map.eachLayer){
-        const remove = [];
-        map.eachLayer(layer => {
-          try{
-            const t = [
-              layer._icon?.innerHTML,
-              layer._icon?.className,
-              layer.getPopup ? layer.getPopup()?.getContent?.() : '',
-              layer.options?.className,
-              layer.options?.title
-            ].join(' ').toLowerCase();
-
-            if(
-              t.includes('halo-v32') ||
-              t.includes('halo-place') ||
-              t.includes('gas') ||
-              t.includes('parking') ||
-              t.includes('shell') ||
-              t.includes('chevron') ||
-              t.includes('arco') ||
-              t.includes('mobil') ||
-              t.includes('7-eleven')
-            ){
-              remove.push(layer);
-            }
-          }catch(e){}
-        });
-        remove.forEach(layer => { try{ map.removeLayer(layer); }catch(e){} });
-      }
-    }catch(e){}
-  }
-
-  async function getGPSOrigin(){
-    return new Promise(resolve => {
-      if(!navigator.geolocation) return resolve('__AUTO_GPS__');
-      navigator.geolocation.getCurrentPosition(
-        pos => resolve({lat:pos.coords.latitude, lng:pos.coords.longitude}),
-        () => resolve('__AUTO_GPS__'),
-        {enableHighAccuracy:true, timeout:6500, maximumAge:60000}
-      );
-    });
-  }
-
-  async function exactReroute(lat,lng,name){
-    lat = Number(lat);
-    lng = Number(lng);
-
-    if(!Number.isFinite(lat) || !Number.isFinite(lng)){
-      console.warn('[HALO V49] bad exact reroute coords', {lat,lng,name});
-      return false;
-    }
-
-    // Token prevents double-click/race glitches.
-    const token = ++activeRouteToken;
-    const destination = `${lat},${lng}`;
-
-    clearSupportOnly();
-
-    setTimeout(async () => {
-      if(token !== activeRouteToken) return;
-
-      try{
-        console.log('[HALO V49] exact reroute:', {name, destination});
-        if(typeof window.haloNavRun === 'function'){
-          const origin = await getGPSOrigin();
-          if(token !== activeRouteToken) return;
-          window.haloNavRun(destination, origin);
-        }else if(typeof window.haloRoutePlusCommand === 'function'){
-          window.haloRoutePlusCommand(destination);
-        }
-      }catch(e){
-        console.error('[HALO V49] exact reroute failed', e);
-      }
-    }, 80);
-
-    return true;
-  }
-
-  // Override the old function at the root. This fixes the "click twice" / random global routing issue.
-  window.haloRerouteTo = function(lat,lng,name){
-    return exactReroute(lat,lng,name);
-  };
-
-  // Also override destination setters used by popup buttons.
-  window.haloV32SetDestination = function(id){
-    const pools = [window.haloV32Markers, window.haloPlaceMarkers, window.haloSupportMarkers];
-    let item = null;
-    for(const pool of pools){
-      try{
-        if(pool instanceof Map && pool.has(id)) item = pool.get(id);
-        else if(pool && pool[id]) item = pool[id];
-      }catch(e){}
-      if(item) break;
-    }
-
-    const p = item?.place || item;
-    const lat = item?.lat ?? p?.lat ?? p?.latitude ?? p?.location?.lat;
-    const lng = item?.lng ?? p?.lng ?? p?.longitude ?? p?.location?.lng;
-
-    return exactReroute(lat,lng,p?.name || item?.name || 'Selected place');
-  };
-
-  window.haloSetPlaceDestination = window.haloV32SetDestination;
-
-  // One fetch wrapper only: clears old support when a true new route starts.
-  const originalFetch = window.fetch;
-  if(originalFetch && !originalFetch.__haloV49Wrapped){
-    window.fetch = async function(input, init){
-      try{
-        const url = typeof input === 'string' ? input : String(input?.url || '');
-        if(url.includes('/route-plus')) clearSupportOnly();
-      }catch(e){}
-
-      const res = await originalFetch.apply(this, arguments);
-
-      try{
-        const url = typeof input === 'string' ? input : String(input?.url || '');
-        if(url.includes('/route-plus')){
-          setTimeout(updateTabs, 350);
-          setTimeout(invalidateMap, 500);
-        }
-      }catch(e){}
-
-      return res;
-    };
-    window.fetch.__haloV49Wrapped = true;
-  }
-
-  const oldOpen = window.openHaloAdvancedMap;
-  if(typeof oldOpen === 'function'){
-    window.openHaloAdvancedMap = function(){
-      const out = oldOpen.apply(this, arguments);
-      ensureTabs();
-      setTimeout(updateTabs, 150);
-      return out;
-    };
-  }
-
-  const oldClose = window.closeHaloAdvancedMap;
-  if(typeof oldClose === 'function'){
-    window.closeHaloAdvancedMap = function(){
-      const out = oldClose.apply(this, arguments);
-      setTimeout(updateTabs, 150);
-      return out;
-    };
-  }
-
-  if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', ensureTabs);
-  }else{
-    ensureTabs();
-  }
-
-  window.haloV49Diagnostic = function(){
-    console.log('[HALO V49 DIAGNOSTIC]', {
-      activeRouteToken,
-      haloRerouteTo: String(window.haloRerouteTo).slice(0,120),
-      leftCollapsed: document.body.classList.contains('halo-left-collapsed'),
-      rightCollapsed: document.body.classList.contains('halo-right-collapsed')
-    });
-  };
-
-  console.log('[HALO V49 CLEAN STABLE PANELS + EXACT REROUTE FIX] loaded');
-})();
-</script>
-
-
-<!-- HALO V50 ARKHAM BLUE TACTICAL HUD VISUAL UPGRADE -->
-<style id="halo-v50-arkham-blue-hud">
-/*
-  V50 visual-only upgrade:
-  - Blue tactical HUD inspired by the uploaded reference.
-  - Keeps existing HALO functionality intact.
-  - No fetch wrapping, no routing logic changes, no heavy observers.
-*/
-
+<!-- HALO V51 CORE OS VISUAL UPGRADE -->
+<style id="halo-v51-core-os-visual-upgrade">
 :root{
-  --halo-v50-blue:#37b7ff;
-  --halo-v50-cyan:#00eaff;
-  --halo-v50-deep:#03101f;
-  --halo-v50-glass:rgba(2,18,38,.72);
-  --halo-v50-line:rgba(55,183,255,.42);
-  --halo-v50-soft:rgba(55,183,255,.16);
-  --halo-v50-hot:rgba(0,234,255,.78);
+  --v51-panel:rgba(2,18,38,.78);
+  --v51-line:rgba(58,191,255,.38);
+  --v51-hot:rgba(0,234,255,.74);
+  --v51-text:#eaffff;
+  --v51-blue:#3abfff;
+  --v51-cyan:#00eaff;
 }
 
-html, body{
+body{
   background:
-    radial-gradient(circle at 50% 42%, rgba(0,175,255,.19), transparent 25%),
-    radial-gradient(circle at 50% 50%, rgba(0,234,255,.07), transparent 42%),
-    linear-gradient(180deg, #020814 0%, #061224 48%, #020712 100%) !important;
+    radial-gradient(circle at 50% 34%, rgba(0,234,255,.13), transparent 18%),
+    radial-gradient(circle at 50% 50%, rgba(29,120,255,.10), transparent 38%),
+    linear-gradient(180deg, #020712 0%, #041326 52%, #020713 100%) !important;
+  overflow-x:hidden;
 }
 
 body::before{
@@ -11332,415 +11004,305 @@ body::before{
   z-index:0;
   pointer-events:none;
   background:
-    linear-gradient(rgba(55,183,255,.035) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(55,183,255,.025) 1px, transparent 1px),
-    radial-gradient(circle at 50% 46%, rgba(0,234,255,.13), transparent 18%),
-    radial-gradient(circle at 50% 50%, transparent 0 18%, rgba(55,183,255,.05) 19%, transparent 35%);
-  background-size: 42px 42px, 42px 42px, auto, auto;
-  mix-blend-mode:screen;
+    linear-gradient(rgba(58,191,255,.026) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(58,191,255,.018) 1px, transparent 1px),
+    radial-gradient(circle at 50% 38%, rgba(0,234,255,.16), transparent 22%);
+  background-size:48px 48px,48px 48px,auto;
+  opacity:.8;
 }
 
 body::after{
   content:"";
   position:fixed;
   inset:0;
-  z-index:999998;
+  z-index:999997;
   pointer-events:none;
-  background:
-    repeating-linear-gradient(
-      to bottom,
-      rgba(255,255,255,.025) 0px,
-      rgba(255,255,255,.025) 1px,
-      transparent 2px,
-      transparent 5px
-    );
-  opacity:.25;
+  background:repeating-linear-gradient(to bottom, rgba(255,255,255,.022) 0, rgba(255,255,255,.022) 1px, transparent 2px, transparent 6px);
+  opacity:.20;
 }
 
-/* Global HUD outer frame */
-#haloAdvancedMapOverlay,
-.halo-map-overlay,
-body{
-  color:#dff8ff !important;
+#haloMiniChat,
+#haloCommandLine,
+.halo-command-line,
+.halo-chat-panel{
+  max-width:min(920px, 60vw) !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+  background:linear-gradient(180deg, rgba(3,21,45,.84), rgba(1,10,25,.82)) !important;
+  border:1px solid rgba(58,191,255,.36) !important;
+  border-radius:28px 8px 28px 8px !important;
+  box-shadow:inset 0 0 32px rgba(58,191,255,.08), 0 0 36px rgba(0,234,255,.11) !important;
 }
 
-#haloAdvancedMapOverlay::before,
-body.halo-map-open::before{
-  filter: saturate(1.25) brightness(.95);
-}
-
-/* top tactical frame */
-#haloAdvancedMapOverlay .halo-map-header,
-.halo-map-header,
-.halo-intel-header,
-header{
-  background:
-    linear-gradient(90deg, rgba(0,20,48,.96), rgba(0,42,78,.72), rgba(0,16,34,.96)) !important;
-  border:1px solid var(--halo-v50-line) !important;
-  box-shadow:
-    inset 0 0 32px rgba(55,183,255,.1),
-    0 0 24px rgba(0,170,255,.15) !important;
-}
-
-/* Most panels */
 #haloNavHUD,
 #haloDestinationBrief,
 #haloDestinationIntelCard,
-#haloMiniChat,
-#haloCommandLine,
-.halo-panel,
+.mission-panel,
+.quick-panel,
+.priority-panel,
+.omkeer-panel{
+  background:linear-gradient(145deg, rgba(2,16,35,.82), rgba(2,28,52,.52)) !important;
+  border:1px solid rgba(58,191,255,.30) !important;
+  box-shadow:inset 0 0 28px rgba(58,191,255,.07), 0 0 22px rgba(0,234,255,.08) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
 .halo-card,
 .halo-nav-row,
 .halo-weather-strip,
-.halo-control,
-.halo-map-control,
-[class*="panel"],
-[class*="brief"],
-[class*="intel"]{
-  background:
-    linear-gradient(145deg, rgba(2,17,36,.88), rgba(3,31,58,.62)) !important;
-  border:1px solid rgba(55,183,255,.35) !important;
-  box-shadow:
-    inset 0 0 22px rgba(55,183,255,.08),
-    0 0 18px rgba(0,234,255,.08) !important;
-  color:#dff8ff !important;
+[class*="objective"],
+[class*="alert"],
+[class*="directive"],
+[class*="operation"]{
+  background:linear-gradient(135deg, rgba(0,18,38,.72), rgba(3,35,63,.38)) !important;
+  border:1px solid rgba(58,191,255,.24) !important;
+  border-radius:14px 4px 14px 4px !important;
 }
 
-/* sharper tactical corners where possible */
-#haloNavHUD,
-#haloDestinationBrief,
-#haloDestinationIntelCard,
-#haloMiniChat{
-  border-radius: 16px 4px 16px 4px !important;
-  clip-path: polygon(
-    0 18px, 18px 0,
-    calc(100% - 12px) 0, 100% 12px,
-    100% calc(100% - 18px), calc(100% - 18px) 100%,
-    12px 100%, 0 calc(100% - 12px)
-  ) !important;
-}
-
-/* blue typography */
-#haloNavHUD h1, #haloNavHUD h2, #haloNavHUD h3,
-#haloDestinationBrief h1, #haloDestinationBrief h2, #haloDestinationBrief h3,
-#haloDestinationIntelCard h1, #haloDestinationIntelCard h2, #haloDestinationIntelCard h3,
-.halo-section-title,
-.halo-title,
-[class*="title"]{
-  color:#effcff !important;
-  text-shadow: 0 0 10px rgba(55,183,255,.45) !important;
-  letter-spacing:.08em;
-}
-
-small, label, .halo-label, [class*="label"]{
-  color:var(--halo-v50-cyan) !important;
-}
-
-/* Route line and markers glow harder */
-.leaflet-interactive{
-  filter: drop-shadow(0 0 8px rgba(0,234,255,.55)) !important;
-}
-
-.leaflet-marker-icon{
-  filter: drop-shadow(0 0 12px rgba(55,183,255,.8)) drop-shadow(0 0 28px rgba(0,234,255,.22)) !important;
-}
-
-/* Map itself */
-.leaflet-container{
-  background:#020914 !important;
-  filter:saturate(.95) contrast(1.14) brightness(.76) hue-rotate(8deg) !important;
-  border:1px solid rgba(55,183,255,.24) !important;
-  box-shadow:
-    inset 0 0 80px rgba(0,0,0,.75),
-    inset 0 0 30px rgba(55,183,255,.08),
-    0 0 28px rgba(55,183,255,.12) !important;
-}
-
-/* center tactical emblem, custom wing/core not exact logo */
-#haloV50CoreEmblem{
+#haloV51CoreSystem{
   position:fixed;
   left:50%;
-  top:45%;
+  top:37%;
   transform:translate(-50%,-50%);
-  width:min(42vw, 560px);
-  height:min(25vw, 330px);
-  z-index:2;
+  width:min(430px, 34vw);
+  height:min(430px, 34vw);
+  z-index:1;
   pointer-events:none;
-  opacity:.20;
-  filter:drop-shadow(0 0 28px rgba(0,234,255,.75));
+  opacity:.72;
+  filter:drop-shadow(0 0 42px rgba(0,234,255,.35));
 }
 
-#haloV50CoreEmblem svg{
-  width:100%;
-  height:100%;
+body.halo-map-open #haloV51CoreSystem{ opacity:.18; }
+
+#haloV51CoreSystem .v51-ring{
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  border:1px solid rgba(0,234,255,.18);
+  box-shadow:inset 0 0 42px rgba(0,234,255,.05);
+  animation:v51Rotate 18s linear infinite;
 }
 
-body.halo-map-open #haloV50CoreEmblem{
-  opacity:.12;
+#haloV51CoreSystem .v51-ring:nth-child(2){
+  inset:34px;
+  border-style:dashed;
+  animation-duration:12s;
+  animation-direction:reverse;
+  opacity:.8;
 }
 
-/* Edge fake HUD widgets */
-.halo-v50-edge{
+#haloV51CoreSystem .v51-ring:nth-child(3){
+  inset:76px;
+  border-color:rgba(58,191,255,.30);
+  animation-duration:8s;
+}
+
+#haloV51CoreSystem .v51-orb{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform:translate(-50%,-50%);
+  width:34%;
+  height:34%;
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 30%, #eaffff 0%, #90f7ff 22%, #28c4ff 48%, rgba(0,42,92,.9) 78%, transparent 100%);
+  box-shadow:0 0 42px rgba(0,234,255,.7), 0 0 90px rgba(58,191,255,.24);
+  animation:v51OrbPulse 3.8s ease-in-out infinite;
+}
+
+#haloV51CoreSystem .v51-wing{
+  position:absolute;
+  left:50%;
+  top:65%;
+  transform:translate(-50%,-50%);
+  width:120%;
+  height:52%;
+  opacity:.50;
+}
+
+#haloV51CoreSystem .v51-wing svg{ width:100%; height:100%; }
+
+@keyframes v51Rotate{ from{ transform:rotate(0deg); } to{ transform:rotate(360deg); } }
+@keyframes v51OrbPulse{
+  0%,100%{ transform:translate(-50%,-50%) scale(.96); filter:brightness(.92); }
+  50%{ transform:translate(-50%,-50%) scale(1.05); filter:brightness(1.18); }
+}
+
+#haloV51TopRail,
+#haloV51BottomRail{
   position:fixed;
+  left:1.2vw;
+  right:1.2vw;
   z-index:999990;
   pointer-events:none;
-  font-family:'JetBrains Mono', monospace;
-  color:#9eeeff;
-  text-shadow:0 0 8px rgba(55,183,255,.55);
-  opacity:.85;
+  height:56px;
+  border:1px solid rgba(58,191,255,.22);
+  box-shadow:inset 0 0 36px rgba(58,191,255,.045);
 }
 
-#haloV50TopLeft{
-  left:18px;
-  top:8px;
-  width:250px;
-  height:76px;
-  border-top:1px solid var(--halo-v50-line);
-  border-left:1px solid var(--halo-v50-line);
-  clip-path:polygon(0 0, 100% 0, 82% 100%, 0 100%);
-  background:linear-gradient(90deg, rgba(55,183,255,.09), transparent);
-  padding:10px 14px;
+#haloV51TopRail{
+  top:10px;
+  border-bottom:none;
+  clip-path:polygon(0 0, 100% 0, 98% 100%, 2% 100%);
+  background:linear-gradient(180deg, rgba(4,26,54,.34), transparent);
 }
 
-#haloV50TopRight{
-  right:18px;
-  top:8px;
-  width:280px;
-  height:76px;
-  border-top:1px solid var(--halo-v50-line);
-  border-right:1px solid var(--halo-v50-line);
-  clip-path:polygon(18% 0, 100% 0, 100% 100%, 0 100%);
-  background:linear-gradient(270deg, rgba(55,183,255,.09), transparent);
-  padding:10px 14px;
-  text-align:right;
-}
-
-#haloV50BottomFrame{
-  left:50%;
+#haloV51BottomRail{
   bottom:8px;
-  transform:translateX(-50%);
-  width:min(760px, 60vw);
-  height:54px;
-  border-bottom:1px solid var(--halo-v50-line);
-  border-left:1px solid rgba(55,183,255,.22);
-  border-right:1px solid rgba(55,183,255,.22);
-  background:linear-gradient(180deg, transparent, rgba(55,183,255,.08));
-  clip-path:polygon(8% 0, 92% 0, 100% 100%, 0 100%);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  gap:24px;
-  font-size:9px;
-  letter-spacing:.14em;
+  border-top:none;
+  clip-path:polygon(2% 0, 98% 0, 100% 100%, 0 100%);
+  background:linear-gradient(0deg, rgba(4,26,54,.34), transparent);
 }
 
-.halo-v50-stat-big{
-  font-size:26px;
-  font-weight:900;
-  color:#eaffff;
-  line-height:1;
-}
-
-.halo-v50-stat-label{
-  font-size:8px;
-  letter-spacing:.2em;
-  color:var(--halo-v50-cyan);
-}
-
-.halo-v50-bars{
-  display:inline-flex;
-  gap:3px;
-  vertical-align:middle;
-  margin-left:8px;
-}
-
-.halo-v50-bars span{
-  display:block;
-  width:6px;
-  height:18px;
-  background:rgba(55,183,255,.24);
-  border:1px solid rgba(55,183,255,.28);
-}
-
-.halo-v50-bars span:nth-child(2),
-.halo-v50-bars span:nth-child(3),
-.halo-v50-bars span:nth-child(4){
-  background:rgba(55,183,255,.58);
-  box-shadow:0 0 10px rgba(55,183,255,.35);
-}
-
-/* buttons */
-button,
-.halo-v49-tab,
-.halo-v45-panel-tab{
-  border-color:rgba(55,183,255,.48) !important;
-  color:#aaf4ff !important;
-  background:linear-gradient(180deg, rgba(4,35,68,.82), rgba(1,14,32,.9)) !important;
-  box-shadow: inset 0 0 18px rgba(55,183,255,.08), 0 0 18px rgba(0,234,255,.12) !important;
-}
-
-button:hover{
-  color:#ffffff !important;
-  box-shadow: inset 0 0 20px rgba(55,183,255,.16), 0 0 28px rgba(0,234,255,.25) !important;
-}
-
-/* inputs */
-input, textarea{
-  background:rgba(0,13,28,.78) !important;
-  border:1px solid rgba(55,183,255,.28) !important;
-  color:#eaffff !important;
-  box-shadow:inset 0 0 16px rgba(55,183,255,.08) !important;
-}
-
-input::placeholder, textarea::placeholder{
-  color:rgba(160,230,255,.4) !important;
-}
-
-/* decorative corner brackets */
-#haloV50CornerFrame{
+#haloV51SystemReadout,
+#haloV51RightReadout{
   position:fixed;
-  inset:12px;
-  z-index:999989;
+  top:78px;
+  z-index:999991;
   pointer-events:none;
-  border:1px solid rgba(55,183,255,.18);
-  box-shadow:inset 0 0 60px rgba(0,170,255,.06);
+  width:250px;
+  font-family:'JetBrains Mono',monospace;
+  color:var(--v51-text);
+  text-shadow:0 0 10px rgba(58,191,255,.55);
+  opacity:.86;
 }
 
-#haloV50CornerFrame::before,
-#haloV50CornerFrame::after{
-  content:"";
-  position:absolute;
-  width:180px;
-  height:70px;
-  border-color:rgba(55,183,255,.52);
-  border-style:solid;
+#haloV51SystemReadout{ left:34px; }
+#haloV51RightReadout{ right:34px; text-align:right; }
+
+#haloV51SystemReadout .big,
+#haloV51RightReadout .big{
+  font-size:30px;
+  line-height:1;
+  font-weight:900;
+  color:#dffbff;
 }
 
-#haloV50CornerFrame::before{
-  top:-1px;
-  left:-1px;
-  border-width:2px 0 0 2px;
+#haloV51SystemReadout .label,
+#haloV51RightReadout .label{
+  font-size:8px;
+  letter-spacing:.22em;
+  color:var(--v51-cyan);
 }
 
-#haloV50CornerFrame::after{
-  right:-1px;
-  bottom:-1px;
-  border-width:0 2px 2px 0;
+#haloV51SystemReadout .bars{
+  display:flex;
+  gap:4px;
+  margin-top:8px;
 }
 
-/* subtle pulse */
-@keyframes haloV50Pulse{
-  0%,100%{ opacity:.72; filter:drop-shadow(0 0 10px rgba(55,183,255,.4)); }
-  50%{ opacity:1; filter:drop-shadow(0 0 20px rgba(0,234,255,.8)); }
+#haloV51SystemReadout .bars span{
+  height:22px;
+  width:8px;
+  border:1px solid rgba(58,191,255,.35);
+  background:rgba(58,191,255,.16);
 }
 
-#haloV50CoreEmblem,
-.halo-v50-edge{
-  animation:haloV50Pulse 4.8s ease-in-out infinite;
+#haloV51SystemReadout .bars span:nth-child(-n+5){
+  background:rgba(58,191,255,.58);
+  box-shadow:0 0 10px rgba(58,191,255,.32);
 }
 
-/* Make the old teal feel blue */
-[style*="#00ff9d"],
-[style*="00ff9d"]{
-  color:var(--halo-v50-blue) !important;
+body.halo-map-open #haloV51SystemReadout,
+body.halo-map-open #haloV51RightReadout{ opacity:.45; }
+
+body.halo-map-open #haloV51TopRail,
+body.halo-map-open #haloV51BottomRail{ opacity:.38; }
+
+button{
+  letter-spacing:.12em;
+  border-color:rgba(58,191,255,.42) !important;
 }
+
+button:hover{ border-color:rgba(0,234,255,.72) !important; }
+
+*{ scroll-behavior:auto !important; }
 </style>
 
-<script id="halo-v50-arkham-blue-hud-js">
+<script id="halo-v51-core-os-visual-upgrade-js">
 (function(){
-  if(window.__haloV50ArkhamBlueHudLoaded) return;
-  window.__haloV50ArkhamBlueHudLoaded = true;
+  if(window.__haloV51CoreOSLoaded) return;
+  window.__haloV51CoreOSLoaded = true;
 
-  function createCore(){
-    if(document.getElementById('haloV50CoreEmblem')) return;
-    const div = document.createElement('div');
-    div.id = 'haloV50CoreEmblem';
-    div.innerHTML = `
-      <svg viewBox="0 0 900 520" aria-hidden="true">
-        <defs>
-          <radialGradient id="haloV50Glow" cx="50%" cy="50%" r="55%">
-            <stop offset="0%" stop-color="#7ff6ff" stop-opacity=".92"/>
-            <stop offset="34%" stop-color="#37b7ff" stop-opacity=".46"/>
-            <stop offset="100%" stop-color="#00172c" stop-opacity="0"/>
-          </radialGradient>
-          <filter id="haloV50Blur">
-            <feGaussianBlur stdDeviation="3"/>
-          </filter>
-        </defs>
-        <ellipse cx="450" cy="260" rx="260" ry="190" fill="url(#haloV50Glow)" filter="url(#haloV50Blur)"/>
-        <path d="M72 245
-                 C162 222 232 180 310 112
-                 C334 154 374 178 450 178
-                 C526 178 566 154 590 112
-                 C668 180 738 222 828 245
-                 C720 274 654 318 604 404
-                 C548 352 506 330 450 330
-                 C394 330 352 352 296 404
-                 C246 318 180 274 72 245Z"
-              fill="rgba(37,178,255,.18)"
-              stroke="rgba(110,235,255,.95)"
-              stroke-width="5"/>
-        <path d="M310 112 C350 250 550 250 590 112" fill="none" stroke="rgba(220,255,255,.5)" stroke-width="2"/>
-        <path d="M296 404 C352 270 548 270 604 404" fill="none" stroke="rgba(220,255,255,.35)" stroke-width="2"/>
-      </svg>
-    `;
-    document.body.appendChild(div);
-  }
-
-  function createEdges(){
-    if(document.getElementById('haloV50TopLeft')) return;
-
-    const left = document.createElement('div');
-    left.id = 'haloV50TopLeft';
-    left.className = 'halo-v50-edge';
-    left.innerHTML = `
-      <div class="halo-v50-stat-label">SYSTEM CORE</div>
-      <div><span class="halo-v50-stat-big">7.3G</span>
-        <span class="halo-v50-bars"><span></span><span></span><span></span><span></span><span></span></span>
-      </div>
-      <div class="halo-v50-stat-label">RAM / SIGNAL / BATTERY</div>
-    `;
-
-    const right = document.createElement('div');
-    right.id = 'haloV50TopRight';
-    right.className = 'halo-v50-edge';
-    right.innerHTML = `
-      <div class="halo-v50-stat-label">TACTICAL FEED</div>
-      <div><span class="halo-v50-stat-big">CPU 10</span></div>
-      <div class="halo-v50-stat-label">NETWORK: ONLINE · LATENCY LOW</div>
-    `;
-
-    const bottom = document.createElement('div');
-    bottom.id = 'haloV50BottomFrame';
-    bottom.className = 'halo-v50-edge';
-    bottom.innerHTML = `
-      <span>CORE ACTIVE</span>
-      <span>MAP VECTOR READY</span>
-      <span>OMKEER WORLD LAYER</span>
-      <span>UPLOAD 100%</span>
-    `;
-
-    const frame = document.createElement('div');
-    frame.id = 'haloV50CornerFrame';
-
-    document.body.appendChild(left);
-    document.body.appendChild(right);
-    document.body.appendChild(bottom);
-    document.body.appendChild(frame);
+  function make(id, inner){
+    if(document.getElementById(id)) return;
+    const el = document.createElement('div');
+    el.id = id;
+    el.innerHTML = inner || '';
+    document.body.appendChild(el);
   }
 
   function boot(){
-    createCore();
-    createEdges();
+    make('haloV51TopRail');
+    make('haloV51BottomRail');
+
+    make('haloV51SystemReadout', `
+      <div class="label">SYSTEM CORE</div>
+      <div class="big">7.3G</div>
+      <div class="label">RAM / SIGNAL / BATTERY</div>
+      <div class="bars"><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    `);
+
+    make('haloV51RightReadout', `
+      <div class="label">TACTICAL FEED</div>
+      <div class="big">CPU 10</div>
+      <div class="label">NETWORK ONLINE · LATENCY LOW</div>
+    `);
+
+    make('haloV51CoreSystem', `
+      <div class="v51-ring"></div>
+      <div class="v51-ring"></div>
+      <div class="v51-ring"></div>
+      <div class="v51-orb"></div>
+      <div class="v51-wing">
+        <svg viewBox="0 0 900 360">
+          <path d="M85 188 C170 166 240 130 326 58 C350 112 392 132 450 132 C508 132 550 112 574 58 C660 130 730 166 815 188 C700 214 633 254 586 320 C530 278 492 264 450 264 C408 264 370 278 314 320 C267 254 200 214 85 188Z"
+                fill="rgba(58,191,255,.13)"
+                stroke="rgba(110,235,255,.88)"
+                stroke-width="5"/>
+          <path d="M326 58 C350 222 550 222 574 58" fill="none" stroke="rgba(220,255,255,.34)" stroke-width="2"/>
+          <path d="M314 320 C370 214 530 214 586 320" fill="none" stroke="rgba(220,255,255,.22)" stroke-width="2"/>
+        </svg>
+      </div>
+    `);
+  }
+
+  function updateMapFlag(){
+    try{
+      const overlay = document.getElementById('haloAdvancedMapOverlay');
+      const open = overlay && (overlay.classList.contains('active') || getComputedStyle(overlay).display !== 'none');
+      document.body.classList.toggle('halo-map-open', !!open);
+    }catch(e){}
+  }
+
+  const oldOpen = window.openHaloAdvancedMap;
+  if(typeof oldOpen === 'function' && !oldOpen.__v51Wrapped){
+    window.openHaloAdvancedMap = function(){
+      const out = oldOpen.apply(this, arguments);
+      setTimeout(updateMapFlag, 150);
+      return out;
+    };
+    window.openHaloAdvancedMap.__v51Wrapped = true;
+  }
+
+  const oldClose = window.closeHaloAdvancedMap;
+  if(typeof oldClose === 'function' && !oldClose.__v51Wrapped){
+    window.closeHaloAdvancedMap = function(){
+      const out = oldClose.apply(this, arguments);
+      setTimeout(updateMapFlag, 150);
+      return out;
+    };
+    window.closeHaloAdvancedMap.__v51Wrapped = true;
   }
 
   if(document.readyState === 'loading'){
-    document.addEventListener('DOMContentLoaded', boot);
+    document.addEventListener('DOMContentLoaded', () => { boot(); updateMapFlag(); });
   }else{
     boot();
+    updateMapFlag();
   }
 
-  console.log('[HALO V50 ARKHAM BLUE TACTICAL HUD VISUAL UPGRADE] loaded');
+  console.log('[HALO V51 CORE OS VISUAL UPGRADE] loaded');
 })();
 </script>
 
