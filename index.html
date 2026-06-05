@@ -11306,5 +11306,339 @@ button:hover{ border-color:rgba(0,234,255,.72) !important; }
 })();
 </script>
 
+
+<!-- HALO V52 ELECTRIC NEURAL ORB UPGRADE -->
+<style id="halo-v52-electric-neural-orb">
+/*
+  V52:
+  - Replaces/overlays the center orb with an electric neural plasma orb.
+  - Visual-only. No route/posting logic touched.
+  - Uses CSS/SVG/DOM, no external assets.
+*/
+
+#haloV51CoreSystem{
+  opacity:0 !important;
+}
+
+#haloV52ElectricOrb{
+  position:fixed;
+  left:50%;
+  top:37%;
+  transform:translate(-50%,-50%);
+  width:min(420px, 32vw);
+  height:min(420px, 32vw);
+  z-index:3;
+  pointer-events:none;
+  filter:
+    drop-shadow(0 0 24px rgba(0,234,255,.75))
+    drop-shadow(0 0 70px rgba(0,118,255,.35));
+}
+
+body.halo-map-open #haloV52ElectricOrb{
+  opacity:.20;
+}
+
+#haloV52ElectricOrb .v52-core{
+  position:absolute;
+  inset:18%;
+  border-radius:50%;
+  background:
+    radial-gradient(circle at 34% 28%, rgba(255,255,255,.98) 0%, rgba(174,250,255,.92) 10%, rgba(0,234,255,.55) 24%, transparent 38%),
+    radial-gradient(circle at 64% 62%, rgba(0,126,255,.9), rgba(0,234,255,.35) 30%, transparent 58%),
+    radial-gradient(circle at 50% 50%, rgba(0,20,42,.62), rgba(0,8,18,.94) 76%);
+  box-shadow:
+    inset 0 0 28px rgba(255,255,255,.35),
+    inset 0 0 70px rgba(0,234,255,.55),
+    inset 0 0 120px rgba(0,87,255,.28),
+    0 0 28px rgba(0,234,255,.9),
+    0 0 90px rgba(0,132,255,.55),
+    0 0 160px rgba(0,234,255,.22);
+  overflow:hidden;
+  animation:v52OrbPulse 3.4s ease-in-out infinite;
+}
+
+#haloV52ElectricOrb .v52-core::before{
+  content:"";
+  position:absolute;
+  inset:-14%;
+  border-radius:50%;
+  background:
+    conic-gradient(from 40deg,
+      transparent 0deg,
+      rgba(0,234,255,.75) 16deg,
+      transparent 32deg,
+      rgba(80,210,255,.48) 62deg,
+      transparent 96deg,
+      rgba(255,255,255,.74) 116deg,
+      transparent 138deg,
+      rgba(0,126,255,.56) 190deg,
+      transparent 230deg,
+      rgba(0,234,255,.6) 286deg,
+      transparent 360deg);
+  filter:blur(8px);
+  opacity:.82;
+  mix-blend-mode:screen;
+  animation:v52Spin 7s linear infinite;
+}
+
+#haloV52ElectricOrb .v52-core::after{
+  content:"";
+  position:absolute;
+  inset:8%;
+  border-radius:50%;
+  border:2px solid rgba(140,250,255,.72);
+  box-shadow:
+    inset 0 0 18px rgba(0,234,255,.7),
+    0 0 18px rgba(0,234,255,.75),
+    0 0 44px rgba(0,132,255,.55);
+  opacity:.9;
+}
+
+#haloV52ElectricOrb .v52-shell{
+  position:absolute;
+  inset:14%;
+  border-radius:50%;
+  border:2px solid rgba(115,241,255,.9);
+  box-shadow:
+    inset 0 0 26px rgba(0,234,255,.42),
+    0 0 26px rgba(0,234,255,.8),
+    0 0 86px rgba(0,132,255,.42);
+  animation:v52ShellPulse 2.6s ease-in-out infinite;
+}
+
+#haloV52ElectricOrb .v52-glass{
+  position:absolute;
+  inset:16%;
+  border-radius:50%;
+  background:
+    linear-gradient(130deg, rgba(255,255,255,.28), transparent 27%),
+    radial-gradient(circle at 30% 22%, rgba(255,255,255,.32), transparent 18%),
+    radial-gradient(circle at 70% 80%, rgba(0,234,255,.16), transparent 20%);
+  mix-blend-mode:screen;
+  opacity:.82;
+}
+
+#haloV52ElectricOrb .v52-burst{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:2px;
+  height:50%;
+  transform-origin:50% 0%;
+  background:linear-gradient(to bottom, rgba(180,255,255,.95), rgba(0,234,255,.48), transparent);
+  filter:blur(.2px) drop-shadow(0 0 6px rgba(0,234,255,.9));
+  opacity:.72;
+  animation:v52Spark 2.8s ease-in-out infinite;
+}
+
+#haloV52ElectricOrb .v52-node{
+  position:absolute;
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:#cfffff;
+  box-shadow:0 0 10px #00eaff, 0 0 22px rgba(0,132,255,.9);
+  opacity:.9;
+  animation:v52NodePulse 2.2s ease-in-out infinite;
+}
+
+#haloV52ElectricOrb .v52-line{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:38%;
+  height:1px;
+  transform-origin:0 50%;
+  background:linear-gradient(90deg, rgba(180,255,255,.9), rgba(0,234,255,.5), transparent);
+  box-shadow:0 0 8px rgba(0,234,255,.8);
+  opacity:.65;
+  animation:v52LineFlicker 2.7s ease-in-out infinite;
+}
+
+#haloV52ElectricOrb svg{
+  position:absolute;
+  inset:0;
+  width:100%;
+  height:100%;
+}
+
+#haloV52ElectricOrb .v52-neural path{
+  fill:none;
+  stroke:rgba(135,245,255,.84);
+  stroke-width:1.6;
+  stroke-linecap:round;
+  stroke-linejoin:round;
+  filter:drop-shadow(0 0 5px rgba(0,234,255,.9));
+  stroke-dasharray:14 18;
+  animation:v52Dash 5.6s linear infinite;
+}
+
+#haloV52ElectricOrb .v52-neural path:nth-child(2n){
+  stroke:rgba(0,132,255,.72);
+  stroke-width:1.1;
+  animation-duration:7.8s;
+  animation-direction:reverse;
+}
+
+#haloV52ElectricOrb .v52-neural path:nth-child(3n){
+  stroke:rgba(230,255,255,.72);
+  stroke-width:1.3;
+  stroke-dasharray:6 14;
+}
+
+@keyframes v52Spin{
+  from{ transform:rotate(0deg); }
+  to{ transform:rotate(360deg); }
+}
+
+@keyframes v52Dash{
+  from{ stroke-dashoffset:0; }
+  to{ stroke-dashoffset:-180; }
+}
+
+@keyframes v52OrbPulse{
+  0%,100%{ transform:scale(.985); filter:brightness(.95) saturate(1.1); }
+  50%{ transform:scale(1.025); filter:brightness(1.18) saturate(1.35); }
+}
+
+@keyframes v52ShellPulse{
+  0%,100%{ opacity:.72; transform:scale(.99); }
+  50%{ opacity:1; transform:scale(1.025); }
+}
+
+@keyframes v52Spark{
+  0%,100%{ opacity:.35; height:42%; }
+  50%{ opacity:1; height:56%; }
+}
+
+@keyframes v52NodePulse{
+  0%,100%{ transform:scale(.75); opacity:.55; }
+  50%{ transform:scale(1.4); opacity:1; }
+}
+
+@keyframes v52LineFlicker{
+  0%,100%{ opacity:.28; }
+  42%{ opacity:.9; }
+  60%{ opacity:.48; }
+}
+
+/* make command thinking state feel alive if body/classes are added later */
+body.halo-thinking #haloV52ElectricOrb,
+body.halo-listening #haloV52ElectricOrb{
+  filter:
+    drop-shadow(0 0 34px rgba(0,234,255,1))
+    drop-shadow(0 0 110px rgba(0,118,255,.55));
+}
+
+body.halo-thinking #haloV52ElectricOrb .v52-core,
+body.halo-listening #haloV52ElectricOrb .v52-core{
+  animation-duration:1.4s;
+}
+
+body.halo-thinking #haloV52ElectricOrb .v52-neural path,
+body.halo-listening #haloV52ElectricOrb .v52-neural path{
+  animation-duration:2.2s;
+}
+</style>
+
+<script id="halo-v52-electric-neural-orb-js">
+(function(){
+  if(window.__haloV52ElectricOrbLoaded) return;
+  window.__haloV52ElectricOrbLoaded = true;
+
+  function rand(min,max){ return Math.random() * (max-min) + min; }
+
+  function makeOrb(){
+    if(document.getElementById('haloV52ElectricOrb')) return;
+
+    const orb = document.createElement('div');
+    orb.id = 'haloV52ElectricOrb';
+
+    const bursts = Array.from({length:90}).map((_,i)=>{
+      const rot = (360/90)*i + rand(-2,2);
+      const scale = rand(.62,1.35).toFixed(2);
+      const delay = rand(-3,0).toFixed(2);
+      return `<i class="v52-burst" style="transform:rotate(${rot}deg) scaleY(${scale}); animation-delay:${delay}s;"></i>`;
+    }).join('');
+
+    const nodes = Array.from({length:26}).map((_,i)=>{
+      const angle = rand(0, Math.PI*2);
+      const radius = rand(22,43);
+      const x = 50 + Math.cos(angle)*radius;
+      const y = 50 + Math.sin(angle)*radius;
+      const delay = rand(-2.2,0).toFixed(2);
+      return `<i class="v52-node" style="left:${x}%;top:${y}%;animation-delay:${delay}s;"></i>`;
+    }).join('');
+
+    const lines = Array.from({length:34}).map((_,i)=>{
+      const rot = rand(0,360).toFixed(2);
+      const len = rand(22,48).toFixed(2);
+      const delay = rand(-2.7,0).toFixed(2);
+      return `<i class="v52-line" style="transform:rotate(${rot}deg);width:${len}%;animation-delay:${delay}s;"></i>`;
+    }).join('');
+
+    const paths = `
+      <path d="M150 198 C230 122 310 265 392 158 S560 108 654 210" />
+      <path d="M178 274 C276 196 355 372 470 232 S600 170 710 288" />
+      <path d="M210 150 C330 178 350 260 456 178 S590 116 668 150" />
+      <path d="M194 340 C288 292 374 286 456 346 S602 388 718 320" />
+      <path d="M248 112 C286 205 224 262 330 330 S510 410 610 292" />
+      <path d="M650 110 C584 176 666 252 566 340 S390 396 302 278" />
+      <path d="M284 206 C362 154 438 290 514 220 S620 198 704 236" />
+      <path d="M228 246 C318 240 360 126 450 190 S552 344 662 280" />
+      <path d="M326 126 C392 218 476 112 554 202 S610 306 690 340" />
+      <path d="M166 232 C258 318 352 120 462 260 S592 234 738 188" />
+    `;
+
+    orb.innerHTML = `
+      ${bursts}
+      <div class="v52-core"></div>
+      <div class="v52-shell"></div>
+      <div class="v52-glass"></div>
+      ${nodes}
+      ${lines}
+      <svg class="v52-neural" viewBox="0 0 900 520" aria-hidden="true">${paths}</svg>
+    `;
+
+    document.body.appendChild(orb);
+  }
+
+  // Light command state pulse hooks.
+  function hookCommandState(){
+    const input =
+      document.querySelector('#haloCommandInput') ||
+      document.querySelector('#haloChatInput') ||
+      document.querySelector('input[placeholder*="HALO" i]') ||
+      document.querySelector('textarea[placeholder*="HALO" i]');
+
+    if(!input || input.__haloV52Hooked) return;
+    input.__haloV52Hooked = true;
+
+    input.addEventListener('focus', () => document.body.classList.add('halo-listening'));
+    input.addEventListener('blur', () => document.body.classList.remove('halo-listening'));
+    input.addEventListener('keydown', e => {
+      if(e.key === 'Enter'){
+        document.body.classList.add('halo-thinking');
+        setTimeout(() => document.body.classList.remove('halo-thinking'), 2200);
+      }
+    });
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', () => {
+      makeOrb();
+      hookCommandState();
+      setTimeout(hookCommandState, 1200);
+    });
+  }else{
+    makeOrb();
+    hookCommandState();
+    setTimeout(hookCommandState, 1200);
+  }
+
+  console.log('[HALO V52 ELECTRIC NEURAL ORB UPGRADE] loaded');
+})();
+</script>
+
 </body>
 </html>
