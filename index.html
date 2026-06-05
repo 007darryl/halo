@@ -11292,5 +11292,464 @@ body.halo-thinking #orbCore{
 })();
 </script>
 
+
+<!-- HALO V54 ROBUST VOICE WAKE FIX -->
+<style id="halo-v54-robust-voice-css">
+/*
+  V54:
+  - Fixes "Hey HALO" not waking up / not hearing.
+  - Primes mic permission.
+  - Uses a resilient wake loop.
+  - Supports "hey halo", "halo", "hello halo", "hey haylo", "hey hallow".
+  - Keeps your existing UI and askHalo/speakText functions.
+*/
+
+#haloVoiceDebugMini{
+  position:fixed;
+  left:50%;
+  bottom:82px;
+  transform:translateX(-50%);
+  z-index:999999;
+  pointer-events:none;
+  font-family:var(--font-mono, monospace);
+  font-size:8px;
+  letter-spacing:1.8px;
+  color:rgba(0,234,255,.62);
+  background:rgba(0,12,28,.72);
+  border:1px solid rgba(0,234,255,.20);
+  border-radius:999px;
+  padding:7px 12px;
+  box-shadow:0 0 18px rgba(0,234,255,.10);
+  display:none;
+}
+
+body.halo-voice-debug #haloVoiceDebugMini{
+  display:block;
+}
+
+body.halo-voice-armed #wakeDot,
+body.halo-voice-listening #wakeDot{
+  background:#00ff88 !important;
+  box-shadow:0 0 14px rgba(0,255,136,.75) !important;
+  animation:pulse .9s infinite !important;
+}
+
+body.halo-voice-wake-detected #wakeDot{
+  background:#ffaa00 !important;
+  box-shadow:0 0 18px rgba(255,170,0,.8) !important;
+}
+</style>
+
+<script id="halo-v54-robust-voice-js">
+(function(){
+  if(window.__haloV54RobustVoiceLoaded) return;
+  window.__haloV54RobustVoiceLoaded = true;
+
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  let wakeRec = null;
+  let commandRec = null;
+  let wakeRestartTimer = null;
+  let wakeWatchdogTimer = null;
+  let lastWakeStart = 0;
+  let isWakeRunning = false;
+  let commandActive = false;
+  let micPrimed = false;
+
+  function dbg(msg){
+    console.log('[HALO V54 VOICE]', msg);
+    let el = document.getElementById('haloVoiceDebugMini');
+    if(!el){
+      el = document.createElement('div');
+      el.id = 'haloVoiceDebugMini';
+      document.body.appendChild(el);
+    }
+    el.textContent = msg;
+    document.body.classList.add('halo-voice-debug');
+    clearTimeout(el.__t);
+    el.__t = setTimeout(()=>document.body.classList.remove('halo-voice-debug'), 4500);
+  }
+
+  function normalizeSpeech(t){
+    return String(t || '')
+      .toLowerCase()
+      .replace(/[^\w\s]/g,' ')
+      .replace(/\s+/g,' ')
+      .trim();
+  }
+
+  function heardWakeWord(t){
+    t = normalizeSpeech(t);
+
+    // Common Chrome speech recognition variants.
+    const direct = [
+      'hey halo',
+      'halo',
+      'hello halo',
+      'ok halo',
+      'yo halo',
+      'hey haylo',
+      'hay halo',
+      'hey hallow',
+      'hello hallow',
+      'hey hello',
+      'a halo',
+      'halo halo'
+    ];
+
+    if(direct.some(w => t === w || t.includes(w))) return true;
+
+    // Loose matching: must include halo-ish token with a wake-ish token OR short command "halo".
+    const haloish = /\b(halo|haylo|hallow|haloed|hello)\b/.test(t);
+    const wakeish = /\b(hey|hi|ok|okay|yo|hello)\b/.test(t);
+    return haloish && (wakeish || t.length <= 12);
+  }
+
+  function safeSetWakeState(state){
+    try{ if(typeof setWakeState === 'function') setWakeState(state); }catch(e){}
+    document.body.classList.toggle('halo-voice-armed', state === 'armed');
+    document.body.classList.toggle('halo-voice-listening', state === 'listening');
+    document.body.classList.toggle('halo-voice-wake-detected', state === 'heard');
+  }
+
+  function safeWave(on){
+    try{ if(typeof animWave === 'function') animWave(!!on); }catch(e){}
+  }
+
+  function stopRecognition(rec){
+    try{ rec && rec.onend && (rec.onend = null); }catch(e){}
+    try{ rec && rec.onerror && (rec.onerror = null); }catch(e){}
+    try{ rec && rec.abort && rec.abort(); }catch(e){}
+    try{ rec && rec.stop && rec.stop(); }catch(e){}
+  }
+
+  async function primeMic(){
+    if(micPrimed) return true;
+
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      dbg('Mic API unavailable. Use Chrome + HTTPS.');
+      return false;
+    }
+
+    try{
+      const stream = await navigator.mediaDevices.getUserMedia({audio:true});
+      stream.getTracks().forEach(t => t.stop());
+      micPrimed = true;
+      dbg('Mic permission ready.');
+      return true;
+    }catch(e){
+      dbg('Mic permission blocked. Click lock icon → allow microphone.');
+      console.warn('[HALO V54] mic prime failed', e);
+      return false;
+    }
+  }
+
+  function canListen(){
+    if(!SR){
+      dbg('SpeechRecognition unavailable. Use Chrome desktop.');
+      return false;
+    }
+    return true;
+  }
+
+  function scheduleWakeRestart(delay=350){
+    clearTimeout(wakeRestartTimer);
+    wakeRestartTimer = setTimeout(() => {
+      if(window.alwaysOn === false || commandActive) return;
+      startWakeLoopV54();
+    }, delay);
+  }
+
+  function startWatchdog(){
+    clearTimeout(wakeWatchdogTimer);
+    wakeWatchdogTimer = setTimeout(() => {
+      if(window.alwaysOn === false || commandActive) return;
+
+      // Chrome sometimes silently dies. Restart every 45s.
+      if(Date.now() - lastWakeStart > 42000){
+        dbg('Wake watchdog restart.');
+        try{ stopRecognition(wakeRec); }catch(e){}
+        isWakeRunning = false;
+        scheduleWakeRestart(250);
+      }else{
+        startWatchdog();
+      }
+    }, 45000);
+  }
+
+  function startWakeLoopV54(){
+    if(!canListen()) return;
+    if(window.alwaysOn === false) return;
+    if(commandActive) return;
+    if(window.isSpeaking === true || (typeof isSpeaking !== 'undefined' && isSpeaking)) {
+      scheduleWakeRestart(800);
+      return;
+    }
+
+    try{ stopRecognition(wakeRec); }catch(e){}
+
+    const r = new SR();
+    wakeRec = r;
+    isWakeRunning = true;
+    lastWakeStart = Date.now();
+
+    r.lang = 'en-US';
+    r.continuous = true;
+    r.interimResults = true;
+    r.maxAlternatives = 5;
+
+    r.onstart = () => {
+      isWakeRunning = true;
+      safeSetWakeState('armed');
+      dbg('Listening for: Hey HALO');
+      startWatchdog();
+    };
+
+    r.onresult = (e) => {
+      const transcripts = [];
+
+      for(let i = e.resultIndex; i < e.results.length; i++){
+        const result = e.results[i];
+        for(let j = 0; j < result.length; j++){
+          transcripts.push(result[j].transcript);
+        }
+      }
+
+      const joined = normalizeSpeech(transcripts.join(' '));
+      if(joined) dbg('Heard: ' + joined.slice(0, 70));
+
+      if(transcripts.some(heardWakeWord) || heardWakeWord(joined)){
+        dbg('Wake word detected.');
+        document.body.classList.add('halo-voice-wake-detected');
+
+        try{ if(typeof playWakeBeep === 'function') playWakeBeep(); }catch(e){}
+        safeSetWakeState('heard');
+        safeWave(true);
+
+        commandActive = true;
+        try{ stopRecognition(wakeRec); }catch(e){}
+        setTimeout(startCommandListenV54, 260);
+      }
+    };
+
+    r.onerror = (e) => {
+      isWakeRunning = false;
+
+      if(e && e.error === 'not-allowed'){
+        window.alwaysOn = false;
+        try{ if(typeof updateToggle === 'function') updateToggle(); }catch(err){}
+        safeSetWakeState('standby');
+        dbg('Microphone blocked. Allow mic permission.');
+        return;
+      }
+
+      if(e && e.error === 'no-speech'){
+        dbg('No speech heard. Restarting wake loop.');
+      }else{
+        dbg('Wake error: ' + (e && e.error ? e.error : 'unknown'));
+      }
+
+      if(window.alwaysOn !== false && !commandActive) scheduleWakeRestart(650);
+    };
+
+    r.onend = () => {
+      isWakeRunning = false;
+      if(window.alwaysOn !== false && !commandActive){
+        scheduleWakeRestart(350);
+      }
+    };
+
+    try{
+      r.start();
+    }catch(e){
+      isWakeRunning = false;
+      dbg('Wake start retry...');
+      scheduleWakeRestart(900);
+    }
+  }
+
+  function startCommandListenV54(){
+    if(!canListen()) return;
+
+    try{ stopRecognition(commandRec); }catch(e){}
+
+    commandActive = true;
+    safeSetWakeState('listening');
+    safeWave(true);
+    dbg('Command mode: speak now.');
+
+    const r = new SR();
+    commandRec = r;
+    r.lang = 'en-US';
+    r.continuous = false;
+    r.interimResults = true;
+    r.maxAlternatives = 3;
+
+    let finalText = '';
+    let interimText = '';
+    let silenceTimer = null;
+
+    function finish(text){
+      text = String(text || finalText || interimText || '').trim();
+      clearTimeout(silenceTimer);
+      commandActive = false;
+      safeWave(false);
+      document.body.classList.remove('halo-voice-wake-detected');
+
+      try{ stopRecognition(commandRec); }catch(e){}
+
+      if(text){
+        dbg('Command: ' + text);
+        try{ if(typeof askHalo === 'function') askHalo(text); }catch(e){ console.error(e); }
+      }else{
+        dbg('No command heard. Returning to wake mode.');
+        safeSetWakeState('armed');
+        scheduleWakeRestart(450);
+      }
+    }
+
+    r.onresult = (e) => {
+      for(let i = e.resultIndex; i < e.results.length; i++){
+        const result = e.results[i];
+        const transcript = result[0].transcript.trim();
+
+        if(result.isFinal) finalText += (finalText ? ' ' : '') + transcript;
+        else interimText = transcript;
+      }
+
+      const preview = finalText || interimText;
+      if(preview) dbg('Command hearing: ' + preview.slice(0, 70));
+
+      clearTimeout(silenceTimer);
+      silenceTimer = setTimeout(() => finish(finalText || interimText), 1500);
+    };
+
+    r.onerror = (e) => {
+      dbg('Command error: ' + (e && e.error ? e.error : 'unknown'));
+      finish(finalText || interimText);
+    };
+
+    r.onend = () => {
+      finish(finalText || interimText);
+    };
+
+    try{
+      r.start();
+      silenceTimer = setTimeout(() => finish(finalText || interimText), 8500);
+    }catch(e){
+      dbg('Command start failed.');
+      commandActive = false;
+      safeWave(false);
+      scheduleWakeRestart(450);
+    }
+  }
+
+  // Override old functions.
+  window.startWakeLoop = startWakeLoopV54;
+  window.startCommandListen = startCommandListenV54;
+
+  window.toggleAlwaysOn = async function(){
+    if(!canListen()) {
+      try{ if(typeof addChat === 'function') addChat('halo','Voice recognition requires Chrome on HTTPS.'); }catch(e){}
+      return;
+    }
+
+    // Make globals if original used let-scoped vars.
+    window.alwaysOn = !(window.alwaysOn === true);
+
+    const ok = await primeMic();
+    if(!ok){
+      window.alwaysOn = false;
+      try{ if(typeof updateToggle === 'function') updateToggle(); }catch(e){}
+      return;
+    }
+
+    try{ if(typeof updateToggle === 'function') updateToggle(); }catch(e){
+      const b = document.getElementById('alwaysOnBtn');
+      if(b){
+        b.textContent = window.alwaysOn ? 'On' : 'Off';
+        b.className = 'tog-btn' + (window.alwaysOn ? ' on' : '');
+      }
+    }
+
+    if(window.alwaysOn){
+      safeSetWakeState('armed');
+      safeWave(false);
+      dbg('Always-on armed. Say Hey HALO.');
+      try{ if(typeof addChat === 'function') addChat('halo','Always-on armed. Say "Hey HALO", then speak your command.'); }catch(e){}
+      startWakeLoopV54();
+    }else{
+      clearTimeout(wakeRestartTimer);
+      clearTimeout(wakeWatchdogTimer);
+      commandActive = false;
+      stopRecognition(wakeRec);
+      stopRecognition(commandRec);
+      safeWave(false);
+      safeSetWakeState('standby');
+      dbg('Always-on off.');
+    }
+  };
+
+  // Patch Activate Voice to also ask for mic permission.
+  const oldActivate = window.activateVoice;
+  window.activateVoice = async function(){
+    window.audioUnlocked = true;
+    await primeMic();
+
+    try{
+      if(typeof oldActivate === 'function'){
+        oldActivate.apply(this, arguments);
+      }
+    }catch(e){
+      console.warn('[HALO V54] old activateVoice failed', e);
+    }
+
+    const btn = document.getElementById('activateVoiceBtn');
+    if(btn){
+      btn.textContent = '▶ VOICE + MIC READY';
+      btn.style.borderColor = 'rgba(0,255,136,0.35)';
+      btn.style.color = '#00ff88';
+    }
+
+    dbg('Voice activated. Turn Always-on ON, then say Hey HALO.');
+  };
+
+  // Dev diagnostic.
+  window.haloVoiceDiagnostic = async function(){
+    console.log('HALO Voice Diagnostic:', {
+      speechRecognition: !!SR,
+      secureContext: window.isSecureContext,
+      protocol: location.protocol,
+      micPrimed,
+      alwaysOn: window.alwaysOn,
+      isWakeRunning,
+      commandActive,
+      userAgent: navigator.userAgent
+    });
+
+    if(navigator.permissions && navigator.permissions.query){
+      try{
+        const p = await navigator.permissions.query({name:'microphone'});
+        console.log('Microphone permission:', p.state);
+        dbg('Mic permission: ' + p.state);
+      }catch(e){
+        dbg('Mic permission check unavailable.');
+      }
+    }
+  };
+
+  // Add a tiny instruction message once loaded.
+  setTimeout(() => {
+    const b = document.getElementById('alwaysOnBtn');
+    if(b && !b.__v54Hinted){
+      b.__v54Hinted = true;
+      b.title = 'Click ON, allow microphone, then say Hey HALO.';
+    }
+  }, 1200);
+
+  console.log('[HALO V54 ROBUST VOICE WAKE FIX] loaded');
+})();
+</script>
+
 </body>
 </html>
