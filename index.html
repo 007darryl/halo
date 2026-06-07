@@ -14762,5 +14762,449 @@ body:not(.halo-map-open) .halo-v61-tab{
 })();
 </script>
 
+
+<!-- HALO IMAGE SEARCH MODULE V69 -->
+<style id="halo-image-search-v69-css">
+#haloImagePanelV69{
+  position:fixed;
+  top:105px;
+  right:26px;
+  width:min(560px,38vw);
+  max-height:78vh;
+  z-index:999997;
+  display:none;
+  flex-direction:column;
+  overflow:hidden;
+  border:1px solid rgba(0,212,255,.26);
+  border-radius:22px 7px 22px 7px;
+  background:
+    radial-gradient(circle at top right,rgba(0,212,255,.16),transparent 38%),
+    linear-gradient(145deg,rgba(1,10,24,.94),rgba(2,25,48,.86));
+  box-shadow:0 0 45px rgba(0,212,255,.16),0 24px 80px rgba(0,0,0,.58),inset 0 0 30px rgba(0,212,255,.045);
+  backdrop-filter:blur(16px);
+  -webkit-backdrop-filter:blur(16px);
+}
+#haloImagePanelV69.active{display:flex;}
+#haloImagePanelV69 .hi-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:14px;
+  padding:15px 16px;
+  border-bottom:1px solid rgba(0,212,255,.13);
+}
+#haloImagePanelV69 .hi-kicker{
+  font-family:var(--font-mono,monospace);
+  color:#00d4ff;
+  font-size:8px;
+  letter-spacing:2.4px;
+  margin-bottom:4px;
+}
+#haloImagePanelV69 .hi-title{
+  font-family:var(--font-display,sans-serif);
+  color:#e8f4ff;
+  font-size:18px;
+  font-weight:900;
+  letter-spacing:.04em;
+  line-height:1.08;
+}
+#haloImagePanelV69 .hi-close{
+  width:36px;height:36px;border-radius:50%;
+  border:1px solid rgba(0,212,255,.34);
+  background:rgba(0,212,255,.06);
+  color:#00d4ff;
+  cursor:pointer;
+  font-size:18px;
+}
+#haloImagePanelV69 .hi-body{padding:14px;overflow:auto;}
+#haloImagePanelV69 .hi-search{
+  display:flex;
+  gap:8px;
+  margin-bottom:12px;
+}
+#haloImagePanelV69 .hi-input{
+  flex:1;
+  border:1px solid rgba(0,212,255,.18);
+  border-radius:999px;
+  background:rgba(0,10,25,.74);
+  color:#e8f4ff;
+  padding:11px 14px;
+  outline:none;
+  font-size:12px;
+}
+#haloImagePanelV69 .hi-btn{
+  border:1px solid rgba(0,212,255,.35);
+  border-radius:999px;
+  background:rgba(0,212,255,.08);
+  color:#00d4ff;
+  padding:10px 14px;
+  font-family:var(--font-mono,monospace);
+  font-size:8px;
+  letter-spacing:1.4px;
+  cursor:pointer;
+}
+#haloImagePanelV69 .hi-status{
+  font-family:var(--font-mono,monospace);
+  font-size:9px;
+  letter-spacing:1px;
+  color:rgba(232,244,255,.66);
+  padding:8px 2px 14px;
+}
+#haloImagePanelV69 .hi-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+#haloImagePanelV69 .hi-card{
+  border:1px solid rgba(0,212,255,.16);
+  border-radius:14px 4px 14px 4px;
+  background:rgba(0,10,26,.58);
+  overflow:hidden;
+  cursor:pointer;
+  transition:.16s ease;
+}
+#haloImagePanelV69 .hi-card:hover{
+  transform:translateY(-2px);
+  border-color:rgba(0,212,255,.48);
+  box-shadow:0 0 24px rgba(0,212,255,.14);
+}
+#haloImagePanelV69 .hi-card img{
+  display:block;
+  width:100%;
+  height:150px;
+  object-fit:cover;
+  background:#02070d;
+}
+#haloImagePanelV69 .hi-cap{
+  min-height:42px;
+  padding:8px 9px 9px;
+  font-size:10px;
+  line-height:1.35;
+  color:rgba(235,250,255,.78);
+}
+#haloImagePanelV69 .hi-src{
+  margin-top:4px;
+  color:#00d4ff;
+  font-family:var(--font-mono,monospace);
+  font-size:7px;
+  letter-spacing:1px;
+  opacity:.82;
+}
+#haloImageLightboxV69{
+  position:fixed;
+  inset:0;
+  z-index:999999;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:38px;
+  background:rgba(0,5,14,.88);
+  backdrop-filter:blur(14px);
+  -webkit-backdrop-filter:blur(14px);
+}
+#haloImageLightboxV69.active{display:flex;}
+#haloImageLightboxV69 .hi-light-inner{
+  max-width:min(1100px,92vw);
+  max-height:88vh;
+  overflow:hidden;
+  border:1px solid rgba(0,212,255,.25);
+  border-radius:24px 8px 24px 8px;
+  background:rgba(0,10,26,.9);
+  box-shadow:0 0 70px rgba(0,212,255,.18);
+}
+#haloImageLightboxV69 img{
+  display:block;
+  max-width:100%;
+  max-height:74vh;
+  object-fit:contain;
+  background:#000;
+}
+#haloImageLightboxV69 .hi-light-meta{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:14px;
+  padding:12px 14px;
+  color:rgba(235,250,255,.78);
+  font-size:11px;
+}
+#haloImageLightboxV69 a{
+  color:#00d4ff;
+  text-decoration:none;
+  font-family:var(--font-mono,monospace);
+  font-size:8px;
+  letter-spacing:1.4px;
+}
+@media(max-width:900px){
+  #haloImagePanelV69{
+    left:14px;
+    right:14px;
+    top:96px;
+    width:auto;
+    max-height:78vh;
+  }
+  #haloImagePanelV69 .hi-grid{grid-template-columns:1fr;}
+}
+</style>
+
+<script id="halo-image-search-v69-js">
+(function(){
+  if(window.__haloImageSearchV69Loaded) return;
+  window.__haloImageSearchV69Loaded = true;
+
+  const HALO_API_BASE =
+    (typeof API !== 'undefined' && API) ||
+    window.HALO_SERVER_URL ||
+    'https://halo-server-d3h3.onrender.com';
+
+  function esc(s){
+    return String(s ?? '').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+  }
+
+  function say(msg){
+    try{ if(typeof speakText === 'function') return speakText(msg); }catch(e){}
+    try{ if(typeof haloSpeak === 'function') return haloSpeak(msg); }catch(e){}
+    try{ if(typeof speak === 'function') return speak(msg); }catch(e){}
+  }
+
+  function addMsg(role,msg){
+    try{ if(typeof addChat === 'function') return addChat(role,msg); }catch(e){}
+    const feed = document.getElementById('chatFeed');
+    if(feed){
+      const div = document.createElement('div');
+      div.className = role === 'user' ? 'msg-u' : 'msg-h';
+      div.textContent = msg;
+      feed.appendChild(div);
+      feed.scrollTop = feed.scrollHeight;
+    }
+  }
+
+  function setOrb(mode){
+    const orb = document.getElementById('orbWrap');
+    if(!orb) return;
+    orb.classList.remove('thinking','listening','speaking','success');
+    if(mode) orb.classList.add(mode);
+  }
+
+  function ensurePanel(){
+    if(document.getElementById('haloImagePanelV69')) return;
+
+    const panel = document.createElement('div');
+    panel.id = 'haloImagePanelV69';
+    panel.innerHTML = `
+      <div class="hi-head">
+        <div>
+          <div class="hi-kicker">VISUAL INTEL</div>
+          <div class="hi-title" id="haloImageTitleV69">IMAGE SEARCH</div>
+        </div>
+        <button class="hi-close" id="haloImageCloseV69">×</button>
+      </div>
+      <div class="hi-body">
+        <div class="hi-search">
+          <input class="hi-input" id="haloImageInputV69" placeholder="Search images..." />
+          <button class="hi-btn" id="haloImageButtonV69">SEARCH</button>
+        </div>
+        <div class="hi-status" id="haloImageStatusV69">Standing by.</div>
+        <div class="hi-grid" id="haloImageGridV69"></div>
+      </div>
+    `;
+    document.body.appendChild(panel);
+
+    const lightbox = document.createElement('div');
+    lightbox.id = 'haloImageLightboxV69';
+    lightbox.innerHTML = `
+      <div class="hi-light-inner">
+        <img id="haloImageLightboxImgV69" alt="HALO visual result" />
+        <div class="hi-light-meta">
+          <span id="haloImageLightboxTitleV69"></span>
+          <a id="haloImageLightboxLinkV69" href="#" target="_blank" rel="noopener">OPEN SOURCE ↗</a>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(lightbox);
+
+    document.getElementById('haloImageCloseV69').onclick = () => panel.classList.remove('active');
+    document.getElementById('haloImageButtonV69').onclick = () => {
+      const q = document.getElementById('haloImageInputV69').value.trim();
+      if(q) window.haloImageSearch(q);
+    };
+    document.getElementById('haloImageInputV69').addEventListener('keydown', e => {
+      if(e.key === 'Enter'){
+        const q = e.currentTarget.value.trim();
+        if(q) window.haloImageSearch(q);
+      }
+    });
+    lightbox.addEventListener('click', e => {
+      if(e.target === lightbox) lightbox.classList.remove('active');
+    });
+  }
+
+  function openLightbox(item){
+    const lb = document.getElementById('haloImageLightboxV69');
+    const img = document.getElementById('haloImageLightboxImgV69');
+    const title = document.getElementById('haloImageLightboxTitleV69');
+    const link = document.getElementById('haloImageLightboxLinkV69');
+
+    img.src = item.image || item.url || item.thumbnail;
+    title.textContent = item.title || 'Image result';
+    link.href = item.link || item.url || item.image || item.thumbnail;
+    lb.classList.add('active');
+  }
+
+  function renderImages(query, images){
+    ensurePanel();
+    const panel = document.getElementById('haloImagePanelV69');
+    const title = document.getElementById('haloImageTitleV69');
+    const status = document.getElementById('haloImageStatusV69');
+    const grid = document.getElementById('haloImageGridV69');
+    const input = document.getElementById('haloImageInputV69');
+
+    panel.classList.add('active');
+    input.value = query;
+    title.textContent = query.toUpperCase().slice(0,42);
+
+    if(!images || !images.length){
+      status.textContent = 'No image results returned.';
+      grid.innerHTML = '';
+      return;
+    }
+
+    status.textContent = `${images.length} visual references loaded.`;
+    grid.innerHTML = images.map((item,i)=>`
+      <div class="hi-card" data-hi-index="${i}">
+        <img src="${esc(item.thumbnail || item.image || item.url)}" alt="${esc(item.title || query)}" loading="lazy" />
+        <div class="hi-cap">
+          ${esc(item.title || query)}
+          <div class="hi-src">${esc(item.source || 'SOURCE')}</div>
+        </div>
+      </div>
+    `).join('');
+
+    grid.querySelectorAll('.hi-card').forEach(card=>{
+      card.onclick = () => openLightbox(images[Number(card.dataset.hiIndex)]);
+    });
+  }
+
+  window.haloImageSearch = async function(query){
+    ensurePanel();
+
+    query = String(query || '').trim();
+    if(!query) return [];
+
+    const panel = document.getElementById('haloImagePanelV69');
+    const status = document.getElementById('haloImageStatusV69');
+    const grid = document.getElementById('haloImageGridV69');
+    const input = document.getElementById('haloImageInputV69');
+
+    panel.classList.add('active');
+    input.value = query;
+    status.textContent = `Searching visual intel for "${query}"...`;
+    grid.innerHTML = '';
+    setOrb('thinking');
+
+    try{
+      const res = await fetch(`${HALO_API_BASE}/api/images?q=${encodeURIComponent(query)}&limit=10`);
+      const data = await res.json();
+
+      if(!res.ok || !data.success){
+        throw new Error(data.error || 'Image search failed');
+      }
+
+      const images = data.images || data.results || [];
+      renderImages(query, images);
+      setOrb('success');
+      addMsg('halo', `Visual intel acquired for "${query}".`);
+      say('Visual intel acquired.');
+      setTimeout(()=>setOrb(''), 1200);
+      return images;
+
+    }catch(err){
+      console.error('[HALO IMAGE SEARCH V69]', err);
+      status.textContent = `Image search failed: ${err.message}`;
+      addMsg('halo', `Image search failed: ${err.message}`);
+      say('Unable to retrieve visual intelligence.');
+      setOrb('');
+      return [];
+    }
+  };
+
+  function isImageCommand(text){
+    text = String(text || '').toLowerCase();
+    return (
+      /\b(show|show me|pull up|find|search|look up|bring up|get)\b/.test(text) &&
+      /\b(image|images|picture|pictures|photo|photos|pic|pics|reference|references|visual|visuals)\b/.test(text)
+    );
+  }
+
+  function extractImageQuery(text){
+    return String(text || '')
+      .replace(/^(hey\s+halo[, ]*)/i,'')
+      .replace(/\b(can you|could you|please)\b/ig,'')
+      .replace(/\b(show me|show|pull up|find|search for|search|look up|bring up|get)\b/ig,'')
+      .replace(/\b(images|image|pictures|picture|photos|photo|pics|pic|references|reference|visual intel|visuals|visual)\b\s*(of|for)?/ig,'')
+      .replace(/\s+/g,' ')
+      .trim();
+  }
+
+  window.haloIsImageCommand = isImageCommand;
+  window.haloExtractImageQuery = extractImageQuery;
+
+  // Wrap typed/voice ask flow.
+  const oldAskHalo = window.askHalo;
+  if(typeof oldAskHalo === 'function' && !oldAskHalo.__haloImageV69Wrapped){
+    window.askHalo = function(text){
+      if(isImageCommand(text)){
+        const q = extractImageQuery(text) || text;
+        addMsg('user', text);
+        window.haloImageSearch(q);
+        return;
+      }
+      return oldAskHalo.apply(this, arguments);
+    };
+    window.askHalo.__haloImageV69Wrapped = true;
+  }
+
+  const oldSendText = window.sendText;
+  if(typeof oldSendText === 'function' && !oldSendText.__haloImageV69Wrapped){
+    window.sendText = function(){
+      const input = document.getElementById('textInp');
+      const text = String(input?.value || '').trim();
+      if(text && isImageCommand(text)){
+        if(input) input.value = '';
+        addMsg('user', text);
+        window.haloImageSearch(extractImageQuery(text) || text);
+        return;
+      }
+      return oldSendText.apply(this, arguments);
+    };
+    window.sendText.__haloImageV69Wrapped = true;
+  }
+
+  function addVisualButton(){
+    const quick = document.querySelector('.right-col .gpnl');
+    if(!quick || document.getElementById('haloVisualIntelBtnV69')) return;
+    const btn = document.createElement('button');
+    btn.id = 'haloVisualIntelBtnV69';
+    btn.className = 'qbtn';
+    btn.textContent = 'Visual intel search ↗';
+    btn.onclick = () => {
+      ensurePanel();
+      document.getElementById('haloImagePanelV69').classList.add('active');
+      document.getElementById('haloImageInputV69').focus();
+    };
+    quick.appendChild(btn);
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded',()=>{ensurePanel();addVisualButton();});
+  }else{
+    ensurePanel();
+    addVisualButton();
+  }
+
+  console.log('[HALO IMAGE SEARCH MODULE V69] loaded');
+})();
+</script>
+
 </body>
 </html>
